@@ -4,6 +4,11 @@ import argparse
 import curses
 import requests
 
+class CursorMove:
+    DONE = 0
+    FOUND = 1
+    NOT_FOUND = 2
+
 
 class Node:
 
@@ -11,16 +16,16 @@ class Node:
         pass
 
     def key_up(self):
-        return False
+        return CursorMove.NOT_FOUND
 
     def key_down(self):
-        return False
+        return CursorMove.NOT_FOUND
 
     def key_left(self):
-        return False
+        return CursorMove.NOT_FOUND
 
     def key_right(self):
-        return False
+        return CursorMove.NOT_FOUND
 
     def select(self):
         pass
@@ -32,11 +37,11 @@ class Node:
 class Object(Node):
 
     def __init__(self, name, fields, is_root=False):
-        self.is_expanded = False
         self.name = name
         self.fields = fields
         self.cursor = False
         self.is_root = is_root
+        self.is_expanded = is_root
 
     def show(self, stdscr, y, x, cursor):
         if self.cursor:
@@ -67,12 +72,20 @@ class Object(Node):
                     field.cursor = False
                     self.fields[i].cursor = True
 
-                    return True
+                    return CursorMove.DONE
+                elif i == -1:
+                    return CursorMove.FOUND
             else:
-                if field.key_up():
-                    return True
+                cursor_move = field.key_up()
 
-        return False
+                if cursor_move == CursorMove.FOUND:
+                    # ToDo: Find previous cursor position.
+                    cursor_move = CursorMove.DONE
+
+                if cursor_move == CursorMove.DONE:
+                    return CursorMove.DONE
+
+        return CursorMove.NOT_FOUND
 
     def key_down(self):
         for i, field in enumerate(self.fields, 1):
@@ -81,27 +94,54 @@ class Object(Node):
                     field.cursor = False
                     self.fields[i].cursor = True
 
-                    return True
+                    return CursorMove.DONE
             else:
-                if field.key_down():
-                    return True
+                cursor_move = field.key_down()
 
-        return False
+                if cursor_move == CursorMove.FOUND:
+                    # ToDo: Find next cursor position.
+                    cursor_move = CursorMove.DONE
+
+                if cursor_move == CursorMove.DONE:
+                    return CursorMove.DONE
+
+        return CursorMove.NOT_FOUND
+
+    def key_left(self):
+        if not self.is_expanded:
+            return CursorMove.NOT_FOUND
+
+        for field in self.fields:
+            if field.cursor and not self.is_root:
+                field.cursor = False
+                self.is_expanded = False
+                self.cursor = True
+
+                return CursorMove.DONE
+            else:
+                cursor_move = field.key_left()
+
+                if cursor_move == CursorMove.DONE:
+                    return CursorMove.DONE
+
+        return CursorMove.NOT_FOUND
 
     def key_right(self):
-        for i, field in enumerate(self.fields, 0):
+        for field in self.fields:
             if field.cursor:
                 if isinstance(field, Object):
                     field.cursor = False
                     field.is_expanded = True
                     field.fields[0].cursor = True
 
-                return True
+                return CursorMove.DONE
             else:
-                if field.key_right():
-                    return True
+                cursor_move = field.key_right()
 
-        return False
+                if cursor_move == CursorMove.DONE:
+                    return CursorMove.DONE
+
+        return CursorMove.NOT_FOUND
 
     def select(self):
         for field in self.fields:
@@ -279,4 +319,7 @@ def main():
                         help='GraphQL end-point URL.')
     args = parser.parse_args()
 
-    print(curses.wrapper(selector, args.url))
+    try:
+        print(curses.wrapper(selector, args.url))
+    except KeyboardInterrupt:
+        sys.exit(1)
