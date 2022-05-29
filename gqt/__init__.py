@@ -265,7 +265,15 @@ def load_tree():
                               ]),
                        Object('packages',
                               [
-                                  Leaf('name')
+                                  Leaf('builds'),
+                                  Leaf('coverage'),
+                                  Object('latest_release',
+                                         [
+                                             Leaf('description'),
+                                             Leaf('version')
+                                         ]),
+                                  Leaf('name'),
+                                  Leaf('number_of_downloads')
                               ])
                    ]),
             Object('statistics',
