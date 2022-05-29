@@ -1,5 +1,8 @@
+import json
+import sys
 import argparse
 import curses
+import requests
 
 
 class Node:
@@ -225,7 +228,14 @@ def load_tree():
                                   Leaf('name')
                               ])
                    ]),
-            Object('statistics', [Leaf('number_of_downloads')])
+            Object('statistics',
+                   [
+                       Leaf('start_date_time'),
+                       Leaf('total_number_of_requests'),
+                       Leaf('number_of_unique_visitors'),
+                       Leaf('number_of_graphql_requests'),
+                       Leaf('no_idle_client_handlers')
+                   ])
         ],
         True)
     root.fields[0].cursor = True
@@ -247,23 +257,18 @@ def selector(stdscr, url):
         if not update(stdscr, url, root, stdscr.getkey()):
             break
 
-    return root.query()
+    query = root.query()
+    response = requests.post(url, data=f'{{"query":"{query}"}}')
 
-    res = ''
-    res += '{\n'
-    res += '  "data": {\n'
-    res += '    "standard_library": {\n'
-    res += '      "package": {\n'
-    res += '        "name": "argparse",\n'
-    res += '        "latest_release": {\n'
-    res += '          "version": "0.1.0"\n'
-    res += '        }\n'
-    res += '      }\n'
-    res += '    }\n'
-    res += '  }\n'
-    res += '}'
+    if response.status_code != 200:
+        sys.exit(1)
 
-    return res
+    response = response.json()
+
+    if 'errors' in response:
+        sys.exit(2)
+
+    return json.dumps(response['data'], indent=4)
 
 
 def main():
