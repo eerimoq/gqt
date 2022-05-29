@@ -1,14 +1,14 @@
-GraphQL queries in the terminal
-===============================
+GraphQL in the terminal
+=======================
 
 .. image:: docs/assets/showcase.gif
 
 Ideas
 -----
 
-- Save latest query and cursor position.
+- Save latest query and cursor position in ``~/.cache/gqt.toml``.
 
-- Print built query.
+- Execute or print built query.
 
 - Contols:
 
@@ -20,6 +20,6 @@ Ideas
 
   - Use ``/`` to fuzzy find field.
 
-- Query is all selected visible leaves.
+- Query all selected visible leaves.
 
 - Variables?
