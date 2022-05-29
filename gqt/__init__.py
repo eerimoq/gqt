@@ -36,6 +36,9 @@ class Node:
     def select(self):
         pass
 
+    def key(self, key):
+        pass
+
     def query(self):
         pass
 
@@ -155,22 +158,34 @@ class Object(Node):
 
     def query(self):
         items = []
+        arguments = []
 
         for field in self.fields:
             if isinstance(field, Leaf):
                 if field.is_selected:
                     items.append(field.name)
+            elif isinstance(field, Argument):
+                arguments.append(f'{field.name}:"{field.value}"')
             elif isinstance(field, Object):
                 if field.is_expanded:
                     items.append(field.query())
+
+        if arguments:
+            arguments = '(' + ','.join(arguments) + ')'
+        else:
+            arguments = ''
 
         if items:
             if self.is_root:
                 return '{' + ' '.join(items) + '}'
             else:
-                return f'{self.name} {{' + ' '.join(items) + '}'
+                return f'{self.name}{arguments} {{' + ' '.join(items) + '}'
         else:
             return ''
+
+    def key(self, key):
+        for field in self.fields:
+            field.key(key)
 
 
 class Leaf(Node):
@@ -203,19 +218,27 @@ class Argument(Node):
 
     def __init__(self, name):
         self.name = name
-        self.value = None
+        self.value = ''
         self.cursor = False
 
     def show(self, stdscr, y, x, cursor):
+        value = f'"{self.value}"'
+
         if self.cursor:
             cursor[0] = y
-            cursor[1] = x + len(self.name) + 6
+            cursor[1] = x + len(self.name) + 4 + len(value)
 
         stdscr.addstr(y, x, '-', curses.color_pair(1))
         stdscr.addstr(y, x + 2, f'{self.name}*:')
-        stdscr.addstr(y, x + 2 + len(self.name) + 3, '""', curses.color_pair(2))
+        stdscr.addstr(y, x + 2 + len(self.name) + 3, value, curses.color_pair(2))
 
         return y + 1
+
+    def key(self, key):
+        if key in ['KEY_BACKSPACE', '\b', 'KEY_DC', '\x7f']:
+            self.value = self.value[:-1]
+        else:
+            self.value += key
 
 
 def update(stdscr, url, root, key):
@@ -231,6 +254,8 @@ def update(stdscr, url, root, key):
         root.select()
     elif key == '\n':
         return False
+    elif key is not None:
+        root.key(key)
 
     stdscr.erase()
     stdscr.addstr(0, 0, url, curses.A_UNDERLINE)
@@ -327,7 +352,7 @@ def selector(stdscr, url):
 
     write_tree_to_cache(root)
 
-    query = root.query()
+    query = root.query().replace('"', '\\"')
     response = requests.post(url, data=f'{{"query":"{query}"}}')
 
     if response.status_code != 200:
