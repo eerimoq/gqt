@@ -1,7 +1,7 @@
 GraphQL queries in the terminal
 ===============================
 
-Add gif here!
+.. image:: https://github.com/eerimoq/gqt/blob/main/docs/asserts/showcase.gif
 
 Ideas
 -----
