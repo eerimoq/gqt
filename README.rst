@@ -3,6 +3,13 @@ GraphQL in the terminal
 
 .. image:: docs/assets/showcase.gif
 
+Installation
+------------
+
+.. code-block:: text
+
+   pip3 install gqt
+           
 Ideas
 -----
 
