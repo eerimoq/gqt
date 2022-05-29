@@ -162,60 +162,74 @@ def main(stdscr):
     fields = load_tree()
     update(stdscr, fields, None)
 
+    # Down.
     fields[0].cursor = False
     fields[1].cursor = True
     update(stdscr, fields, stdscr.getkey())
 
+    # Right.
     fields[0].cursor = False
     fields[1].is_expanded = True
     fields[1].fields[0].cursor = True
     update(stdscr, fields, stdscr.getkey())
 
+    # Down.
     fields[1].fields[0].cursor = False
     fields[1].fields[1].cursor = True
     update(stdscr, fields, stdscr.getkey())
 
+    # Down.
     fields[1].fields[1].cursor = False
     fields[1].fields[2].cursor = True
     update(stdscr, fields, stdscr.getkey())
 
+    # Right.
     fields[1].fields[2].cursor = False
     fields[1].fields[2].is_expanded = True
     fields[1].fields[2].fields[0].cursor = True
     update(stdscr, fields, stdscr.getkey())
 
+    # Down.
     fields[1].fields[2].fields[0].cursor = False
     fields[1].fields[2].fields[1].cursor = True
     update(stdscr, fields, stdscr.getkey())
 
+    # Down.
     fields[1].fields[2].fields[1].cursor = False
     fields[1].fields[2].fields[2].cursor = True
     update(stdscr, fields, stdscr.getkey())
 
+    # Down.
     fields[1].fields[2].fields[2].cursor = False
     fields[1].fields[2].fields[3].cursor = True
     update(stdscr, fields, stdscr.getkey())
 
+    # Down.
     fields[1].fields[2].fields[3].cursor = False
     fields[1].fields[2].fields[4].cursor = True
     update(stdscr, fields, stdscr.getkey())
 
+    # Space.
     fields[1].fields[2].fields[4].is_selected = True
     update(stdscr, fields, stdscr.getkey())
 
+    # Up.
     fields[1].fields[2].fields[4].cursor = False
     fields[1].fields[2].fields[3].cursor = True
     update(stdscr, fields, stdscr.getkey())
 
+    # Right.
     fields[1].fields[2].fields[3].cursor = False
     fields[1].fields[2].fields[3].is_expanded = True
     fields[1].fields[2].fields[3].fields[0].cursor = True
     update(stdscr, fields, stdscr.getkey())
 
+    # Down.
     fields[1].fields[2].fields[3].fields[0].cursor = False
     fields[1].fields[2].fields[3].fields[1].cursor = True
     update(stdscr, fields, stdscr.getkey())
 
+    # Space.
     fields[1].fields[2].fields[3].fields[1].is_selected = True
     update(stdscr, fields, stdscr.getkey())
 
