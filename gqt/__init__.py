@@ -1,8 +1,14 @@
+import pickle
 import json
 import sys
 import argparse
 import curses
 import requests
+from xdg import XDG_CACHE_HOME
+
+
+CACHE_PICKLE = XDG_CACHE_HOME / 'gqt' / 'query.pickle'
+
 
 class CursorMove:
     DONE = 0
@@ -236,7 +242,21 @@ def update(stdscr, url, root, key):
     return True
 
 
+def read_tree_from_cache():
+    return pickle.loads(CACHE_PICKLE.read_bytes())
+
+
+def write_tree_to_cache(root):
+    CACHE_PICKLE.parent.mkdir(exist_ok=True)
+    CACHE_PICKLE.write_bytes(pickle.dumps(root))
+
+
 def load_tree():
+    try:
+        return read_tree_from_cache()
+    except Exception:
+        pass
+
     root = Object(
         None,
         [
@@ -304,6 +324,8 @@ def selector(stdscr, url):
     while True:
         if not update(stdscr, url, root, stdscr.getkey()):
             break
+
+    write_tree_to_cache(root)
 
     query = root.query()
     response = requests.post(url, data=f'{{"query":"{query}"}}')

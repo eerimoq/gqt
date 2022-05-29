@@ -19,7 +19,8 @@ setuptools.setup(
     license='MIT',
     url='https://github.com/eerimoq/gqt',
     install_requires=[
-        'gql[requests]',
+        'requests',
+        'xdg'
     ],
     packages=find_packages(exclude=['tests']),
     test_suite="tests",
