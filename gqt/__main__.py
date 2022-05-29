@@ -1,11 +1,9 @@
 import curses
 
+
 class Node:
 
-    def show(self, stdscr, y, x):
-        pass
-
-    def has_cursor(self):
+    def show(self, stdscr, y, x, cursor):
         pass
 
 
@@ -17,7 +15,11 @@ class Object(Node):
         self.fields = fields
         self.cursor = False
 
-    def show(self, stdscr, y, x):
+    def show(self, stdscr, y, x, cursor):
+        if self.cursor:
+            cursor[0] = y
+            cursor[1] = x
+
         if not self.is_expanded:
             stdscr.addstr(y, x, '>', curses.color_pair(1))
             stdscr.addstr(y, x + 2, self.name)
@@ -28,12 +30,9 @@ class Object(Node):
             y += 1
 
             for field in self.fields:
-                y = field.show(stdscr, y, x + 2)
+                y = field.show(stdscr, y, x + 2, cursor)
 
         return y
-
-    def has_cursor(self):
-        return self.cursor
 
 
 class Leaf(Node):
@@ -43,7 +42,11 @@ class Leaf(Node):
         self.name = name
         self.cursor = False
 
-    def show(self, stdscr, y, x):
+    def show(self, stdscr, y, x, cursor):
+        if self.cursor:
+            cursor[0] = y
+            cursor[1] = x
+
         if self.is_selected:
             stdscr.addstr(y, x, '■', curses.color_pair(1))
         else:
@@ -53,9 +56,6 @@ class Leaf(Node):
 
         return y + 1
 
-    def has_cursor(self):
-        return self.cursor
-
 
 class Argument(Node):
 
@@ -64,15 +64,16 @@ class Argument(Node):
         self.value = None
         self.cursor = False
 
-    def show(self, stdscr, y, x):
+    def show(self, stdscr, y, x, cursor):
+        if self.cursor:
+            cursor[0] = y
+            cursor[1] = x
+
         stdscr.addstr(y, x, '■', curses.color_pair(1))
         stdscr.addstr(y, x + 2, f'{self.name}*:')
         stdscr.addstr(y, x + 2 + len(self.name) + 3, '""', curses.color_pair(2))
 
         return y + 1
-
-    def has_cursor(self):
-        return self.cursor
 
 
 def key_up(fields):
@@ -111,10 +112,12 @@ def update(stdscr, fields, key):
 
     stdscr.erase()
     y = 0
+    cursor = [0, 0]
 
     for field in fields:
-        y = field.show(stdscr, y, 0)
+        y = field.show(stdscr, y, 0, cursor)
 
+    stdscr.move(*cursor)
     stdscr.refresh()
 
     return True
@@ -159,16 +162,58 @@ def main(stdscr):
     fields = load_tree()
     update(stdscr, fields, None)
 
-    fields[1].is_expanded = True
+    fields[0].cursor = False
+    fields[1].cursor = True
     update(stdscr, fields, stdscr.getkey())
 
+    fields[0].cursor = False
+    fields[1].is_expanded = True
+    fields[1].fields[0].cursor = True
+    update(stdscr, fields, stdscr.getkey())
+
+    fields[1].fields[0].cursor = False
+    fields[1].fields[1].cursor = True
+    update(stdscr, fields, stdscr.getkey())
+
+    fields[1].fields[1].cursor = False
+    fields[1].fields[2].cursor = True
+    update(stdscr, fields, stdscr.getkey())
+
+    fields[1].fields[2].cursor = False
     fields[1].fields[2].is_expanded = True
+    fields[1].fields[2].fields[0].cursor = True
+    update(stdscr, fields, stdscr.getkey())
+
+    fields[1].fields[2].fields[0].cursor = False
+    fields[1].fields[2].fields[1].cursor = True
+    update(stdscr, fields, stdscr.getkey())
+
+    fields[1].fields[2].fields[1].cursor = False
+    fields[1].fields[2].fields[2].cursor = True
+    update(stdscr, fields, stdscr.getkey())
+
+    fields[1].fields[2].fields[2].cursor = False
+    fields[1].fields[2].fields[3].cursor = True
+    update(stdscr, fields, stdscr.getkey())
+
+    fields[1].fields[2].fields[3].cursor = False
+    fields[1].fields[2].fields[4].cursor = True
     update(stdscr, fields, stdscr.getkey())
 
     fields[1].fields[2].fields[4].is_selected = True
     update(stdscr, fields, stdscr.getkey())
 
+    fields[1].fields[2].fields[4].cursor = False
+    fields[1].fields[2].fields[3].cursor = True
+    update(stdscr, fields, stdscr.getkey())
+
+    fields[1].fields[2].fields[3].cursor = False
     fields[1].fields[2].fields[3].is_expanded = True
+    fields[1].fields[2].fields[3].fields[0].cursor = True
+    update(stdscr, fields, stdscr.getkey())
+
+    fields[1].fields[2].fields[3].fields[0].cursor = False
+    fields[1].fields[2].fields[3].fields[1].cursor = True
     update(stdscr, fields, stdscr.getkey())
 
     fields[1].fields[2].fields[3].fields[1].is_selected = True
