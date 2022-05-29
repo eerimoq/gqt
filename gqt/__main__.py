@@ -75,19 +75,19 @@ class Argument(Node):
         return self.cursor
 
 
-def move_up(fields):
+def key_up(fields):
     pass
 
 
-def move_down(fields):
+def key_down(fields):
     pass
 
 
-def move_left(fields):
+def key_left(fields):
     pass
 
 
-def move_right(fields):
+def key_right(fields):
     pass
 
 
@@ -97,13 +97,13 @@ def select(fields):
 
 def update(stdscr, fields, key):
     if key == 'KEY_UP':
-        move_up(fields)
+        key_up(fields)
     elif key == 'KEY_DOWN':
-        move_down(fields)
+        key_down(fields)
     elif key == 'KEY_LEFT':
-        move_left(fields)
+        key_left(fields)
     elif key == 'KEY_RIGHT':
-        move_right(fields)
+        key_right(fields)
     elif key == ' ':
         select(fields)
     elif key == '\n':
