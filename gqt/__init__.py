@@ -97,7 +97,7 @@ def select(fields):
     pass
 
 
-def update(stdscr, fields, key):
+def update(stdscr, url, fields, key):
     if key == 'KEY_UP':
         key_up(fields)
     elif key == 'KEY_DOWN':
@@ -112,7 +112,8 @@ def update(stdscr, fields, key):
         return False
 
     stdscr.erase()
-    y = 0
+    stdscr.addstr(0, 0, url, curses.A_UNDERLINE)
+    y = 1
     cursor = [0, 0]
 
     for field in fields:
@@ -153,7 +154,7 @@ def load_tree():
     return fields
 
 
-def selector(stdscr):
+def selector(stdscr, url):
     stdscr.clear()
     stdscr.keypad(True)
     curses.use_default_colors()
@@ -161,78 +162,78 @@ def selector(stdscr):
     curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
 
     fields = load_tree()
-    update(stdscr, fields, None)
+    update(stdscr, url, fields, None)
 
     # Down.
     fields[0].cursor = False
     fields[1].cursor = True
-    update(stdscr, fields, stdscr.getkey())
+    update(stdscr, url, fields, stdscr.getkey())
 
     # Right.
     fields[0].cursor = False
     fields[1].is_expanded = True
     fields[1].fields[0].cursor = True
-    update(stdscr, fields, stdscr.getkey())
+    update(stdscr, url, fields, stdscr.getkey())
 
     # Down.
     fields[1].fields[0].cursor = False
     fields[1].fields[1].cursor = True
-    update(stdscr, fields, stdscr.getkey())
+    update(stdscr, url, fields, stdscr.getkey())
 
     # Down.
     fields[1].fields[1].cursor = False
     fields[1].fields[2].cursor = True
-    update(stdscr, fields, stdscr.getkey())
+    update(stdscr, url, fields, stdscr.getkey())
 
     # Right.
     fields[1].fields[2].cursor = False
     fields[1].fields[2].is_expanded = True
     fields[1].fields[2].fields[0].cursor = True
-    update(stdscr, fields, stdscr.getkey())
+    update(stdscr, url, fields, stdscr.getkey())
 
     # Down.
     fields[1].fields[2].fields[0].cursor = False
     fields[1].fields[2].fields[1].cursor = True
-    update(stdscr, fields, stdscr.getkey())
+    update(stdscr, url, fields, stdscr.getkey())
 
     # Down.
     fields[1].fields[2].fields[1].cursor = False
     fields[1].fields[2].fields[2].cursor = True
-    update(stdscr, fields, stdscr.getkey())
+    update(stdscr, url, fields, stdscr.getkey())
 
     # Down.
     fields[1].fields[2].fields[2].cursor = False
     fields[1].fields[2].fields[3].cursor = True
-    update(stdscr, fields, stdscr.getkey())
+    update(stdscr, url, fields, stdscr.getkey())
 
     # Down.
     fields[1].fields[2].fields[3].cursor = False
     fields[1].fields[2].fields[4].cursor = True
-    update(stdscr, fields, stdscr.getkey())
+    update(stdscr, url, fields, stdscr.getkey())
 
     # Space.
     fields[1].fields[2].fields[4].is_selected = True
-    update(stdscr, fields, stdscr.getkey())
+    update(stdscr, url, fields, stdscr.getkey())
 
     # Up.
     fields[1].fields[2].fields[4].cursor = False
     fields[1].fields[2].fields[3].cursor = True
-    update(stdscr, fields, stdscr.getkey())
+    update(stdscr, url, fields, stdscr.getkey())
 
     # Right.
     fields[1].fields[2].fields[3].cursor = False
     fields[1].fields[2].fields[3].is_expanded = True
     fields[1].fields[2].fields[3].fields[0].cursor = True
-    update(stdscr, fields, stdscr.getkey())
+    update(stdscr, url, fields, stdscr.getkey())
 
     # Down.
     fields[1].fields[2].fields[3].fields[0].cursor = False
     fields[1].fields[2].fields[3].fields[1].cursor = True
-    update(stdscr, fields, stdscr.getkey())
+    update(stdscr, url, fields, stdscr.getkey())
 
     # Space.
     fields[1].fields[2].fields[3].fields[1].is_selected = True
-    update(stdscr, fields, stdscr.getkey())
+    update(stdscr, url, fields, stdscr.getkey())
 
     stdscr.getkey()
 
@@ -255,7 +256,10 @@ def selector(stdscr):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('url')
+    parser.add_argument('url',
+                        nargs='?',
+                        default='https://mys-lang.org/graphql',
+                        help='GraphQL end-point URL.')
     args = parser.parse_args()
-    
-    print(curses.wrapper(selector))
+
+    print(curses.wrapper(selector, args.url))
