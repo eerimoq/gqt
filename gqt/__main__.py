@@ -1,3 +1,4 @@
+import argparse
 import curses
 
 
@@ -152,7 +153,7 @@ def load_tree():
     return fields
 
 
-def main(stdscr):
+def selector(stdscr):
     stdscr.clear()
     stdscr.keypad(True)
     curses.use_default_colors()
@@ -251,4 +252,13 @@ def main(stdscr):
 
     return res
 
-print(curses.wrapper(main))
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('url')
+    args = parser.parse_args()
+    
+    print(curses.wrapper(selector))
+
+
+main()
