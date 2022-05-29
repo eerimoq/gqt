@@ -1,7 +1,7 @@
 GraphQL queries in the terminal
 ===============================
 
-.. image:: docs/asserts/showcase.gif
+.. image:: docs/assets/showcase.gif
 
 Ideas
 -----
