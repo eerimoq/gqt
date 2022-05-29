@@ -1,2 +1,1 @@
 gql[requests]
-rich

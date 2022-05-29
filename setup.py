@@ -18,5 +18,8 @@ setuptools.setup(
     author_email='erik.moqvist@gmail.com',
     license='MIT',
     url='https://github.com/eerimoq/gqt',
+    install_requires=[
+        'gql[requests]',
+    ],
     packages=find_packages(exclude=['tests']),
     test_suite="tests")
