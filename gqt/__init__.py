@@ -361,7 +361,7 @@ def selector(stdscr, url):
     response = response.json()
 
     if 'errors' in response:
-        sys.exit(2)
+        sys.exit(response['errors'])
 
     return json.dumps(response['data'], indent=4)
 
