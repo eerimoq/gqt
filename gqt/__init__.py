@@ -7,33 +7,121 @@ class Node:
     def show(self, stdscr, y, x, cursor):
         pass
 
+    def key_up(self):
+        return False
+
+    def key_down(self):
+        return False
+
+    def key_left(self):
+        return False
+
+    def key_right(self):
+        return False
+
+    def select(self):
+        pass
+
+    def query(self):
+        pass
+
 
 class Object(Node):
 
-    def __init__(self, name, fields):
+    def __init__(self, name, fields, is_root=False):
         self.is_expanded = False
         self.name = name
         self.fields = fields
         self.cursor = False
+        self.is_root = is_root
 
     def show(self, stdscr, y, x, cursor):
         if self.cursor:
             cursor[0] = y
             cursor[1] = x
 
-        if not self.is_expanded:
-            stdscr.addstr(y, x, '>', curses.color_pair(1))
-            stdscr.addstr(y, x + 2, self.name)
-            y += 1
-        else:
+        if self.is_root:
+            for field in self.fields:
+                y = field.show(stdscr, y, x, cursor)
+        elif self.is_expanded:
             stdscr.addstr(y, x, '', curses.color_pair(1))
             stdscr.addstr(y, x + 2, self.name)
             y += 1
 
             for field in self.fields:
                 y = field.show(stdscr, y, x + 2, cursor)
+        else:
+            stdscr.addstr(y, x, '>', curses.color_pair(1))
+            stdscr.addstr(y, x + 2, self.name)
+            y += 1
 
         return y
+
+    def key_up(self):
+        for i, field in enumerate(self.fields, -1):
+            if field.cursor:
+                if i > -1:
+                    field.cursor = False
+                    self.fields[i].cursor = True
+
+                    return True
+            else:
+                if field.key_up():
+                    return True
+
+        return False
+
+    def key_down(self):
+        for i, field in enumerate(self.fields, 1):
+            if field.cursor:
+                if i < len(self.fields):
+                    field.cursor = False
+                    self.fields[i].cursor = True
+
+                    return True
+            else:
+                if field.key_down():
+                    return True
+
+        return False
+
+    def key_right(self):
+        for i, field in enumerate(self.fields, 0):
+            if field.cursor:
+                if isinstance(field, Object):
+                    field.cursor = False
+                    field.is_expanded = True
+                    field.fields[0].cursor = True
+
+                return True
+            else:
+                if field.key_right():
+                    return True
+
+        return False
+
+    def select(self):
+        for field in self.fields:
+            field.select()
+
+    def query(self):
+        items = []
+
+        for field in self.fields:
+            if isinstance(field, Leaf):
+                if field.is_selected:
+                    items.append(field.name)
+            elif isinstance(field, Object):
+                if field.is_expanded:
+                    items.append(field.query())
+
+        if items:
+            if self.is_root:
+                return '{' + ' '.join(items) + '}'
+            else:
+                return f'{self.name} {{' + ' '.join(items) + '}'
+        else:
+            return ''
 
 
 class Leaf(Node):
@@ -57,6 +145,10 @@ class Leaf(Node):
 
         return y + 1
 
+    def select(self):
+        if self.cursor:
+            self.is_selected = not self.is_selected
+
 
 class Argument(Node):
 
@@ -68,57 +160,33 @@ class Argument(Node):
     def show(self, stdscr, y, x, cursor):
         if self.cursor:
             cursor[0] = y
-            cursor[1] = x
+            cursor[1] = x + len(self.name) + 6
 
-        stdscr.addstr(y, x, '■', curses.color_pair(1))
+        stdscr.addstr(y, x, '-', curses.color_pair(1))
         stdscr.addstr(y, x + 2, f'{self.name}*:')
         stdscr.addstr(y, x + 2 + len(self.name) + 3, '""', curses.color_pair(2))
 
         return y + 1
 
 
-def key_up(fields):
-    pass
-
-
-def key_down(fields):
-    pass
-
-
-def key_left(fields):
-    pass
-
-
-def key_right(fields):
-    pass
-
-
-def select(fields):
-    pass
-
-
-def update(stdscr, url, fields, key):
+def update(stdscr, url, root, key):
     if key == 'KEY_UP':
-        key_up(fields)
+        root.key_up()
     elif key == 'KEY_DOWN':
-        key_down(fields)
+        root.key_down()
     elif key == 'KEY_LEFT':
-        key_left(fields)
+        root.key_left()
     elif key == 'KEY_RIGHT':
-        key_right(fields)
+        root.key_right()
     elif key == ' ':
-        select(fields)
+        root.select()
     elif key == '\n':
         return False
 
     stdscr.erase()
     stdscr.addstr(0, 0, url, curses.A_UNDERLINE)
-    y = 1
     cursor = [0, 0]
-
-    for field in fields:
-        y = field.show(stdscr, y, 0, cursor)
-
+    root.show(stdscr, 1, 0, cursor)
     stdscr.move(*cursor)
     stdscr.refresh()
 
@@ -126,116 +194,60 @@ def update(stdscr, url, fields, key):
 
 
 def load_tree():
-    fields = [
-        Object('activities', []),
-        Object('standard_library',
-               [
-                   Leaf('number_of_downloads'),
-                   Leaf('number_of_packages'),
-                   Object('package',
-                          [
-                              Argument('name'),
-                              Leaf('builds'),
-                              Leaf('coverage'),
-                              Object('latest_release',
-                                     [
-                                         Leaf('description'),
-                                         Leaf('version')
-                                     ]),
-                              Leaf('name'),
-                              Leaf('number_of_downloads')
-                          ]),
-                   Object('packages', [])
-               ]),
-        Object('statistics', [Leaf('foo')])
-    ]
-    fields[0].cursor = True
+    root = Object(
+        None,
+        [
+            Object('activities',
+                   [
+                       Leaf('date'),
+                       Leaf('kind'),
+                       Leaf('message')
+                   ]),
+            Object('standard_library',
+                   [
+                       Leaf('number_of_downloads'),
+                       Leaf('number_of_packages'),
+                       Object('package',
+                              [
+                                  Argument('name'),
+                                  Leaf('builds'),
+                                  Leaf('coverage'),
+                                  Object('latest_release',
+                                         [
+                                             Leaf('description'),
+                                             Leaf('version')
+                                         ]),
+                                  Leaf('name'),
+                                  Leaf('number_of_downloads')
+                              ]),
+                       Object('packages',
+                              [
+                                  Leaf('name')
+                              ])
+                   ]),
+            Object('statistics', [Leaf('number_of_downloads')])
+        ],
+        True)
+    root.fields[0].cursor = True
 
-    return fields
+    return root
 
 
 def selector(stdscr, url):
     stdscr.clear()
     stdscr.keypad(True)
     curses.use_default_colors()
-    curses.init_pair(1, curses.COLOR_YELLOW, curses.COLOR_BLACK)
-    curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(1, curses.COLOR_YELLOW, -1)
+    curses.init_pair(2, curses.COLOR_GREEN, -1)
 
-    fields = load_tree()
-    update(stdscr, url, fields, None)
+    root = load_tree()
+    update(stdscr, url, root, None)
 
-    # Down.
-    fields[0].cursor = False
-    fields[1].cursor = True
-    update(stdscr, url, fields, stdscr.getkey())
+    while True:
+        if not update(stdscr, url, root, stdscr.getkey()):
+            break
 
-    # Right.
-    fields[0].cursor = False
-    fields[1].is_expanded = True
-    fields[1].fields[0].cursor = True
-    update(stdscr, url, fields, stdscr.getkey())
-
-    # Down.
-    fields[1].fields[0].cursor = False
-    fields[1].fields[1].cursor = True
-    update(stdscr, url, fields, stdscr.getkey())
-
-    # Down.
-    fields[1].fields[1].cursor = False
-    fields[1].fields[2].cursor = True
-    update(stdscr, url, fields, stdscr.getkey())
-
-    # Right.
-    fields[1].fields[2].cursor = False
-    fields[1].fields[2].is_expanded = True
-    fields[1].fields[2].fields[0].cursor = True
-    update(stdscr, url, fields, stdscr.getkey())
-
-    # Down.
-    fields[1].fields[2].fields[0].cursor = False
-    fields[1].fields[2].fields[1].cursor = True
-    update(stdscr, url, fields, stdscr.getkey())
-
-    # Down.
-    fields[1].fields[2].fields[1].cursor = False
-    fields[1].fields[2].fields[2].cursor = True
-    update(stdscr, url, fields, stdscr.getkey())
-
-    # Down.
-    fields[1].fields[2].fields[2].cursor = False
-    fields[1].fields[2].fields[3].cursor = True
-    update(stdscr, url, fields, stdscr.getkey())
-
-    # Down.
-    fields[1].fields[2].fields[3].cursor = False
-    fields[1].fields[2].fields[4].cursor = True
-    update(stdscr, url, fields, stdscr.getkey())
-
-    # Space.
-    fields[1].fields[2].fields[4].is_selected = True
-    update(stdscr, url, fields, stdscr.getkey())
-
-    # Up.
-    fields[1].fields[2].fields[4].cursor = False
-    fields[1].fields[2].fields[3].cursor = True
-    update(stdscr, url, fields, stdscr.getkey())
-
-    # Right.
-    fields[1].fields[2].fields[3].cursor = False
-    fields[1].fields[2].fields[3].is_expanded = True
-    fields[1].fields[2].fields[3].fields[0].cursor = True
-    update(stdscr, url, fields, stdscr.getkey())
-
-    # Down.
-    fields[1].fields[2].fields[3].fields[0].cursor = False
-    fields[1].fields[2].fields[3].fields[1].cursor = True
-    update(stdscr, url, fields, stdscr.getkey())
-
-    # Space.
-    fields[1].fields[2].fields[3].fields[1].is_selected = True
-    update(stdscr, url, fields, stdscr.getkey())
-
-    stdscr.getkey()
+    return root.query()
 
     res = ''
     res += '{\n'
