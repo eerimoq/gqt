@@ -39,14 +39,14 @@ Repeat last query:
 
 Print the query instead of executing it:
 
-.. code-block:: text
+.. code-block:: bash
 
    $ gqt -q https://mys-lang.org/graphql
    {"query":"{statistics {start_date_time number_of_graphql_requests}}"}
 
 Use ``jq`` for colors (not seen below) and extracting field values:
 
-.. code-block:: text
+.. code-block:: shell
 
    $ gqt https://mys-lang.org/graphql | jq
    {
