@@ -1,8 +1,10 @@
+import os
 import pickle
 import json
 import sys
 import argparse
 import curses
+from contextlib import contextmanager
 import requests
 from xdg import XDG_CACHE_HOME
 
@@ -410,6 +412,18 @@ def selector(stdscr, url):
     return json.dumps(response['data'], indent=4)
 
 
+@contextmanager
+def redirect_stdout_to_stderr():
+    original_stdout = os.dup(sys.stdout.fileno())
+    os.dup2(sys.stderr.fileno(), sys.stdout.fileno())
+
+    try:
+        yield
+    finally:
+        os.dup2(original_stdout, sys.stdout.fileno())
+        os.close(original_stdout)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('url',
@@ -419,6 +433,9 @@ def main():
     args = parser.parse_args()
 
     try:
-        print(curses.wrapper(selector, args.url))
+        with redirect_stdout_to_stderr():
+            response = curses.wrapper(selector, args.url)
     except KeyboardInterrupt:
         sys.exit(1)
+
+    print(response)
