@@ -13,12 +13,10 @@ Installation
 Ideas
 -----
 
-- Execute or print built query.
+- Print built query instead of executing it.
 
 - Contols:
 
   - Use ``/`` to fuzzy find field.
 
 - Variables?
-
-- Pipe output to other programs? Possible when using curses? How to do it?
