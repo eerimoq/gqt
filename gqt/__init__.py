@@ -12,100 +12,33 @@ from xdg import XDG_CACHE_HOME
 
 CACHE_PATH = XDG_CACHE_HOME / 'gqt' / 'cache'
 
-SCHEMA_QUERY = '''\
-{
-  "query": "
-    query IntrospectionQuery {
-      __schema {
-        queryType { name }
-        mutationType { name }
-        subscriptionType { name }
-        types {
-          ...FullType
-        }
-        directives {
-          name
-          description
-          locations
-          args {
-            ...InputValue
-          }
-        }
-      }
-    }
-    fragment FullType on __Type {
-      kind
-      name
-      description
-      fields(includeDeprecated: true) {
-        name
-        description
-        args {
-          ...InputValue
-        }
-        type {
-          ...TypeRef
-        }
-        isDeprecated
-        deprecationReason
-      }
-      inputFields {
-        ...InputValue
-      }
-      interfaces {
-        ...TypeRef
-      }
-      enumValues(includeDeprecated: true) {
-        name
-        description
-        isDeprecated
-        deprecationReason
-      }
-      possibleTypes {
-        ...TypeRef
-      }
-    }
-    fragment InputValue on __InputValue {
-      name
-      description
-      type { ...TypeRef }
-      defaultValue
-    }
-    fragment TypeRef on __Type {
-      kind
-      name
-      ofType {
-        kind
-        name
-        ofType {
-          kind
-          name
-          ofType {
-            kind
-            name
-            ofType {
-              kind
-              name
-              ofType {
-                kind
-                name
-                ofType {
-                  kind
-                  name
-                  ofType {
-                    kind
-                    name
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  "
+SCHEMA_QUERY = {
+    "query": (
+        "\n    query IntrospectionQuery {\n      __schema {\n        queryType { "
+        "name }\n        mutationType { name }\n        subscriptionType { name }"
+        "\n        types {\n          ...FullType\n        }\n        directives "
+        "{\n          name\n          description\n          locations\n         "
+        " args {\n            ...InputValue\n          }\n        }\n      }\n   "
+        " }\n\n    fragment FullType on __Type {\n      kind\n      name\n      d"
+        "escription\n      fields(includeDeprecated: true) {\n        name\n     "
+        "   description\n        args {\n          ...InputValue\n        }\n    "
+        "    type {\n          ...TypeRef\n        }\n        isDeprecated\n     "
+        "   deprecationReason\n      }\n      inputFields {\n        ...InputValu"
+        "e\n      }\n      interfaces {\n        ...TypeRef\n      }\n      enumV"
+        "alues(includeDeprecated: true) {\n        name\n        description\n   "
+        "     isDeprecated\n        deprecationReason\n      }\n      possibleTyp"
+        "es {\n        ...TypeRef\n      }\n    }\n\n    fragment InputValue on _"
+        "_InputValue {\n      name\n      description\n      type { ...TypeRef }\n"
+        "      defaultValue\n    }\n\n    fragment TypeRef on __Type {\n      kin"
+        "d\n      name\n      ofType {\n        kind\n        name\n        ofTyp"
+        "e {\n          kind\n          name\n          ofType {\n            kin"
+        "d\n            name\n            ofType {\n              kind\n         "
+        "     name\n              ofType {\n                kind\n               "
+        " name\n                ofType {\n                  kind\n               "
+        "   name\n                  ofType {\n                    kind\n         "
+        "           name\n                  }\n                }\n              }"
+        "\n            }\n          }\n        }\n      }\n    }\n  ")
 }
-'''
 
 
 class CursorMove:
@@ -159,15 +92,15 @@ class Object(Node):
             for field in self.fields:
                 y = field.show(stdscr, y, x, cursor)
         elif self.is_expanded:
-            stdscr.addstr(y, x, '', curses.color_pair(1))
-            stdscr.addstr(y, x + 2, self.name)
+            addstr(stdscr, y, x, '', curses.color_pair(1))
+            addstr(stdscr, y, x + 2, self.name)
             y += 1
 
             for field in self.fields:
                 y = field.show(stdscr, y, x + 2, cursor)
         else:
-            stdscr.addstr(y, x, '>', curses.color_pair(1))
-            stdscr.addstr(y, x + 2, self.name)
+            addstr(stdscr, y, x, '>', curses.color_pair(1))
+            addstr(stdscr, y, x + 2, self.name)
             y += 1
 
         return y
@@ -277,7 +210,10 @@ class Object(Node):
                 if field.is_selected:
                     items.append(field.name)
             elif isinstance(field, Argument):
-                arguments.append(f'{field.name}:"{field.value}"')
+                value = field.query()
+
+                if value is not None:
+                    arguments.append(f'{field.name}:{value}')
             elif isinstance(field, Object):
                 if field.is_expanded:
                     items.append(field.query())
@@ -313,11 +249,11 @@ class Leaf(Node):
             cursor[1] = x
 
         if self.is_selected:
-            stdscr.addstr(y, x, '■', curses.color_pair(1))
+            addstr(stdscr, y, x, '■', curses.color_pair(1))
         else:
-            stdscr.addstr(y, x, '□', curses.color_pair(1))
+            addstr(stdscr, y, x, '□', curses.color_pair(1))
 
-        stdscr.addstr(y, x + 2, self.name)
+        addstr(stdscr, y, x + 2, self.name)
 
         return y + 1
 
@@ -328,29 +264,55 @@ class Leaf(Node):
 
 class Argument(Node):
 
-    def __init__(self, name):
+    def __init__(self, name, type):
         self.name = name
+        self.type = type
         self.value = ''
         self.cursor = False
 
+    def is_string(self):
+        item = self.type
+
+        while item['kind'] == 'NON_NULL':
+            item = item['ofType']
+
+        return item['name'] == 'String'
+
     def show(self, stdscr, y, x, cursor):
-        value = f'"{self.value}"'
+        if self.is_string():
+            value = f'"{self.value}"'
+            offset = 1
+        else:
+            value = str(self.value)
+            offset = 2
 
         if self.cursor:
             cursor[0] = y
-            cursor[1] = x + len(self.name) + 4 + len(value)
+            cursor[1] = x + len(self.name) + 3 + len(value) + offset
 
-        stdscr.addstr(y, x, '-', curses.color_pair(1))
-        stdscr.addstr(y, x + 2, f'{self.name}*:')
-        stdscr.addstr(y, x + 2 + len(self.name) + 3, value, curses.color_pair(2))
+        addstr(stdscr, y, x, '-', curses.color_pair(1))
+        addstr(stdscr, y, x + 2, f'{self.name}*:')
+        addstr(stdscr, y, x + 2 + len(self.name) + 3, value, curses.color_pair(2))
 
         return y + 1
 
     def key(self, key):
+        if not self.cursor:
+            return
+
         if key in ['KEY_BACKSPACE', '\b', 'KEY_DC', '\x7f']:
             self.value = self.value[:-1]
         else:
             self.value += key
+
+    def query(self):
+        if not self.value:
+            return None
+
+        if self.is_string():
+            return f'"{self.value}"'
+        else:
+            return str(self.value)
 
 
 def set_cursor_up(field):
@@ -400,13 +362,20 @@ def update(stdscr, url, root, key):
         root.key(key)
 
     stdscr.erase()
-    stdscr.addstr(0, 0, url, curses.A_UNDERLINE)
+    addstr(stdscr, 0, 0, url, curses.A_UNDERLINE)
     cursor = [0, 0]
     root.show(stdscr, 1, 0, cursor)
     stdscr.move(*cursor)
     stdscr.refresh()
 
     return True
+
+
+def addstr(stdscr, y, x, text, attrs=0):
+    try:
+        stdscr.addstr(y, x, text, attrs)
+    except curses.error:
+        pass
 
 
 def read_tree_from_cache(checksum):
@@ -419,7 +388,7 @@ def write_tree_to_cache(root, checksum):
 
 
 def fetch_schema(url):
-    response = requests.post(url, data=SCHEMA_QUERY)
+    response = requests.post(url, json=SCHEMA_QUERY)
 
     if response.status_code != 200:
         sys.exit(1)
@@ -433,56 +402,46 @@ def fetch_schema(url):
     return response['data'], checksum
 
 
+def find_type(types, name):
+    for type in types:
+        if type['name'] == name:
+            return type
+
+
+def build_field(types, field):
+    try:
+        name = field['name']
+    except:
+        sys.exit("No field name.")
+
+    item = field['type']
+
+    while item['kind'] in ['NON_NULL', 'LIST']:
+        item = item['ofType']
+
+    if item['kind'] == 'OBJECT':
+        return Object(name,
+                      [
+                          Argument(arg['name'], arg['type'])
+                          for arg in field['args']
+                      ] + [
+                          build_field(types, field)
+                          for field in find_type(types, item['name'])['fields']
+                      ])
+    else:
+        return Leaf(name)
+
+
 def load_tree_from_schema(schema):
-    return Object(
-        None,
-        [
-            Object('activities',
-                   [
-                       Leaf('date'),
-                       Leaf('kind'),
-                       Leaf('message')
-                   ]),
-            Object('standard_library',
-                   [
-                       Leaf('number_of_downloads'),
-                       Leaf('number_of_packages'),
-                       Object('package',
-                              [
-                                  Argument('name'),
-                                  Leaf('builds'),
-                                  Leaf('coverage'),
-                                  Object('latest_release',
-                                         [
-                                             Leaf('description'),
-                                             Leaf('version')
-                                         ]),
-                                  Leaf('name'),
-                                  Leaf('number_of_downloads')
-                              ]),
-                       Object('packages',
-                              [
-                                  Leaf('builds'),
-                                  Leaf('coverage'),
-                                  Object('latest_release',
-                                         [
-                                             Leaf('description'),
-                                             Leaf('version')
-                                         ]),
-                                  Leaf('name'),
-                                  Leaf('number_of_downloads')
-                              ])
-                   ]),
-            Object('statistics',
-                   [
-                       Leaf('start_date_time'),
-                       Leaf('total_number_of_requests'),
-                       Leaf('number_of_unique_visitors'),
-                       Leaf('number_of_graphql_requests'),
-                       Leaf('no_idle_client_handlers')
-                   ])
-        ],
-        True)
+    types = schema['__schema']['types']
+    query = find_type(types, 'Query')
+
+    return Object(None,
+                  [
+                      build_field(types, field)
+                      for field in query['fields']
+                  ],
+                  True)
 
 
 def load_tree(url):
@@ -519,9 +478,9 @@ def selector(stdscr, url):
 
 
 def create_query(root):
-    query = root.query().replace('"', '\\"')
+    query = root.query()
 
-    return f'{{"query":"{query}"}}'
+    return {"query": query}
 
 
 def last_query(url):
@@ -531,7 +490,7 @@ def last_query(url):
 
 
 def execute_query(url, query):
-    response = requests.post(url, data=query)
+    response = requests.post(url, json=query)
 
     if response.status_code != 200:
         sys.exit(1)
@@ -580,6 +539,6 @@ def main():
             sys.exit(1)
 
     if args.query:
-        print(query)
+        print(json.dumps(query))
     else:
         print(execute_query(args.url, query))
