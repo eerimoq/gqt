@@ -6,7 +6,7 @@ GraphQL in the terminal
 Installation
 ------------
 
-.. code-block:: text
+.. code-block:: shell
 
    pip3 install gqt
 
@@ -15,7 +15,7 @@ Usage
 
 Interactively create a query and execute it:
 
-.. code-block:: text
+.. code-block:: shell
 
    $ gqt https://mys-lang.org/graphql
    {
@@ -27,7 +27,7 @@ Interactively create a query and execute it:
 
 Repeat last query:
 
-.. code-block:: text
+.. code-block:: shell
 
    $ gqt -r https://mys-lang.org/graphql
    {
@@ -39,7 +39,7 @@ Repeat last query:
 
 Print the query instead of executing it:
 
-.. code-block:: bash
+.. code-block:: shell
 
    $ gqt -q https://mys-lang.org/graphql
    {"query":"{statistics {start_date_time number_of_graphql_requests}}"}
