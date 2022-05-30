@@ -1,7 +1,7 @@
 GraphQL in the terminal
 =======================
 
-.. image:: docs/assets/showcase.gif
+.. image:: https://github.com/eerimoq/gqt/raw/main/docs/assets/showcase.gif
 
 Installation
 ------------
