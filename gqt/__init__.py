@@ -77,19 +77,25 @@ class Object(Node):
     def key_up(self):
         for i, field in enumerate(self.fields, -1):
             if field.cursor:
+                field.cursor = False
+
                 if i > -1:
-                    field.cursor = False
-                    self.fields[i].cursor = True
+                    set_cursor_up(self.fields[i])
 
                     return CursorMove.DONE
-                elif i == -1:
+                else:
                     return CursorMove.FOUND
             else:
                 cursor_move = field.key_up()
 
                 if cursor_move == CursorMove.FOUND:
-                    # ToDo: Find previous cursor position.
-                    cursor_move = CursorMove.DONE
+                    if i == -1:
+                        return CursorMove.FOUND
+                    else:
+                        cursor_move = set_cursor_up(self.fields[i])
+
+                    if cursor_move == CursorMove.FOUND:
+                        return CursorMove.FOUND
 
                 if cursor_move == CursorMove.DONE:
                     return CursorMove.DONE
@@ -99,17 +105,25 @@ class Object(Node):
     def key_down(self):
         for i, field in enumerate(self.fields, 1):
             if field.cursor:
+                field.cursor = False
+
                 if i < len(self.fields):
-                    field.cursor = False
-                    self.fields[i].cursor = True
+                    set_cursor_down(self.fields[i])
 
                     return CursorMove.DONE
+                else:
+                    return CursorMove.FOUND
             else:
                 cursor_move = field.key_down()
 
                 if cursor_move == CursorMove.FOUND:
-                    # ToDo: Find next cursor position.
-                    cursor_move = CursorMove.DONE
+                    if i < len(self.fields):
+                        cursor_move = set_cursor_down(self.fields[i])
+
+                        if cursor_move == CursorMove.FOUND:
+                            return CursorMove.FOUND
+                    else:
+                        return CursorMove.FOUND
 
                 if cursor_move == CursorMove.DONE:
                     return CursorMove.DONE
@@ -241,11 +255,41 @@ class Argument(Node):
             self.value += key
 
 
+def set_cursor_up(field):
+    if isinstance(field, Object):
+        if not field.is_expanded:
+            field.cursor = True
+
+            return CursorMove.DONE
+        else:
+            return set_cursor_up(field.fields[-1])
+    else:
+        field.cursor = True
+
+        return CursorMove.DONE
+
+
+def set_cursor_down(field):
+    if isinstance(field, Object):
+        if not field.is_expanded:
+            field.cursor = True
+
+            return CursorMove.DONE
+        else:
+            return set_cursor_down(field.fields[0])
+    else:
+        field.cursor = True
+
+        return CursorMove.DONE
+
+
 def update(stdscr, url, root, key):
     if key == 'KEY_UP':
-        root.key_up()
+        if root.key_up() == CursorMove.FOUND:
+            set_cursor_down(root.fields[0])
     elif key == 'KEY_DOWN':
-        root.key_down()
+        if root.key_down() == CursorMove.FOUND:
+            set_cursor_up(root.fields[-1])
     elif key == 'KEY_LEFT':
         root.key_left()
     elif key == 'KEY_RIGHT':
