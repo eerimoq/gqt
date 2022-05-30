@@ -1,3 +1,4 @@
+from base64 import b64encode
 from hashlib import blake2b
 import os
 import pickle
@@ -8,6 +9,7 @@ import curses
 from contextlib import contextmanager
 import requests
 from xdg import XDG_CACHE_HOME
+from .version import __version__
 
 
 CACHE_PATH = XDG_CACHE_HOME / 'gqt' / 'cache'
@@ -378,16 +380,45 @@ def addstr(stdscr, y, x, text, attrs=0):
         pass
 
 
+def make_cache_name(checksum):
+    return f'{__version__}-{checksum}'
+
+
 def read_tree_from_cache(checksum):
-    return pickle.loads(CACHE_PATH.joinpath(checksum).read_bytes())
+    return pickle.loads(CACHE_PATH.joinpath(make_cache_name(checksum)).read_bytes())
 
 
 def write_tree_to_cache(root, checksum):
     CACHE_PATH.mkdir(exist_ok=True, parents=True)
-    CACHE_PATH.joinpath(checksum).write_bytes(pickle.dumps(root))
+    CACHE_PATH.joinpath(make_cache_name(checksum)).write_bytes(pickle.dumps(root))
 
 
-def fetch_schema(url):
+def make_schema_cache_name(url):
+    return b64encode(url.encode('utf-8')).decode('utf-8')
+
+
+def read_cached_schema(url):
+    name = make_schema_cache_name(url)
+    schema = pickle.loads(CACHE_PATH.joinpath(f'{name}.schema').read_bytes())
+    checksum = CACHE_PATH.joinpath(f'{name}.checksum').read_text()
+
+    return schema, checksum
+
+
+def write_cached_schema(schema, checksum, url):
+    CACHE_PATH.mkdir(exist_ok=True, parents=True)
+    name = make_schema_cache_name(url)
+    CACHE_PATH.joinpath(f'{name}.schema').write_bytes(pickle.dumps(schema))
+    CACHE_PATH.joinpath(f'{name}.checksum').write_text(checksum)
+
+
+def fetch_schema(url, no_cached_schema):
+    if not no_cached_schema:
+        try:
+            return read_cached_schema(url)
+        except Exception:
+            pass
+
     response = requests.post(url, json=SCHEMA_QUERY)
 
     if response.status_code != 200:
@@ -398,6 +429,8 @@ def fetch_schema(url):
 
     if 'errors' in response:
         sys.exit(response['errors'])
+
+    write_cached_schema(response['data'], checksum, url)
 
     return response['data'], checksum
 
@@ -444,8 +477,8 @@ def load_tree_from_schema(schema):
                   True)
 
 
-def load_tree(url):
-    schema, checksum = fetch_schema(url)
+def load_tree(url, no_cached_schema):
+    schema, checksum = fetch_schema(url, no_cached_schema)
 
     try:
         return read_tree_from_cache(checksum), checksum
@@ -458,14 +491,14 @@ def load_tree(url):
     return root, checksum
 
 
-def selector(stdscr, url):
+def selector(stdscr, url, no_cached_schema):
     stdscr.clear()
     stdscr.keypad(True)
     curses.use_default_colors()
     curses.init_pair(1, curses.COLOR_YELLOW, -1)
     curses.init_pair(2, curses.COLOR_GREEN, -1)
 
-    root, checksum = load_tree(url)
+    root, checksum = load_tree(url, no_cached_schema)
     update(stdscr, url, root, None)
 
     while True:
@@ -483,8 +516,8 @@ def create_query(root):
     return {"query": query}
 
 
-def last_query(url):
-    checksum = fetch_schema(url)[1]
+def last_query(url, no_cached_schema):
+    checksum = fetch_schema(url, no_cached_schema)[1]
 
     return create_query(read_tree_from_cache(checksum))
 
@@ -527,14 +560,17 @@ def main():
     parser.add_argument('-r', '--repeat',
                         action='store_true',
                         help='Repeat last query.')
+    parser.add_argument('-n', '--no-cached-schema',
+                        action='store_true',
+                        help='Do not use any cached schema.')
     args = parser.parse_args()
 
     if args.repeat:
-        query = last_query(args.url)
+        query = last_query(args.url, args.no_cached_schema)
     else:
         try:
             with redirect_stdout_to_stderr():
-                query = curses.wrapper(selector, args.url)
+                query = curses.wrapper(selector, args.url, args.no_cached_schema)
         except KeyboardInterrupt:
             sys.exit(1)
 
