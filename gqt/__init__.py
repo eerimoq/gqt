@@ -398,8 +398,21 @@ def selector(stdscr, url):
 
     write_tree_to_cache(root)
 
+    return create_query(root)
+
+
+def create_query(root):
     query = root.query().replace('"', '\\"')
-    response = requests.post(url, data=f'{{"query":"{query}"}}')
+
+    return f'{{"query":"{query}"}}'
+
+
+def last_query():
+    return create_query(read_tree_from_cache())
+
+
+def execute_query(url, query):
+    response = requests.post(url, data=query)
 
     if response.status_code != 200:
         sys.exit(1)
@@ -430,12 +443,24 @@ def main():
                         nargs='?',
                         default='https://mys-lang.org/graphql',
                         help='GraphQL end-point URL.')
+    parser.add_argument('-q', '--query',
+                        action='store_true',
+                        help='Print the query instead of executing it.')
+    parser.add_argument('-r', '--repeat',
+                        action='store_true',
+                        help='Repeat last query.')
     args = parser.parse_args()
 
-    try:
-        with redirect_stdout_to_stderr():
-            response = curses.wrapper(selector, args.url)
-    except KeyboardInterrupt:
-        sys.exit(1)
+    if args.repeat:
+        query = last_query()
+    else:
+        try:
+            with redirect_stdout_to_stderr():
+                query = curses.wrapper(selector, args.url)
+        except KeyboardInterrupt:
+            sys.exit(1)
 
-    print(response)
+    if args.query:
+        print(query)
+    else:
+        print(execute_query(args.url, query))
