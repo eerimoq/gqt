@@ -1,3 +1,4 @@
+from hashlib import blake2b
 import os
 import pickle
 import json
@@ -9,7 +10,102 @@ import requests
 from xdg import XDG_CACHE_HOME
 
 
-CACHE_PICKLE = XDG_CACHE_HOME / 'gqt' / 'query.pickle'
+CACHE_PATH = XDG_CACHE_HOME / 'gqt' / 'cache'
+
+SCHEMA_QUERY = '''\
+{
+  "query": "
+    query IntrospectionQuery {
+      __schema {
+        queryType { name }
+        mutationType { name }
+        subscriptionType { name }
+        types {
+          ...FullType
+        }
+        directives {
+          name
+          description
+          locations
+          args {
+            ...InputValue
+          }
+        }
+      }
+    }
+    fragment FullType on __Type {
+      kind
+      name
+      description
+      fields(includeDeprecated: true) {
+        name
+        description
+        args {
+          ...InputValue
+        }
+        type {
+          ...TypeRef
+        }
+        isDeprecated
+        deprecationReason
+      }
+      inputFields {
+        ...InputValue
+      }
+      interfaces {
+        ...TypeRef
+      }
+      enumValues(includeDeprecated: true) {
+        name
+        description
+        isDeprecated
+        deprecationReason
+      }
+      possibleTypes {
+        ...TypeRef
+      }
+    }
+    fragment InputValue on __InputValue {
+      name
+      description
+      type { ...TypeRef }
+      defaultValue
+    }
+    fragment TypeRef on __Type {
+      kind
+      name
+      ofType {
+        kind
+        name
+        ofType {
+          kind
+          name
+          ofType {
+            kind
+            name
+            ofType {
+              kind
+              name
+              ofType {
+                kind
+                name
+                ofType {
+                  kind
+                  name
+                  ofType {
+                    kind
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  "
+}
+'''
 
 
 class CursorMove:
@@ -313,22 +409,32 @@ def update(stdscr, url, root, key):
     return True
 
 
-def read_tree_from_cache():
-    return pickle.loads(CACHE_PICKLE.read_bytes())
+def read_tree_from_cache(checksum):
+    return pickle.loads(CACHE_PATH.joinpath(checksum).read_bytes())
 
 
-def write_tree_to_cache(root):
-    CACHE_PICKLE.parent.mkdir(exist_ok=True)
-    CACHE_PICKLE.write_bytes(pickle.dumps(root))
+def write_tree_to_cache(root, checksum):
+    CACHE_PATH.mkdir(exist_ok=True, parents=True)
+    CACHE_PATH.joinpath(checksum).write_bytes(pickle.dumps(root))
 
 
-def load_tree():
-    try:
-        return read_tree_from_cache()
-    except Exception:
-        pass
+def fetch_schema(url):
+    response = requests.post(url, data=SCHEMA_QUERY)
 
-    root = Object(
+    if response.status_code != 200:
+        sys.exit(1)
+
+    checksum = blake2b(response.content).hexdigest()
+    response = response.json()
+
+    if 'errors' in response:
+        sys.exit(response['errors'])
+
+    return response['data'], checksum
+
+
+def load_tree_from_schema(schema):
+    return Object(
         None,
         [
             Object('activities',
@@ -377,9 +483,20 @@ def load_tree():
                    ])
         ],
         True)
+
+
+def load_tree(url):
+    schema, checksum = fetch_schema(url)
+
+    try:
+        return read_tree_from_cache(checksum), checksum
+    except Exception:
+        pass
+
+    root = load_tree_from_schema(schema)
     root.fields[0].cursor = True
 
-    return root
+    return root, checksum
 
 
 def selector(stdscr, url):
@@ -389,14 +506,14 @@ def selector(stdscr, url):
     curses.init_pair(1, curses.COLOR_YELLOW, -1)
     curses.init_pair(2, curses.COLOR_GREEN, -1)
 
-    root = load_tree()
+    root, checksum = load_tree(url)
     update(stdscr, url, root, None)
 
     while True:
         if not update(stdscr, url, root, stdscr.getkey()):
             break
 
-    write_tree_to_cache(root)
+    write_tree_to_cache(root, checksum)
 
     return create_query(root)
 
@@ -407,8 +524,10 @@ def create_query(root):
     return f'{{"query":"{query}"}}'
 
 
-def last_query():
-    return create_query(read_tree_from_cache())
+def last_query(url):
+    checksum = fetch_schema(url)[1]
+
+    return create_query(read_tree_from_cache(checksum))
 
 
 def execute_query(url, query):
@@ -452,7 +571,7 @@ def main():
     args = parser.parse_args()
 
     if args.repeat:
-        query = last_query()
+        query = last_query(args.url)
     else:
         try:
             with redirect_stdout_to_stderr():
