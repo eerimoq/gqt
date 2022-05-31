@@ -8,16 +8,22 @@ Installation
 
 .. code-block:: shell
 
-   pip3 install gqt
+   $ pip3 install gqt
 
 Usage
 -----
+
+Set default GraphQL end-point URL:
+
+.. code-block:: shell
+
+   $ export GQT_URL=https://mys-lang.org/graphql
 
 Interactively create a query and execute it:
 
 .. code-block:: shell
 
-   $ gqt https://mys-lang.org/graphql
+   $ gqt
    {
        "statistics": {
            "start_date_time": "2022-05-29 20:54:48",
@@ -29,7 +35,7 @@ Repeat last query:
 
 .. code-block:: shell
 
-   $ gqt -r https://mys-lang.org/graphql
+   $ gqt -r
    {
        "statistics": {
            "start_date_time": "2022-05-29 20:54:48",
@@ -41,21 +47,21 @@ Print the query instead of executing it:
 
 .. code-block:: shell
 
-   $ gqt -q https://mys-lang.org/graphql
+   $ gqt -q
    {"query":"{statistics {start_date_time number_of_graphql_requests}}"}
 
 Use ``jq`` for colors (not seen below) and extracting field values:
 
 .. code-block:: shell
 
-   $ gqt https://mys-lang.org/graphql | jq
+   $ gqt | jq
    {
      "statistics": {
        "start_date_time": "2022-05-29 20:54:48",
        "number_of_graphql_requests": 235
      }
    }
-   $ gqt https://mys-lang.org/graphql | jq .statistics.number_of_graphql_requests
+   $ gqt | jq .statistics.number_of_graphql_requests
    236
 
 Ideas
