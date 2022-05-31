@@ -83,14 +83,14 @@ Ideas
   .. code-block::
 
      >: null
-     : not null
+     v: not null
 
   Scalar example:
 
   .. code-block::
 
-      standard_library
-        package
+     v standard_library
+       v package
          ■ name*: ""             # Cannot be unselected as it cannot be null.
          □ name
        > packages
@@ -100,11 +100,11 @@ Ideas
   .. code-block::
 
      > kinds*:                     # Argument is null.
-      kinds*:                     # List with two elements.
-        a: "foo"
+     v kinds*:                     # List with two elements.
+       v a: "foo"
          b: "eq"
          c: "kalle"
-        a: "bar"
+       v a: "bar"
          b: "ne"
          c: "frolle"
        > ...
