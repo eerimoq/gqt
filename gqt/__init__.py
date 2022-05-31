@@ -43,6 +43,10 @@ SCHEMA_QUERY = {
 }
 
 
+def default_url():
+    return os.environ.get('GQT_URL', 'https://mys-lang.org/graphql')
+
+
 class CursorMove:
     DONE = 0
     FOUND = 1
@@ -570,10 +574,6 @@ curl -X POST \\
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('url',
-                        nargs='?',
-                        default='https://mys-lang.org/graphql',
-                        help='GraphQL end-point URL.')
     parser.add_argument('-q', '--query',
                         action='store_true',
                         help='Print the query instead of executing it.')
@@ -587,6 +587,11 @@ def main():
                         action='store_true',
                         help=('Fetch schema from server, even if a cached schema '
                               'exists.'))
+    parser.add_argument(
+        '-u', '--url',
+        default=default_url(),
+        help=('GraphQL URL (default: %(default)s). Set environment variable '
+              'GQT_URL to override default value.'))
     args = parser.parse_args()
 
     try:
