@@ -68,3 +68,43 @@ Ideas
   - Use ``/`` to fuzzy find field.
 
 - Variables?
+
+- Arguments:
+
+  Scalars:
+
+  .. code-block::
+
+     □: null
+     ■: not null
+
+  Lists:
+
+  .. code-block::
+
+     >: null
+     : not null
+
+  Scalar example:
+
+  .. code-block::
+
+      standard_library
+        package
+         ■ name*: ""             # Cannot be unselected as it cannot be null.
+         □ name
+       > packages
+
+  List example:
+
+  .. code-block::
+
+     > kinds*:                     # Argument is null.
+      kinds*:                     # List with two elements.
+        a: "foo"
+         b: "eq"
+         c: "kalle"
+        a: "bar"
+         b: "ne"
+         c: "frolle"
+       > ...
