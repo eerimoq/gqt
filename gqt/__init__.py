@@ -380,36 +380,44 @@ def addstr(stdscr, y, x, text, attrs=0):
         pass
 
 
+def make_url_cache_name(url):
+    return b64encode(url.encode('utf-8')).decode('utf-8')
+
+
 def make_cache_name(checksum):
     return f'{__version__}-{checksum}'
 
 
-def read_tree_from_cache(checksum):
-    return pickle.loads(CACHE_PATH.joinpath(make_cache_name(checksum)).read_bytes())
+def make_query_pickle_path(url, checksum):
+    name = make_url_cache_name(url)
+
+    return CACHE_PATH / __version__ / name / f'query-{checksum}.pickle'
 
 
-def write_tree_to_cache(root, checksum):
-    CACHE_PATH.mkdir(exist_ok=True, parents=True)
-    CACHE_PATH.joinpath(make_cache_name(checksum)).write_bytes(pickle.dumps(root))
+def read_tree_from_cache(url, checksum):
+    return pickle.loads(make_query_pickle_path(url, checksum).read_bytes())
 
 
-def make_schema_cache_name(url):
-    return b64encode(url.encode('utf-8')).decode('utf-8')
+def write_tree_to_cache(root, url, checksum):
+    path = make_query_pickle_path(url, checksum)
+    path.parent.mkdir(exist_ok=True, parents=True)
+    path.write_bytes(pickle.dumps(root))
+
+
+def make_schema_pickle_path(url):
+    name = make_url_cache_name(url)
+
+    return CACHE_PATH / __version__ / name / 'schema.pickle'
 
 
 def read_cached_schema(url):
-    name = make_schema_cache_name(url)
-    schema = pickle.loads(CACHE_PATH.joinpath(f'{name}.schema').read_bytes())
-    checksum = CACHE_PATH.joinpath(f'{name}.checksum').read_text()
-
-    return schema, checksum
+    return pickle.loads(make_schema_pickle_path(url).read_bytes())
 
 
 def write_cached_schema(schema, checksum, url):
-    CACHE_PATH.mkdir(exist_ok=True, parents=True)
-    name = make_schema_cache_name(url)
-    CACHE_PATH.joinpath(f'{name}.schema').write_bytes(pickle.dumps(schema))
-    CACHE_PATH.joinpath(f'{name}.checksum').write_text(checksum)
+    path = make_schema_pickle_path(url)
+    path.parent.mkdir(exist_ok=True, parents=True)
+    path.write_bytes(pickle.dumps((schema, checksum)))
 
 
 def fetch_schema(url, no_cached_schema):
@@ -444,7 +452,7 @@ def find_type(types, name):
 def build_field(types, field):
     try:
         name = field['name']
-    except:
+    except Exception:
         sys.exit("No field name.")
 
     item = field['type']
@@ -481,7 +489,7 @@ def load_tree(url, no_cached_schema):
     schema, checksum = fetch_schema(url, no_cached_schema)
 
     try:
-        return read_tree_from_cache(checksum), checksum
+        return read_tree_from_cache(url, checksum), checksum
     except Exception:
         pass
 
@@ -491,35 +499,39 @@ def load_tree(url, no_cached_schema):
     return root, checksum
 
 
-def selector(stdscr, url, no_cached_schema):
+def selector(stdscr, url, root):
     stdscr.clear()
     stdscr.keypad(True)
     curses.use_default_colors()
     curses.init_pair(1, curses.COLOR_YELLOW, -1)
     curses.init_pair(2, curses.COLOR_GREEN, -1)
 
-    root, checksum = load_tree(url, no_cached_schema)
     update(stdscr, url, root, None)
 
     while True:
         if not update(stdscr, url, root, stdscr.getkey()):
             break
 
-    write_tree_to_cache(root, checksum)
-
-    return create_query(root)
-
 
 def create_query(root):
-    query = root.query()
-
-    return {"query": query}
+    return {"query": root.query()}
 
 
 def last_query(url, no_cached_schema):
     checksum = fetch_schema(url, no_cached_schema)[1]
 
-    return create_query(read_tree_from_cache(checksum))
+    return create_query(read_tree_from_cache(url, checksum))
+
+
+def query_builder(url, no_cached_schema):
+    root, checksum = load_tree(url, no_cached_schema)
+
+    with redirect_stdout_to_stderr():
+        curses.wrapper(selector, url, root)
+
+    write_tree_to_cache(root, url, checksum)
+
+    return create_query(root)
 
 
 def execute_query(url, query):
@@ -565,16 +577,15 @@ def main():
                         help='Do not use any cached schema.')
     args = parser.parse_args()
 
-    if args.repeat:
-        query = last_query(args.url, args.no_cached_schema)
-    else:
-        try:
-            with redirect_stdout_to_stderr():
-                query = curses.wrapper(selector, args.url, args.no_cached_schema)
-        except KeyboardInterrupt:
-            sys.exit(1)
+    try:
+        if args.repeat:
+            query = last_query(args.url, args.no_cached_schema)
+        else:
+            query = query_builder(args.url, args.no_cached_schema)
 
-    if args.query:
-        print(json.dumps(query))
-    else:
-        print(execute_query(args.url, query))
+        if args.query:
+            print(json.dumps(query))
+        else:
+            print(execute_query(args.url, query))
+    except KeyboardInterrupt:
+        sys.exit(1)
