@@ -420,8 +420,8 @@ def write_cached_schema(schema, checksum, url):
     path.write_bytes(pickle.dumps((schema, checksum)))
 
 
-def fetch_schema(url, no_cached_schema):
-    if not no_cached_schema:
+def fetch_schema(url, force_fetch_schema):
+    if not force_fetch_schema:
         try:
             return read_cached_schema(url)
         except Exception:
@@ -485,8 +485,8 @@ def load_tree_from_schema(schema):
                   True)
 
 
-def load_tree(url, no_cached_schema):
-    schema, checksum = fetch_schema(url, no_cached_schema)
+def load_tree(url, force_fetch_schema):
+    schema, checksum = fetch_schema(url, force_fetch_schema)
 
     try:
         return read_tree_from_cache(url, checksum), checksum
@@ -517,14 +517,26 @@ def create_query(root):
     return {"query": root.query()}
 
 
-def last_query(url, no_cached_schema):
-    checksum = fetch_schema(url, no_cached_schema)[1]
+def last_query(url, force_fetch_schema):
+    checksum = fetch_schema(url, force_fetch_schema)[1]
 
     return create_query(read_tree_from_cache(url, checksum))
 
 
-def query_builder(url, no_cached_schema):
-    root, checksum = load_tree(url, no_cached_schema)
+@contextmanager
+def redirect_stdout_to_stderr():
+    original_stdout = os.dup(sys.stdout.fileno())
+    os.dup2(sys.stderr.fileno(), sys.stdout.fileno())
+
+    try:
+        yield
+    finally:
+        os.dup2(original_stdout, sys.stdout.fileno())
+        os.close(original_stdout)
+
+
+def query_builder(url, force_fetch_schema):
+    root, checksum = load_tree(url, force_fetch_schema)
 
     with redirect_stdout_to_stderr():
         curses.wrapper(selector, url, root)
@@ -548,16 +560,12 @@ def execute_query(url, query):
     return json.dumps(response['data'], indent=4)
 
 
-@contextmanager
-def redirect_stdout_to_stderr():
-    original_stdout = os.dup(sys.stdout.fileno())
-    os.dup2(sys.stderr.fileno(), sys.stdout.fileno())
-
-    try:
-        yield
-    finally:
-        os.dup2(original_stdout, sys.stdout.fileno())
-        os.close(original_stdout)
+CURL_COMMAND = '''\
+curl -X POST \\
+     -H 'content-type: application/json' \\
+     '{url}' \\
+     -d '{query}'\
+'''
 
 
 def main():
@@ -569,22 +577,28 @@ def main():
     parser.add_argument('-q', '--query',
                         action='store_true',
                         help='Print the query instead of executing it.')
+    parser.add_argument('-c', '--curl',
+                        action='store_true',
+                        help='Print the cURL command instead of executing it.')
     parser.add_argument('-r', '--repeat',
                         action='store_true',
                         help='Repeat last query.')
-    parser.add_argument('-n', '--no-cached-schema',
+    parser.add_argument('-f', '--force-fetch-schema',
                         action='store_true',
-                        help='Do not use any cached schema.')
+                        help=('Fetch schema from server, even if a cached schema '
+                              'exists.'))
     args = parser.parse_args()
 
     try:
         if args.repeat:
-            query = last_query(args.url, args.no_cached_schema)
+            query = last_query(args.url, args.force_fetch_schema)
         else:
-            query = query_builder(args.url, args.no_cached_schema)
+            query = query_builder(args.url, args.force_fetch_schema)
 
         if args.query:
             print(json.dumps(query))
+        elif args.curl:
+            print(CURL_COMMAND.format(url=args.url, query=json.dumps(query)))
         else:
             print(execute_query(args.url, query))
     except KeyboardInterrupt:
