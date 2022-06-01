@@ -587,7 +587,7 @@ def execute_query(url, query):
     if 'errors' in response:
         sys.exit(response['errors'])
 
-    return json.dumps(response['data'], indent=4)
+    return json.dumps(response['data'])
 
 
 CURL_COMMAND = '''\
