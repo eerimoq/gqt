@@ -296,8 +296,8 @@ class Argument(Node):
             cursor[0] = y
             cursor[1] = x + len(self.name) + 3 + len(value) + offset
 
-        addstr(stdscr, y, x, '-', curses.color_pair(1))
-        addstr(stdscr, y, x + 2, f'{self.name}*:')
+        addstr(stdscr, y, x, '■', curses.color_pair(1))
+        addstr(stdscr, y, x + 2, f'{self.name}:')
         addstr(stdscr, y, x + 2 + len(self.name) + 3, value, curses.color_pair(2))
 
         return y + 1
