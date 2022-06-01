@@ -120,13 +120,13 @@ Ideas
      │ v item
      │   □ kinds*:                 # Argument is null.
      │   ■ kinds2*:                # List with two elements.
-     │     v ■ a: "foo"
-     │       ■ b: "eq"
-     │       ■ c:
-     │         v ■ a: "x"
-     │           ■ b: "y"
-     │         > ...
-     │     v ■ a: "bar"
-     │       ■ b: "ne"
-     │       □ c:
-     │     > ...
+     │     [0] ■ a: "foo"
+     │         ■ b: "eq"
+     │         ■ c:
+     │           v ■ a: "x"
+     │             ■ b: "y"
+     │           > ...
+     │     [1] ■ a: "bar"
+     │         ■ b: "ne"
+     │         □ c:
+     │     [2]
