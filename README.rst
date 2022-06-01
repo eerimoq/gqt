@@ -93,7 +93,7 @@ Ideas
 
 - Arguments:
 
-  Marked with *, or possibly color, or a combination.
+  Marked with ``*``, or possibly color, or a combination.
 
   .. code-block::
 
