@@ -69,12 +69,6 @@ Use ``jq`` for colors (not seen below) and extracting field values:
 Ideas
 -----
 
-- Print built query instead of executing it.
-
-- Contols:
-
-  - Use ``/`` to fuzzy find field.
-
 - Arguments and variables:
 
   .. code-block::
