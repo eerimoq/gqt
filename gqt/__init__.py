@@ -1,3 +1,4 @@
+import yaml
 import shutil
 from base64 import b64encode
 from hashlib import blake2b
@@ -588,18 +589,26 @@ def query_builder(url):
     return create_query(root)
 
 
-def execute_query(url, query):
+def execute_query(url, query, format_yaml):
     response = requests.post(url, json=query)
 
     if response.status_code != 200:
         sys.exit(1)
 
-    response = response.json()
+    json_response = response.json()
 
-    if 'errors' in response:
-        sys.exit(response['errors'])
+    if 'errors' in json_response:
+        sys.exit(json_response['errors'])
 
-    return json.dumps(response['data'])
+    json_data = json.dumps(json_response['data'], ensure_ascii=False)
+
+    if format_yaml:
+        return yaml.dump(yaml.load(json_data, Loader=yaml.Loader),
+                         allow_unicode=True,
+                         sort_keys=False,
+                         Dumper=yaml.Dumper)
+    else:
+        return json_data
 
 
 CURL_COMMAND = '''\
@@ -625,6 +634,9 @@ def main():
     parser.add_argument('-r', '--repeat',
                         action='store_true',
                         help='Repeat last query.')
+    parser.add_argument('-y', '--yaml',
+                        action='store_true',
+                        help='Print the response as YAML instead of JSON.')
     parser.add_argument('-C', '--clear-cache',
                         action='store_true',
                         help='Clear the cache.')
@@ -651,6 +663,6 @@ def main():
         elif args.curl:
             print(CURL_COMMAND.format(url=args.url, query=json.dumps(query)))
         else:
-            print(execute_query(args.url, query))
+            print(execute_query(args.url, query, args.yaml))
     except KeyboardInterrupt:
         sys.exit(1)

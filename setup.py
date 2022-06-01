@@ -20,7 +20,8 @@ setuptools.setup(
     url='https://github.com/eerimoq/gqt',
     install_requires=[
         'requests',
-        'xdg'
+        'xdg',
+        'pyyaml'
     ],
     packages=find_packages(exclude=['tests']),
     test_suite="tests",
