@@ -271,12 +271,12 @@ class Leaf(Node):
 
 class Argument(Node):
 
-    def __init__(self, name, type):
+    def __init__(self, name, type, tree):
         self.name = name
         self.type = type
+        self.tree = tree
         self.value = ''
         self.cursor = False
-        self.cursor_at_input_field = True
         self.symbol = '■'
 
     def is_string(self):
@@ -290,22 +290,22 @@ class Argument(Node):
     def show(self, stdscr, y, x, cursor):
         if self.is_string():
             value = f'"{self.value}"'
-            offset = 1
+            offset = 0
         else:
             value = str(self.value)
-            offset = 2
+            offset = 1
 
         if self.cursor:
             cursor[0] = y
 
-            if self.cursor_at_input_field:
+            if self.tree.cursor_at_input_field:
                 cursor[1] = x + len(self.name) + 3 + len(value) + offset
             else:
                 cursor[1] = x
 
-        addstr(stdscr, y, x, self.symbol, curses.color_pair(1))
+        addstr(stdscr, y, x, self.symbol, curses.color_pair(3))
         addstr(stdscr, y, x + 2, f'{self.name}:')
-        addstr(stdscr, y, x + 2 + len(self.name) + 3, value, curses.color_pair(2))
+        addstr(stdscr, y, x + 2 + len(self.name) + 2, value, curses.color_pair(2))
 
         return y + 1
 
@@ -322,8 +322,8 @@ class Argument(Node):
             return
 
         if key == '\t':
-            self.cursor_at_input_field = not self.cursor_at_input_field
-        elif self.cursor_at_input_field:
+            self.tree.cursor_at_input_field = not self.tree.cursor_at_input_field
+        elif self.tree.cursor_at_input_field:
             if key in ['KEY_BACKSPACE', '\b', 'KEY_DC', '\x7f']:
                 self.value = self.value[:-1]
             else:
@@ -333,7 +333,7 @@ class Argument(Node):
         if not self.cursor:
             return
 
-        if self.cursor_at_input_field:
+        if self.tree.cursor_at_input_field:
             self.key(' ')
         else:
             self.next_symbol()
@@ -346,6 +346,12 @@ class Argument(Node):
             return f'"{self.value}"'
         else:
             return str(self.value)
+
+
+class Tree:
+
+    def __init__(self):
+        self.cursor_at_input_field = True
 
 
 def set_cursor_up(field):
@@ -483,7 +489,7 @@ def find_type(types, name):
             return type
 
 
-def build_field(types, field):
+def build_field(types, field, tree):
     try:
         name = field['name']
     except Exception:
@@ -497,10 +503,10 @@ def build_field(types, field):
     if item['kind'] == 'OBJECT':
         return Object(name,
                       [
-                          Argument(arg['name'], arg['type'])
+                          Argument(arg['name'], arg['type'], tree)
                           for arg in field['args']
                       ] + [
-                          build_field(types, field)
+                          build_field(types, field, tree)
                           for field in find_type(types, item['name'])['fields']
                       ])
     else:
@@ -510,10 +516,11 @@ def build_field(types, field):
 def load_tree_from_schema(schema):
     types = schema['__schema']['types']
     query = find_type(types, 'Query')
+    tree = Tree()
 
     return Object(None,
                   [
-                      build_field(types, field)
+                      build_field(types, field, tree)
                       for field in query['fields']
                   ],
                   True)
@@ -539,6 +546,7 @@ def selector(stdscr, url, root):
     curses.use_default_colors()
     curses.init_pair(1, curses.COLOR_YELLOW, -1)
     curses.init_pair(2, curses.COLOR_GREEN, -1)
+    curses.init_pair(3, curses.COLOR_CYAN, -1)
 
     update(stdscr, url, root, None)
 
