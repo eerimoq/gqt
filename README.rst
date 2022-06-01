@@ -42,7 +42,7 @@ Print the query instead of executing it:
    $ gqt -q
    {"query":"{statistics {number_of_graphql_requests}}"}
 
-Use ``jq`` for indentation, colors (not seen below) and extracting field values:
+Use ``jq`` for indentation, colors and extracting field values:
 
 .. code-block:: shell
 
