@@ -330,6 +330,9 @@ class Argument(Node):
                 self.value += key
 
     def select(self):
+        if not self.cursor:
+            return
+
         if self.cursor_at_input_field:
             self.key(' ')
         else:
