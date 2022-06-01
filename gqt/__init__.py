@@ -368,9 +368,13 @@ def update(stdscr, url, root, key):
         root.key(key)
 
     stdscr.erase()
-    addstr(stdscr, 0, 0, url, curses.A_UNDERLINE)
+    addstr(stdscr, 0, 0, '╭─ Query')
     cursor = [0, 0]
-    root.show(stdscr, 1, 0, cursor)
+    y = root.show(stdscr, 1, 2, cursor)
+
+    for i in range(1, y):
+        addstr(stdscr, i, 0, '│')
+
     stdscr.move(*cursor)
     stdscr.refresh()
 
