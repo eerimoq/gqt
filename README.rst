@@ -107,10 +107,13 @@ Ideas
 
      > kinds*:                     # Argument is null.
      v kinds*:                     # List with two elements.
-       v a: "foo"
-         b: "eq"
-         c: "kalle"
-       v a: "bar"
-         b: "ne"
-         c: "frolle"
+       v ■ a: "foo"
+         ■ b: "eq"
+         ■ c:
+           v ■ a: "x"
+             ■ b: "y"
+           > ...
+       v ■ a: "bar"
+         ■ b: "ne"
+         □ c:
        > ...
