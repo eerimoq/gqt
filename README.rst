@@ -62,8 +62,8 @@ Ideas
 
   .. code-block::
 
-     □: null
      ■: not null
+     □: null
      $: variable
 
   Scalar example:
