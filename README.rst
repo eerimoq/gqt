@@ -40,7 +40,7 @@ Print the query instead of executing it:
 .. code-block:: shell
 
    $ gqt -q
-   {"query":"{statistics {start_date_time number_of_graphql_requests}}"}
+   {"query":"{statistics {number_of_graphql_requests}}"}
 
 Use ``jq`` for indentation, colors (not seen below) and extracting field values:
 
