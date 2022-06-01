@@ -75,25 +75,7 @@ Ideas
 
   - Use ``/`` to fuzzy find field.
 
-- Variables:
-
-  .. code-block::
-
-     ╭─ Query
-     │ ▼ standard_library
-     │   ▼ package
-     │     $ name*: name
-     │     ■ id*: 5
-     │     □ name
-     │   □ number_of_downloads
-     │ ▶ statistics
-
-     ╭─ Variables
-     │ ■ name: "foo"
-
-- Arguments:
-
-  Marked with ``*``, or possibly color, or a combination.
+- Arguments and variables:
 
   .. code-block::
 
@@ -108,7 +90,7 @@ Ideas
      ╭─ Query
      │ ▼ standard_library
      │   ▼ package
-     │     ■ name*: ""             # Cannot be unselected as it cannot be null.
+     │     ■ name: ""
      │     □ name
      │   ▶ packages
 
@@ -118,8 +100,8 @@ Ideas
 
      ╭─ Query
      │ ▼ item
-     │   □ kinds*:                 # Argument is null.
-     │   ■ kinds2*:                # List with two elements.
+     │   □ kinds:
+     │   ■ kinds2:
      │     [0] ■ a: "foo"
      │         ■ b: "eq"
      │         ■ c:
@@ -130,3 +112,31 @@ Ideas
      │         ■ b: "ne"
      │         □ c:
      │     [2]
+
+  Variables example:
+
+  .. code-block::
+
+     ╭─ Query
+     │ ▼ standard_library
+     │   ▼ package
+     │     $ name: name
+     │     ■ id: 5
+     │     $ kind: kind
+     │     □ name
+     │   □ number_of_downloads
+     │ ▶ statistics
+
+     ╭─ Variables
+     │ name: "foo"
+     │ kind:
+     │   [0] ■ a: "foo"
+     │       ■ b: "eq"
+     │       ■ c:
+     │         [0] ■ a: "x"
+     │             ■ b: "y"
+     │         [1]
+     │   [1] ■ a: "bar"
+     │       ■ b: "ne"
+     │       □ c:
+     │   [2]
