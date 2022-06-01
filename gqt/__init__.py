@@ -98,14 +98,14 @@ class Object(Node):
             for field in self.fields:
                 y = field.show(stdscr, y, x, cursor)
         elif self.is_expanded:
-            addstr(stdscr, y, x, '', curses.color_pair(1))
+            addstr(stdscr, y, x, '▼', curses.color_pair(1))
             addstr(stdscr, y, x + 2, self.name)
             y += 1
 
             for field in self.fields:
                 y = field.show(stdscr, y, x + 2, cursor)
         else:
-            addstr(stdscr, y, x, '>', curses.color_pair(1))
+            addstr(stdscr, y, x, '▶', curses.color_pair(1))
             addstr(stdscr, y, x + 2, self.name)
             y += 1
 
