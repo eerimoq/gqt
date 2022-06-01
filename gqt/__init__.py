@@ -275,6 +275,8 @@ class Argument(Node):
         self.type = type
         self.value = ''
         self.cursor = False
+        self.cursor_at_input_field = True
+        self.symbol = '■'
 
     def is_string(self):
         item = self.type
@@ -294,13 +296,25 @@ class Argument(Node):
 
         if self.cursor:
             cursor[0] = y
-            cursor[1] = x + len(self.name) + 3 + len(value) + offset
 
-        addstr(stdscr, y, x, '■', curses.color_pair(1))
+            if self.cursor_at_input_field:
+                cursor[1] = x + len(self.name) + 3 + len(value) + offset
+            else:
+                cursor[1] = x
+
+        addstr(stdscr, y, x, self.symbol, curses.color_pair(1))
         addstr(stdscr, y, x + 2, f'{self.name}:')
         addstr(stdscr, y, x + 2 + len(self.name) + 3, value, curses.color_pair(2))
 
         return y + 1
+
+    def next_symbol(self):
+        if self.symbol == '■':
+            self.symbol = '□'
+        elif self.symbol == '$':
+            self.symbol = '■'
+        else:
+            self.symbol = '$'
 
     def key(self, key):
         if not self.cursor:
@@ -308,8 +322,16 @@ class Argument(Node):
 
         if key in ['KEY_BACKSPACE', '\b', 'KEY_DC', '\x7f']:
             self.value = self.value[:-1]
+        elif key == '\t':
+            self.cursor_at_input_field = not self.cursor_at_input_field
         else:
             self.value += key
+
+    def select(self):
+        if self.cursor_at_input_field:
+            self.key(' ')
+        else:
+            self.next_symbol()
 
     def query(self):
         if not self.value:
