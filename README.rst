@@ -1,6 +1,8 @@
 GraphQL in the terminal
 =======================
 
+This project is inspired by https://graphiql-online.com.
+
 .. image:: https://github.com/eerimoq/gqt/raw/main/docs/assets/showcase.gif
 
 Installation
@@ -73,47 +75,56 @@ Ideas
 
   - Use ``/`` to fuzzy find field.
 
-- Variables?
+- Variables:
+
+  ╭─ Query
+  │  standard_library
+  │    package
+  │     $ name*: name
+  │     ■ id*: 5
+  │     □ name
+  │   □ number_of_downloads
+  │ > statistics
+
+  ╭─ Variables
+  │ ■ name: "foo"
 
 - Arguments:
 
-  Scalars:
+  Marked with *, or possibly color, or a combination.
 
   .. code-block::
 
      □: null
      ■: not null
-
-  Lists:
-
-  .. code-block::
-
-     >: null
-     v: not null
+     $: variable
 
   Scalar example:
 
   .. code-block::
 
-     v standard_library
-       v package
-         ■ name*: ""             # Cannot be unselected as it cannot be null.
-         □ name
-       > packages
+     ╭─ Query
+     │ v standard_library
+     │   v package
+     │     ■ name*: ""             # Cannot be unselected as it cannot be null.
+     │     □ name
+     │   > packages
 
   List example:
 
   .. code-block::
 
-     > kinds*:                     # Argument is null.
-     v kinds*:                     # List with two elements.
-       v ■ a: "foo"
-         ■ b: "eq"
-         ■ c:
-           v ■ a: "x"
-             ■ b: "y"
-           > ...
-       v ■ a: "bar"
-         ■ b: "ne"
-         □ c:
-       > ...
+     ╭─ Query
+     │ v item
+     │   □ kinds*:                 # Argument is null.
+     │   ■ kinds2*:                # List with two elements.
+     │     v ■ a: "foo"
+     │       ■ b: "eq"
+     │       ■ c:
+     │         v ■ a: "x"
+     │           ■ b: "y"
+     │         > ...
+     │     v ■ a: "bar"
+     │       ■ b: "ne"
+     │       □ c:
+     │     > ...
