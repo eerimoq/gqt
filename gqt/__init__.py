@@ -1,3 +1,4 @@
+import shutil
 from base64 import b64encode
 from hashlib import blake2b
 import os
@@ -450,12 +451,11 @@ def write_cached_schema(schema, checksum, url):
     path.write_bytes(pickle.dumps((schema, checksum)))
 
 
-def fetch_schema(url, force_fetch_schema):
-    if not force_fetch_schema:
-        try:
-            return read_cached_schema(url)
-        except Exception:
-            pass
+def fetch_schema(url):
+    try:
+        return read_cached_schema(url)
+    except Exception:
+        pass
 
     response = requests.post(url, json=SCHEMA_QUERY)
 
@@ -515,8 +515,8 @@ def load_tree_from_schema(schema):
                   True)
 
 
-def load_tree(url, force_fetch_schema):
-    schema, checksum = fetch_schema(url, force_fetch_schema)
+def load_tree(url):
+    schema, checksum = fetch_schema(url)
 
     try:
         return read_tree_from_cache(url, checksum), checksum
@@ -547,8 +547,8 @@ def create_query(root):
     return {"query": root.query()}
 
 
-def last_query(url, force_fetch_schema):
-    checksum = fetch_schema(url, force_fetch_schema)[1]
+def last_query(url):
+    checksum = fetch_schema(url)[1]
 
     return create_query(read_tree_from_cache(url, checksum))
 
@@ -565,8 +565,8 @@ def redirect_stdout_to_stderr():
         os.close(original_stdout)
 
 
-def query_builder(url, force_fetch_schema):
-    root, checksum = load_tree(url, force_fetch_schema)
+def query_builder(url):
+    root, checksum = load_tree(url)
 
     with redirect_stdout_to_stderr():
         curses.wrapper(selector, url, root)
@@ -609,10 +609,9 @@ def main():
     parser.add_argument('-r', '--repeat',
                         action='store_true',
                         help='Repeat last query.')
-    parser.add_argument('-f', '--force-fetch-schema',
+    parser.add_argument('-C', '--clear-cache',
                         action='store_true',
-                        help=('Fetch schema from server, even if a cached schema '
-                              'exists.'))
+                        help='Clear the cache.')
     parser.add_argument(
         '-u', '--url',
         default=default_url(),
@@ -620,11 +619,16 @@ def main():
               'GQT_URL to override default value.'))
     args = parser.parse_args()
 
+    CACHE_PATH.mkdir(exist_ok=True, parents=True)
+
+    if args.clear_cache:
+        shutil.rmtree(CACHE_PATH)
+
     try:
         if args.repeat:
-            query = last_query(args.url, args.force_fetch_schema)
+            query = last_query(args.url)
         else:
-            query = query_builder(args.url, args.force_fetch_schema)
+            query = query_builder(args.url)
 
         if args.query:
             print(json.dumps(query))
