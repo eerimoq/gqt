@@ -80,13 +80,13 @@ Ideas
   .. code-block::
 
      ╭─ Query
-     │ v standard_library
-     │   v package
+     │ ▼ standard_library
+     │   ▼ package
      │     $ name*: name
      │     ■ id*: 5
      │     □ name
      │   □ number_of_downloads
-     │ > statistics
+     │ ▶ statistics
 
      ╭─ Variables
      │ ■ name: "foo"
@@ -106,18 +106,18 @@ Ideas
   .. code-block::
 
      ╭─ Query
-     │ v standard_library
-     │   v package
+     │ ▼ standard_library
+     │   ▼ package
      │     ■ name*: ""             # Cannot be unselected as it cannot be null.
      │     □ name
-     │   > packages
+     │   ▶ packages
 
   List example:
 
   .. code-block::
 
      ╭─ Query
-     │ v item
+     │ ▼ item
      │   □ kinds*:                 # Argument is null.
      │   ■ kinds2*:                # List with two elements.
      │     [0] ■ a: "foo"
