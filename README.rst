@@ -55,6 +55,14 @@ Use ``jq`` for indentation, colors and extracting field values:
    $ gqt | jq .statistics.number_of_graphql_requests
    237
 
+Use YAML output and ``bat`` for indentation and colors:
+
+.. code-block:: shell
+
+   $ gqt -y | bat -l yaml -pP
+   statistics:
+     number_of_graphql_requests: 238
+
 Ideas
 -----
 
