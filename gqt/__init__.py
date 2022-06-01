@@ -321,12 +321,13 @@ class Argument(Node):
         if not self.cursor:
             return
 
-        if key in ['KEY_BACKSPACE', '\b', 'KEY_DC', '\x7f']:
-            self.value = self.value[:-1]
-        elif key == '\t':
+        if key == '\t':
             self.cursor_at_input_field = not self.cursor_at_input_field
-        else:
-            self.value += key
+        elif self.cursor_at_input_field:
+            if key in ['KEY_BACKSPACE', '\b', 'KEY_DC', '\x7f']:
+                self.value = self.value[:-1]
+            else:
+                self.value += key
 
     def select(self):
         if self.cursor_at_input_field:
