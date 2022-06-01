@@ -601,6 +601,10 @@ curl -X POST \\
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--version',
+                        action='version',
+                        version=__version__,
+                        help='Print version information and exit.')
     parser.add_argument('-q', '--query',
                         action='store_true',
                         help='Print the query instead of executing it.')
