@@ -77,17 +77,19 @@ Ideas
 
 - Variables:
 
-  ╭─ Query
-  │  standard_library
-  │    package
-  │     $ name*: name
-  │     ■ id*: 5
-  │     □ name
-  │   □ number_of_downloads
-  │ > statistics
+  .. code-block::
 
-  ╭─ Variables
-  │ ■ name: "foo"
+     ╭─ Query
+     │  standard_library
+     │    package
+     │     $ name*: name
+     │     ■ id*: 5
+     │     □ name
+     │   □ number_of_downloads
+     │ > statistics
+
+     ╭─ Variables
+     │ ■ name: "foo"
 
 - Arguments:
 
