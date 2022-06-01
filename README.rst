@@ -80,8 +80,8 @@ Ideas
   .. code-block::
 
      ╭─ Query
-     │  standard_library
-     │    package
+     │ v standard_library
+     │   v package
      │     $ name*: name
      │     ■ id*: 5
      │     □ name
