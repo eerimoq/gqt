@@ -130,13 +130,14 @@ Ideas
      ╭─ Variables
      │ name: "foo"
      │ kind:
-     │   [0] ■ a: "foo"
-     │       ■ b: "eq"
-     │       ■ c:
-     │         [0] ■ a: "x"
-     │             ■ b: "y"
-     │         [1]
-     │   [1] ■ a: "bar"
+     │   [0] ■ a: "bar"
      │       ■ b: "ne"
      │       □ c:
-     │   [2]
+     │   [1]
+
+  Print the variables:
+
+  .. code-block:: shell
+
+     $ gqt -v
+     {"name": "foo", "kind": [{"a": "bar", "b": "ne"}]}
