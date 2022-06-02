@@ -59,9 +59,13 @@ Use YAML output and `bat`_ for indentation and colors:
 
 .. code-block:: shell
 
-   $ gqt -y | bat -l yaml -pP
-   statistics:
-     number_of_graphql_requests: 238
+   $ gqt -y | bat -l yaml
+   ───────┬──────────────────────────────────────────────────────────────
+          │ STDIN
+   ───────┼──────────────────────────────────────────────────────────────
+      1   │ statistics:
+      2   │   number_of_graphql_requests: 238
+   ───────┴──────────────────────────────────────────────────────────────
 
 Known issues
 ------------
@@ -69,6 +73,8 @@ Known issues
 - Arguments does not work very well.
 
 - Recursive schemas does not work.
+
+- Scrolling.
 
 Ideas
 -----
