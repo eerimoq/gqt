@@ -15,7 +15,7 @@ Installation
 Usage
 -----
 
-Set default GraphQL end-point URL:
+Set default GraphQL endpoint URL:
 
 .. code-block:: shell
 
