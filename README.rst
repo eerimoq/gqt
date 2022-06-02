@@ -1,5 +1,5 @@
-GraphQL in the terminal
-=======================
+GraphQL client in the terminal
+==============================
 
 This project is inspired by https://graphiql-online.com.
 

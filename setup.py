@@ -12,7 +12,7 @@ def find_version():
 setuptools.setup(
     name='gqt',
     version=find_version(),
-    description='GraphQL query builder.',
+    description='GraphQL client in the terminal.',
     long_description=open('README.rst', 'r').read(),
     author='Erik Moqvist',
     author_email='erik.moqvist@gmail.com',
