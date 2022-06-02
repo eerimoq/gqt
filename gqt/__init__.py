@@ -606,7 +606,7 @@ def execute_query(url, query, format_yaml):
         return yaml.dump(yaml.load(json_data, Loader=yaml.Loader),
                          allow_unicode=True,
                          sort_keys=False,
-                         Dumper=yaml.Dumper)
+                         Dumper=yaml.Dumper).strip()
     else:
         return json_data
 
