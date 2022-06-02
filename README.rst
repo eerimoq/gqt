@@ -11,7 +11,7 @@ Installation
 .. code-block:: shell
 
    $ pip3 install gqt
-
+   
 Usage
 -----
 
@@ -42,7 +42,7 @@ Print the query instead of executing it:
    $ gqt -q
    {"query":"{statistics {number_of_graphql_requests}}"}
 
-Use ``jq`` for indentation, colors and extracting field values:
+Use `jq`_ for indentation, colors and extracting field values:
 
 .. code-block:: shell
 
@@ -55,7 +55,7 @@ Use ``jq`` for indentation, colors and extracting field values:
    $ gqt | jq .statistics.number_of_graphql_requests
    237
 
-Use YAML output and ``bat`` for indentation and colors:
+Use YAML output and `bat`_ for indentation and colors:
 
 .. code-block:: shell
 
@@ -65,6 +65,10 @@ Use YAML output and ``bat`` for indentation and colors:
 
 Ideas
 -----
+
+- Mutations?
+
+- Subscriptions?
 
 - Arguments and variables:
 
@@ -132,3 +136,6 @@ Ideas
 
      $ gqt -v
      {"name": "foo", "kind": [{"a": "bar", "b": "ne"}]}
+
+.. _jq: https://github.com/stedolan/jq
+.. _bat: https://github.com/sharkdp/bat
