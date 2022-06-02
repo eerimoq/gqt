@@ -55,6 +55,21 @@ Use `jq`_ for indentation, colors and extracting field values:
    $ gqt | jq .statistics.number_of_graphql_requests
    237
 
+Alternatively use ``json_pp`` and `bat`_ for indentation and colors:
+
+.. code-block:: shell
+
+   $ gqt | json_pp | bat -l json
+   ───────┬──────────────────────────────────────────────────────────────
+          │ STDIN
+   ───────┼──────────────────────────────────────────────────────────────
+      1   │ {
+      2   │    "statistics" : {
+      3   │       "number_of_graphql_requests" : 238
+      4   │    }
+      5   │ }
+   ───────┴──────────────────────────────────────────────────────────────
+
 Use YAML output and `bat`_ for indentation and colors:
 
 .. code-block:: shell
@@ -64,7 +79,7 @@ Use YAML output and `bat`_ for indentation and colors:
           │ STDIN
    ───────┼──────────────────────────────────────────────────────────────
       1   │ statistics:
-      2   │   number_of_graphql_requests: 238
+      2   │   number_of_graphql_requests: 239
    ───────┴──────────────────────────────────────────────────────────────
 
 Known issues
