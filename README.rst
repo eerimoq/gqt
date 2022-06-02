@@ -11,7 +11,7 @@ Installation
 .. code-block:: shell
 
    $ pip3 install gqt
-   
+
 Usage
 -----
 
@@ -62,6 +62,13 @@ Use YAML output and `bat`_ for indentation and colors:
    $ gqt -y | bat -l yaml -pP
    statistics:
      number_of_graphql_requests: 238
+
+Known issues
+------------
+
+- Arguments does not work very well.
+
+- Recursive schemas does not work.
 
 Ideas
 -----
