@@ -21,7 +21,8 @@ setuptools.setup(
     install_requires=[
         'requests',
         'xdg',
-        'pyyaml'
+        'pyyaml',
+        'readlike'
     ],
     packages=find_packages(exclude=['tests']),
     test_suite="tests",

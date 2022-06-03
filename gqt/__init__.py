@@ -11,8 +11,44 @@ import curses
 from contextlib import contextmanager
 import requests
 from xdg import XDG_CACHE_HOME
+from readlike import edit
 from .version import __version__
 
+
+KEY_BINDINGS = {
+    'KEY_BACKSPACE': 'backspace',
+    '\b': 'backspace',
+    'KEY_DC': 'backspace',
+    '\x7f': 'backspace',
+    '\x01': 'ctrl a',
+    # '': 'ctrl b',
+    '\x04': 'ctrl d',
+    '\x05': 'ctrl e',
+    # '': 'ctrl f',
+    # '': 'ctrl h',
+    '\x0b': 'ctrl k',
+    # '': 'ctrl meta h',
+    '\x14': 'ctrl t',
+    # '': 'ctrl u',
+    # '': 'ctrl w',
+    # '': 'delete',
+    # '': 'end',
+    # '': 'home',
+    'KEY_LEFT': 'left',
+    # '': 'meta \\',
+    # '': 'meta b',
+    '\x1b\x7f': 'meta backspace',
+    # '': 'meta c',
+    '\x1bd': 'meta d',
+    # '': 'meta delete',
+    # '': 'meta f',
+    # '': 'meta l',
+    '\x1bb': 'meta left',
+    '\x1bf': 'meta right',
+    # '': 'meta t',
+    # '': 'meta u',
+    'KEY_RIGHT': 'right'
+}
 
 CACHE_PATH = XDG_CACHE_HOME / 'gqt' / 'cache'
 
@@ -181,6 +217,12 @@ class Object(Node):
 
         for field in self.fields:
             if field.cursor and not self.is_root:
+                if isinstance(field, Argument):
+                    if field.tree.cursor_at_input_field:
+                        field.key_left()
+
+                        return CursorMove.DONE
+
                 field.cursor = False
                 self.is_expanded = False
                 self.cursor = True
@@ -204,6 +246,9 @@ class Object(Node):
                     field.cursor = False
                     field.is_expanded = True
                     field.fields[0].cursor = True
+                elif isinstance(field, Argument):
+                    if field.tree.cursor_at_input_field:
+                        field.key_right()
 
                 return CursorMove.DONE
             else:
@@ -295,8 +340,10 @@ class Argument(Node):
         self.type = type
         self.tree = tree
         self.value = ''
+        self.pos = 0
         self.cursor = False
         self.symbol = '■'
+        self.meta = False
 
     def is_string(self):
         item = self.type
@@ -309,16 +356,16 @@ class Argument(Node):
     def show(self, stdscr, y, x, cursor):
         if self.is_string():
             value = f'"{self.value}"'
-            offset = 0
+            offset = 1
         else:
             value = str(self.value)
-            offset = 1
+            offset = 0
 
         if self.cursor:
             cursor[0] = y
 
             if self.tree.cursor_at_input_field:
-                cursor[1] = x + len(self.name) + 3 + len(value) + offset
+                cursor[1] = x + len(self.name) + 4 + self.pos + offset
             else:
                 cursor[1] = x
 
@@ -336,6 +383,12 @@ class Argument(Node):
         else:
             self.symbol = '$'
 
+    def key_left(self):
+        self.key('KEY_LEFT')
+
+    def key_right(self):
+        self.key('KEY_RIGHT')
+
     def key(self, key):
         if not self.cursor:
             return
@@ -343,10 +396,17 @@ class Argument(Node):
         if key == '\t':
             self.tree.cursor_at_input_field = not self.tree.cursor_at_input_field
         elif self.tree.cursor_at_input_field:
-            if key in ['KEY_BACKSPACE', '\b', 'KEY_DC', '\x7f']:
-                self.value = self.value[:-1]
-            else:
-                self.value += key
+            if self.meta:
+                key = '\x1b' + key
+                self.meta = False
+            elif key == '\x1b':
+                self.meta = True
+
+                return
+
+            self.value, self.pos = edit(self.value,
+                                        self.pos,
+                                        KEY_BINDINGS.get(key, key))
 
     def select(self):
         if not self.cursor:
@@ -707,7 +767,6 @@ def main():
 
     if args.clear_cache:
         shutil.rmtree(CACHE_PATH)
-
         return
 
     try:
