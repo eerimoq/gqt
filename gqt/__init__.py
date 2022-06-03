@@ -695,7 +695,7 @@ def main():
                         help='Print the response as YAML instead of JSON.')
     parser.add_argument('-C', '--clear-cache',
                         action='store_true',
-                        help='Clear the cache.')
+                        help='Clear the cache and exit.')
     parser.add_argument(
         '-u', '--url',
         default=default_url(),
@@ -707,6 +707,8 @@ def main():
 
     if args.clear_cache:
         shutil.rmtree(CACHE_PATH)
+
+        return
 
     try:
         if args.repeat:
