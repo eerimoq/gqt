@@ -430,7 +430,7 @@ class Argument(Node):
 class Tree:
 
     def __init__(self):
-        self.cursor_at_input_field = True
+        self.cursor_at_input_field = False
 
 
 def set_cursor_up(field):
