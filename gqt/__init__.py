@@ -114,6 +114,9 @@ class Object(Node):
         return y
 
     def key_up(self):
+        if not self.is_expanded:
+            return CursorMove.NOT_FOUND
+
         for i, field in enumerate(self.fields, -1):
             if field.cursor:
                 field.cursor = False
@@ -142,6 +145,9 @@ class Object(Node):
         return CursorMove.NOT_FOUND
 
     def key_down(self):
+        if not self.is_expanded:
+            return CursorMove.NOT_FOUND
+
         for i, field in enumerate(self.fields, 1):
             if field.cursor:
                 field.cursor = False
@@ -189,6 +195,9 @@ class Object(Node):
         return CursorMove.NOT_FOUND
 
     def key_right(self):
+        if not self.is_expanded:
+            return CursorMove.NOT_FOUND
+
         for field in self.fields:
             if field.cursor:
                 if isinstance(field, Object):
@@ -206,10 +215,16 @@ class Object(Node):
         return CursorMove.NOT_FOUND
 
     def select(self):
+        if not self.is_expanded:
+            return CursorMove.NOT_FOUND
+
         for field in self.fields:
             field.select()
 
     def query(self):
+        if not self.is_expanded:
+            return CursorMove.NOT_FOUND
+
         items = []
         arguments = []
 
@@ -240,6 +255,9 @@ class Object(Node):
             return ''
 
     def key(self, key):
+        if not self.is_expanded:
+            return CursorMove.NOT_FOUND
+
         for field in self.fields:
             field.key(key)
 
@@ -286,7 +304,7 @@ class Argument(Node):
         while item['kind'] == 'NON_NULL':
             item = item['ofType']
 
-        return item['name'] == 'String'
+        return item['name'] in ['String', 'ID']
 
     def show(self, stdscr, y, x, cursor):
         if self.is_string():
@@ -469,9 +487,7 @@ def fetch_schema(url):
         pass
 
     response = requests.post(url, json=SCHEMA_QUERY)
-
-    if response.status_code != 200:
-        sys.exit(1)
+    response.raise_for_status()
 
     checksum = blake2b(response.content).hexdigest()
     response = response.json()
@@ -489,6 +505,8 @@ def find_type(types, name):
         if type['name'] == name:
             return type
 
+    raise Exception(f"Type '{name}' not found in schema.")
+
 
 def build_field(types, field, tree):
     try:
@@ -503,27 +521,67 @@ def build_field(types, field, tree):
 
     if item['kind'] == 'OBJECT':
         return Object(name,
-                      [
-                          Argument(arg['name'], arg['type'], tree)
-                          for arg in field['args']
-                      ] + [
-                          build_field(types, field, tree)
-                          for field in find_type(types, item['name'])['fields']
-                      ])
+                      ObjectFields(field['args'],
+                                   find_type(types, item['name'])['fields'],
+                                   types,
+                                   tree))
     else:
         return Leaf(name)
 
 
+class ObjectFieldsIterator:
+
+    def __init__(self, fields):
+        self._fields = fields
+        self._index = 0
+
+    def __next__(self):
+        if self._index < len(self._fields):
+            self._index += 1
+
+            return self._fields[self._index - 1]
+        else:
+            raise StopIteration()
+
+
+class ObjectFields:
+
+    def __init__(self, arguments, fields, types, tree):
+        self._arguments_info = arguments
+        self._fields_info = fields
+        self._types = types
+        self._tree = tree
+        self._fields = None
+
+    def fields(self):
+        if self._fields is None:
+            self._fields = [
+                Argument(arg['name'], arg['type'], self._tree)
+                for arg in self._arguments_info
+            ] + [
+                build_field(self._types, field, self._tree)
+                for field in self._fields_info
+            ]
+
+        return self._fields
+
+    def __iter__(self):
+        return ObjectFieldsIterator(self.fields())
+
+    def __len__(self):
+        return len(self.fields())
+
+    def __getitem__(self, key):
+        return self.fields()[key]
+
+
 def load_tree_from_schema(schema):
     types = schema['__schema']['types']
-    query = find_type(types, 'Query')
+    query = find_type(types, schema['__schema']['queryType']['name'])
     tree = Tree()
 
     return Object(None,
-                  [
-                      build_field(types, field, tree)
-                      for field in query['fields']
-                  ],
+                  ObjectFields([], query['fields'], types, tree),
                   True)
 
 
@@ -591,16 +649,14 @@ def query_builder(url):
 
 def execute_query(url, query, format_yaml):
     response = requests.post(url, json=query)
-
-    if response.status_code != 200:
-        sys.exit(1)
+    response.raise_for_status()
 
     json_response = response.json()
 
     if 'errors' in json_response:
         sys.exit(json_response['errors'])
 
-    json_data = json.dumps(json_response['data'], ensure_ascii=False)
+    json_data = json.dumps(json_response['data'], ensure_ascii=False, indent=4)
 
     if format_yaml:
         return yaml.dump(yaml.load(json_data, Loader=yaml.Loader),
@@ -666,3 +722,5 @@ def main():
             print(execute_query(args.url, query, args.yaml))
     except KeyboardInterrupt:
         sys.exit(1)
+    except BaseException as error:
+        sys.exit(f'error: {error}')

@@ -87,8 +87,6 @@ Known issues
 
 - Arguments does not work very well.
 
-- Recursive schemas does not work.
-
 - Scrolling.
 
 Ideas
