@@ -152,7 +152,7 @@ class Object(Node):
                 field.cursor = False
 
                 if i < len(self.fields):
-                    set_cursor_down(self.fields[i])
+                    self.fields[i].cursor = True
 
                     return CursorMove.DONE
                 else:
@@ -162,10 +162,9 @@ class Object(Node):
 
                 if cursor_move == CursorMove.FOUND:
                     if i < len(self.fields):
-                        cursor_move = set_cursor_down(self.fields[i])
+                        self.fields[i].cursor = True
 
-                        if cursor_move == CursorMove.FOUND:
-                            return CursorMove.FOUND
+                        return CursorMove.DONE
                     else:
                         return CursorMove.FOUND
 
@@ -415,17 +414,6 @@ def set_cursor_up(field):
             return CursorMove.DONE
         else:
             return set_cursor_up(field.fields[-1])
-    else:
-        field.cursor = True
-
-        return CursorMove.DONE
-
-
-def set_cursor_down(field):
-    if isinstance(field, Object):
-        field.cursor = True
-
-        return CursorMove.DONE
     else:
         field.cursor = True
 

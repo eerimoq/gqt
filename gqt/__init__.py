@@ -18,7 +18,6 @@ from xdg import XDG_CACHE_HOME
 from .screen import addstr
 from .tree import CursorMove
 from .tree import load_tree_from_schema
-from .tree import set_cursor_down
 from .tree import set_cursor_up
 from .version import __version__
 
@@ -59,8 +58,7 @@ def default_endpoint():
 
 def update(stdscr, endpoint, root, key):
     if key == 'KEY_UP':
-        if root.key_up() == CursorMove.FOUND:
-            set_cursor_down(root.fields[0])
+        root.key_up()
     elif key == 'KEY_DOWN':
         if root.key_down() == CursorMove.FOUND:
             set_cursor_up(root.fields[-1])
