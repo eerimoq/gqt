@@ -150,19 +150,16 @@ class Object(Node):
         return y
 
     def key_up(self):
-        if not self.is_expanded:
-            return CursorMove.NOT_FOUND
-
         for i, field in enumerate(self.fields, -1):
             if field.cursor:
-                field.cursor = False
-
                 if i > -1:
+                    field.cursor = False
                     set_cursor_up(self.fields[i])
+                elif not self.is_root:
+                    field.cursor = False
+                    self.cursor = True
 
-                    return CursorMove.DONE
-                else:
-                    return CursorMove.FOUND
+                return CursorMove.DONE
             else:
                 cursor_move = field.key_up()
 
@@ -181,11 +178,15 @@ class Object(Node):
         return CursorMove.NOT_FOUND
 
     def key_down(self):
-        if not self.is_expanded:
-            return CursorMove.NOT_FOUND
-
         for i, field in enumerate(self.fields, 1):
             if field.cursor:
+                if isinstance(field, Object):
+                    if field.is_expanded:
+                        field.cursor = False
+                        field.fields[0].cursor = True
+
+                        return CursorMove.DONE
+
                 field.cursor = False
 
                 if i < len(self.fields):
@@ -212,19 +213,23 @@ class Object(Node):
         return CursorMove.NOT_FOUND
 
     def key_left(self):
-        if not self.is_expanded:
-            return CursorMove.NOT_FOUND
-
         for field in self.fields:
-            if field.cursor and not self.is_root:
-                if isinstance(field, Argument):
+            if field.cursor:
+                if isinstance(field, Object):
+                    if field.is_expanded:
+                        field.is_expanded = False
+                    elif not self.is_root:
+                        field.cursor = False
+                        self.cursor = True
+
+                    return CursorMove.DONE
+                elif isinstance(field, Argument):
                     if field.tree.cursor_at_input_field:
                         field.key_left()
 
                         return CursorMove.DONE
 
                 field.cursor = False
-                self.is_expanded = False
                 self.cursor = True
 
                 return CursorMove.DONE
@@ -237,15 +242,14 @@ class Object(Node):
         return CursorMove.NOT_FOUND
 
     def key_right(self):
-        if not self.is_expanded:
-            return CursorMove.NOT_FOUND
-
         for field in self.fields:
             if field.cursor:
                 if isinstance(field, Object):
-                    field.cursor = False
-                    field.is_expanded = True
-                    field.fields[0].cursor = True
+                    if field.is_expanded:
+                        field.cursor = False
+                        field.fields[0].cursor = True
+                    else:
+                        field.is_expanded = True
                 elif isinstance(field, Argument):
                     if field.tree.cursor_at_input_field:
                         field.key_right()
@@ -268,7 +272,7 @@ class Object(Node):
 
     def query(self):
         if not self.is_expanded:
-            return CursorMove.NOT_FOUND
+            return
 
         items = []
         arguments = []
@@ -296,8 +300,10 @@ class Object(Node):
                 return '{' + ' '.join(items) + '}'
             else:
                 return f'{self.name}{arguments} {{' + ' '.join(items) + '}'
+        elif self.is_root:
+            sys.exit(f"No fields selected.")
         else:
-            return ''
+            sys.exit(f"No fields selected in '{self.name}'.")
 
     def key(self, key):
         if not self.is_expanded:
@@ -449,12 +455,9 @@ def set_cursor_up(field):
 
 def set_cursor_down(field):
     if isinstance(field, Object):
-        if not field.is_expanded:
-            field.cursor = True
+        field.cursor = True
 
-            return CursorMove.DONE
-        else:
-            return set_cursor_down(field.fields[0])
+        return CursorMove.DONE
     else:
         field.cursor = True
 
@@ -487,7 +490,11 @@ def update(stdscr, url, root, key):
     for i in range(1, y):
         addstr(stdscr, i, 0, '│')
 
-    stdscr.move(*cursor)
+    try:
+        stdscr.move(*cursor)
+    except curses.error:
+        pass
+
     stdscr.refresh()
 
     return True
@@ -546,9 +553,7 @@ def fetch_schema(url):
     except Exception:
         pass
 
-    response = requests.post(url, json=SCHEMA_QUERY)
-    response.raise_for_status()
-
+    response = post(url, SCHEMA_QUERY)
     checksum = blake2b(response.content).hexdigest()
     response = response.json()
 
@@ -707,11 +712,18 @@ def query_builder(url):
     return create_query(root)
 
 
-def execute_query(url, query, format_yaml):
+def post(url, query):
     response = requests.post(url, json=query)
-    response.raise_for_status()
 
-    json_response = response.json()
+    if response.status_code != 200:
+        print(response.text, file=sys.stderr)
+        response.raise_for_status()
+
+    return response
+
+
+def execute_query(url, query, format_yaml):
+    json_response = post(url, query).json()
 
     if 'errors' in json_response:
         sys.exit(json_response['errors'])
