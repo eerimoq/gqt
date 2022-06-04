@@ -22,7 +22,8 @@ setuptools.setup(
         'requests',
         'xdg',
         'pyyaml',
-        'readlike'
+        'readlike',
+        'graphql-core'
     ],
     packages=find_packages(exclude=['tests']),
     test_suite="tests",

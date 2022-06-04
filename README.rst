@@ -26,61 +26,91 @@ Interactively create a query and execute it:
 .. code-block:: shell
 
    $ gqt
-   {"statistics": {"number_of_graphql_requests": 234}}
+   {
+       "statistics": {
+           "numberOfGraphqlRequests": 3
+       }
+   }
 
 Repeat last query:
 
 .. code-block:: shell
 
    $ gqt -r
-   {"statistics": {"number_of_graphql_requests": 235}}
+   {
+       "statistics": {
+           "numberOfGraphqlRequests": 4
+       }
+   }
 
 Print the query instead of executing it:
 
 .. code-block:: shell
 
    $ gqt -q
-   {"query":"{statistics {number_of_graphql_requests}}"}
+   {statistics {numberOfGraphqlRequests}}
 
-Use `jq`_ for indentation, colors and extracting field values:
+Use `jq`_ for colors and extracting field values:
 
 .. code-block:: shell
 
    $ gqt | jq
    {
      "statistics": {
-       "number_of_graphql_requests": 236
+       "numberOfGraphqlRequests": 5
      }
    }
-   $ gqt | jq .statistics.number_of_graphql_requests
-   237
+   $ gqt | jq .statistics.numberOfGraphqlRequests
+   6
 
-Alternatively use ``json_pp`` and `bat`_ for indentation and colors:
+Alternatively use and `bat`_ for colors:
 
 .. code-block:: shell
 
-   $ gqt | json_pp | bat -l json
-   ───────┬──────────────────────────────────────────────────────────────
+   $ gqt | bat -l json
+   ───────┬────────────────────────────────────────────
           │ STDIN
-   ───────┼──────────────────────────────────────────────────────────────
+   ───────┼────────────────────────────────────────────
       1   │ {
       2   │    "statistics" : {
-      3   │       "number_of_graphql_requests" : 238
+      3   │       "numberOfGraphqlRequests" : 7
       4   │    }
       5   │ }
-   ───────┴──────────────────────────────────────────────────────────────
+   ───────┴────────────────────────────────────────────
 
-Use YAML output and `bat`_ for indentation and colors:
+Use YAML output and `bat`_ for colors:
 
 .. code-block:: shell
 
    $ gqt -y | bat -l yaml
-   ───────┬──────────────────────────────────────────────────────────────
+   ───────┬────────────────────────────────────────────
           │ STDIN
-   ───────┼──────────────────────────────────────────────────────────────
+   ───────┼────────────────────────────────────────────
       1   │ statistics:
-      2   │   number_of_graphql_requests: 239
-   ───────┴──────────────────────────────────────────────────────────────
+      2   │   numberOfGraphqlRequests: 8
+   ───────┴────────────────────────────────────────────
+
+Print the schema:
+
+.. code-block:: shell
+
+   $ gqt --print-schema | bat -l graphql
+   ───────┬────────────────────────────────────────────
+          │ STDIN
+   ───────┼────────────────────────────────────────────
+      1   │ type Query {
+      2   │   standardLibrary: StandardLibrary!
+      3   │   statistics: Statistics!
+      4   │   activities: [Activity!]!
+      5   │ }
+      6   │
+      7   │ type StandardLibrary {
+      8   │   package(name: String!): Package!
+      9   │   packages: [Package!]
+     10   │   numberOfPackages: Int
+     11   │   numberOfDownloads: Int
+     12   │ }
+     ...
 
 Known issues
 ------------
@@ -139,13 +169,13 @@ Ideas
   .. code-block::
 
      ╭─ Query
-     │ ▼ standard_library
+     │ ▼ standardLibrary
      │   ▼ package
      │     $ name: name
      │     ■ id: 5
      │     $ kind: kind
      │     □ name
-     │   □ number_of_downloads
+     │   □ numberOfDownloads
      │ ▶ statistics
 
      ╭─ Variables

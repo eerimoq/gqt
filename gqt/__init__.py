@@ -12,6 +12,8 @@ from contextlib import contextmanager
 import requests
 from xdg import XDG_CACHE_HOME
 from readlike import edit
+from graphql import print_schema
+from graphql import build_client_schema
 from .version import __version__
 
 
@@ -569,14 +571,18 @@ def fetch_schema(endpoint):
     except Exception:
         pass
 
+    schema, checksum = fetch_schema_from_endpoint(endpoint)
+    write_cached_schema(schema, checksum, endpoint)
+
+    return schema, checksum
+
+def fetch_schema_from_endpoint(endpoint):
     response = post(endpoint, SCHEMA_QUERY)
     checksum = blake2b(response.content).hexdigest()
     response = response.json()
 
     if 'errors' in response:
         sys.exit(response['errors'])
-
-    write_cached_schema(response['data'], checksum, endpoint)
 
     return response['data'], checksum
 
@@ -700,14 +706,14 @@ def selector(stdscr, endpoint, root):
             break
 
 
-def create_query(root):
-    return {"query": root.query()}
+def create_query(query):
+    return {"query": query}
 
 
 def last_query(endpoint):
     checksum = fetch_schema(endpoint)[1]
 
-    return create_query(read_tree_from_cache(endpoint, checksum))
+    return read_tree_from_cache(endpoint, checksum)
 
 
 @contextmanager
@@ -730,7 +736,7 @@ def query_builder(endpoint):
 
     write_tree_to_cache(root, endpoint, checksum)
 
-    return create_query(root)
+    return root
 
 
 def post(endpoint, query):
@@ -791,6 +797,9 @@ def main():
     parser.add_argument('-c', '--curl',
                         action='store_true',
                         help='Print the cURL command instead of executing it.')
+    parser.add_argument('-p', '--print-schema',
+                        action='store_true',
+                        help='Print the schema.')
     parser.add_argument('-C', '--clear-cache',
                         action='store_true',
                         help='Clear the cache and exit.')
@@ -803,18 +812,25 @@ def main():
         return
 
     try:
-        if args.repeat:
-            query = last_query(args.endpoint)
+        if args.print_schema:
+            schema, _ = fetch_schema_from_endpoint(args.endpoint)
+            print(print_schema(build_client_schema(schema)))
         else:
-            query = query_builder(args.endpoint)
+            if args.repeat:
+                query = last_query(args.endpoint)
+            else:
+                query = query_builder(args.endpoint)
 
-        if args.query:
-            print(json.dumps(query))
-        elif args.curl:
-            print(CURL_COMMAND.format(endpoint=args.endpoint, query=json.dumps(query)))
-        else:
-            print(execute_query(args.endpoint, query, args.yaml))
+            query = query.query()
+
+            if args.query:
+                print(query)
+            elif args.curl:
+                print(CURL_COMMAND.format(endpoint=args.endpoint,
+                                          query=json.dumps(create_query(query))))
+            else:
+                print(execute_query(args.endpoint, create_query(query), args.yaml))
     except KeyboardInterrupt:
         sys.exit(1)
-    #except BaseException as error:
-    #    sys.exit(f'error: {error}')
+    except BaseException as error:
+        sys.exit(f'error: {error}')

@@ -2,3 +2,4 @@ requests
 xdg
 pyyaml
 readlike
+graphql-core
