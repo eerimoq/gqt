@@ -498,10 +498,7 @@ def update(stdscr, endpoint, root, key):
 
     stdscr.erase()
     y_max, x_max = stdscr.getmaxyx()
-    endpoint_with_prefix = f'Endpoint: {endpoint}'
-    addstr(stdscr, 0, x_max - len(endpoint_with_prefix), endpoint_with_prefix)
-    about = 'Project: https://github.com/eerimoq/gqt'
-    addstr(stdscr, y_max - 1, x_max - len(about), about)
+    addstr(stdscr, 0, x_max - len(endpoint), endpoint)
     addstr(stdscr, 0, 0, '╭─ Query')
     cursor = [0, 0]
     y = root.show(stdscr, 1, 2, cursor)
