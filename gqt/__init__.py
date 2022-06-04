@@ -1,3 +1,4 @@
+import subprocess
 import argparse
 import curses
 import json
@@ -255,8 +256,17 @@ curl -X POST \\
 '''
 
 
+def show(data, language):
+    if 'GQT_NO_BAT' not in os.environ and shutil.which('bat'):
+        data += '\n'
+        subprocess.run(['bat', '-p', '-l', language], input=data, text=True)
+    else:
+        print(data)
+
+
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description='Set GQT_NO_BAT to disable using bat for styling.')
     parser.add_argument('--version',
                         action='version',
                         version=__version__,
@@ -295,7 +305,8 @@ def main():
     try:
         if args.print_schema:
             schema, _ = fetch_schema_from_endpoint(args.endpoint)
-            print(print_schema(build_client_schema(schema)))
+            schema = print_schema(build_client_schema(schema))
+            show(schema, 'graphql')
         else:
             if args.repeat:
                 query = last_query(args.endpoint)
@@ -305,12 +316,17 @@ def main():
             query = query.query()
 
             if args.query:
-                print(query)
+                show(str(query), 'graphql')
             elif args.curl:
                 print(CURL_COMMAND.format(endpoint=args.endpoint,
                                           query=json.dumps(create_query(query))))
             else:
-                print(execute_query(args.endpoint, create_query(query), args.yaml))
+                data = execute_query(args.endpoint, create_query(query), args.yaml)
+
+                if args.yaml:
+                    show(data, 'yaml')
+                else:
+                    show(data, 'json')
     except KeyboardInterrupt:
         sys.exit(1)
     except BaseException as error:
