@@ -1,6 +1,8 @@
 GraphQL client in the terminal
 ==============================
 
+Build and execute GraphQL queries in the terminal.
+
 This project is inspired by https://graphiql-online.com.
 
 .. image:: https://github.com/eerimoq/gqt/raw/main/docs/assets/showcase.gif
