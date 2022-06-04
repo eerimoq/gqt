@@ -128,10 +128,18 @@ Known issues
 
 - Arguments does not work very well.
 
-- Scrolling.
+- Scrolling does not work.
+
+- Fragments and unions are not implemented.
+
+- Mutations and subscriptions are not implemented.
+
+- And much more.
 
 Ideas
 -----
+
+- Show GraphQL API documentation.
 
 - Mutations?
 
