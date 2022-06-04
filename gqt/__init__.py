@@ -150,6 +150,9 @@ class Object(Node):
         return y
 
     def key_up(self):
+        if not self.is_expanded:
+            return CursorMove.NOT_FOUND
+
         for i, field in enumerate(self.fields, -1):
             if field.cursor:
                 if i > -1:
@@ -178,6 +181,9 @@ class Object(Node):
         return CursorMove.NOT_FOUND
 
     def key_down(self):
+        if not self.is_expanded:
+            return CursorMove.NOT_FOUND
+
         for i, field in enumerate(self.fields, 1):
             if field.cursor:
                 if isinstance(field, Object):
@@ -213,6 +219,9 @@ class Object(Node):
         return CursorMove.NOT_FOUND
 
     def key_left(self):
+        if not self.is_expanded:
+            return CursorMove.NOT_FOUND
+
         for field in self.fields:
             if field.cursor:
                 if isinstance(field, Object):
@@ -242,6 +251,9 @@ class Object(Node):
         return CursorMove.NOT_FOUND
 
     def key_right(self):
+        if not self.is_expanded:
+            return CursorMove.NOT_FOUND
+
         for field in self.fields:
             if field.cursor:
                 if isinstance(field, Object):
@@ -807,5 +819,5 @@ def main():
             print(execute_query(args.endpoint, query, args.yaml))
     except KeyboardInterrupt:
         sys.exit(1)
-    except BaseException as error:
-        sys.exit(f'error: {error}')
+    #except BaseException as error:
+    #    sys.exit(f'error: {error}')
