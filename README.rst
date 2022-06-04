@@ -69,7 +69,7 @@ YAML output:
 
 .. code-block:: shell
 
-   $ gqt -y | bat -l yaml
+   $ gqt -y
    statistics:
      numberOfGraphqlRequests: 8
 
