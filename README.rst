@@ -10,12 +10,23 @@ Installation
 
 .. code-block:: shell
 
-   $ pip3 install gqt
+   pip3 install gqt
 
-Usage
------
+Controls
+--------
 
-Set default GraphQL endpoint URL:
+- Navigate with arrow keys.
+
+- Select fields with <Space>.
+
+- Toggle between argument selection and its value with <Tab>.
+
+- End with <Enter>.
+
+Examples
+--------
+
+Set default GraphQL endpoint:
 
 .. code-block:: shell
 
