@@ -101,10 +101,6 @@ def make_endpoint_cache_name(endpoint):
     return b64encode(endpoint.encode('utf-8')).decode('utf-8')
 
 
-def make_cache_name(checksum):
-    return f'{__version__}-{checksum}'
-
-
 def make_query_pickle_path(endpoint, checksum):
     name = make_endpoint_cache_name(endpoint)
 
