@@ -81,8 +81,8 @@ SCHEMA_QUERY = {
 }
 
 
-def default_url():
-    return os.environ.get('GQT_URL', 'https://mys-lang.org/graphql')
+def default_endpoint():
+    return os.environ.get('GQT_ENDPOINT', 'https://mys-lang.org/graphql')
 
 
 class CursorMove:
@@ -464,7 +464,7 @@ def set_cursor_down(field):
         return CursorMove.DONE
 
 
-def update(stdscr, url, root, key):
+def update(stdscr, endpoint, root, key):
     if key == 'KEY_UP':
         if root.key_up() == CursorMove.FOUND:
             set_cursor_down(root.fields[0])
@@ -485,8 +485,11 @@ def update(stdscr, url, root, key):
         root.key(key)
 
     stdscr.erase()
-    _, x_max = stdscr.getmaxyx()
-    addstr(stdscr, 0, x_max - len(url), url)
+    y_max, x_max = stdscr.getmaxyx()
+    endpoint_with_prefix = f'Endpoint: {endpoint}'
+    addstr(stdscr, 0, x_max - len(endpoint_with_prefix), endpoint_with_prefix)
+    about = 'Project: https://github.com/eerimoq/gqt'
+    addstr(stdscr, y_max - 1, x_max - len(about), about)
     addstr(stdscr, 0, 0, '╭─ Query')
     cursor = [0, 0]
     y = root.show(stdscr, 1, 2, cursor)
@@ -511,60 +514,60 @@ def addstr(stdscr, y, x, text, attrs=0):
         pass
 
 
-def make_url_cache_name(url):
-    return b64encode(url.encode('utf-8')).decode('utf-8')
+def make_endpoint_cache_name(endpoint):
+    return b64encode(endpoint.encode('utf-8')).decode('utf-8')
 
 
 def make_cache_name(checksum):
     return f'{__version__}-{checksum}'
 
 
-def make_query_pickle_path(url, checksum):
-    name = make_url_cache_name(url)
+def make_query_pickle_path(endpoint, checksum):
+    name = make_endpoint_cache_name(endpoint)
 
     return CACHE_PATH / __version__ / name / f'query-{checksum}.pickle'
 
 
-def read_tree_from_cache(url, checksum):
-    return pickle.loads(make_query_pickle_path(url, checksum).read_bytes())
+def read_tree_from_cache(endpoint, checksum):
+    return pickle.loads(make_query_pickle_path(endpoint, checksum).read_bytes())
 
 
-def write_tree_to_cache(root, url, checksum):
-    path = make_query_pickle_path(url, checksum)
+def write_tree_to_cache(root, endpoint, checksum):
+    path = make_query_pickle_path(endpoint, checksum)
     path.parent.mkdir(exist_ok=True, parents=True)
     path.write_bytes(pickle.dumps(root))
 
 
-def make_schema_pickle_path(url):
-    name = make_url_cache_name(url)
+def make_schema_pickle_path(endpoint):
+    name = make_endpoint_cache_name(endpoint)
 
     return CACHE_PATH / __version__ / name / 'schema.pickle'
 
 
-def read_cached_schema(url):
-    return pickle.loads(make_schema_pickle_path(url).read_bytes())
+def read_cached_schema(endpoint):
+    return pickle.loads(make_schema_pickle_path(endpoint).read_bytes())
 
 
-def write_cached_schema(schema, checksum, url):
-    path = make_schema_pickle_path(url)
+def write_cached_schema(schema, checksum, endpoint):
+    path = make_schema_pickle_path(endpoint)
     path.parent.mkdir(exist_ok=True, parents=True)
     path.write_bytes(pickle.dumps((schema, checksum)))
 
 
-def fetch_schema(url):
+def fetch_schema(endpoint):
     try:
-        return read_cached_schema(url)
+        return read_cached_schema(endpoint)
     except Exception:
         pass
 
-    response = post(url, SCHEMA_QUERY)
+    response = post(endpoint, SCHEMA_QUERY)
     checksum = blake2b(response.content).hexdigest()
     response = response.json()
 
     if 'errors' in response:
         sys.exit(response['errors'])
 
-    write_cached_schema(response['data'], checksum, url)
+    write_cached_schema(response['data'], checksum, endpoint)
 
     return response['data'], checksum
 
@@ -654,11 +657,11 @@ def load_tree_from_schema(schema):
                   True)
 
 
-def load_tree(url):
-    schema, checksum = fetch_schema(url)
+def load_tree(endpoint):
+    schema, checksum = fetch_schema(endpoint)
 
     try:
-        return read_tree_from_cache(url, checksum), checksum
+        return read_tree_from_cache(endpoint, checksum), checksum
     except Exception:
         pass
 
@@ -668,7 +671,7 @@ def load_tree(url):
     return root, checksum
 
 
-def selector(stdscr, url, root):
+def selector(stdscr, endpoint, root):
     stdscr.clear()
     stdscr.keypad(True)
     curses.use_default_colors()
@@ -676,7 +679,7 @@ def selector(stdscr, url, root):
     curses.init_pair(2, curses.COLOR_GREEN, -1)
     curses.init_pair(3, curses.COLOR_CYAN, -1)
 
-    update(stdscr, url, root, None)
+    update(stdscr, endpoint, root, None)
 
     while True:
         try:
@@ -684,7 +687,7 @@ def selector(stdscr, url, root):
         except curses.error:
             continue
 
-        if not update(stdscr, url, root, key):
+        if not update(stdscr, endpoint, root, key):
             break
 
 
@@ -692,10 +695,10 @@ def create_query(root):
     return {"query": root.query()}
 
 
-def last_query(url):
-    checksum = fetch_schema(url)[1]
+def last_query(endpoint):
+    checksum = fetch_schema(endpoint)[1]
 
-    return create_query(read_tree_from_cache(url, checksum))
+    return create_query(read_tree_from_cache(endpoint, checksum))
 
 
 @contextmanager
@@ -710,19 +713,19 @@ def redirect_stdout_to_stderr():
         os.close(original_stdout)
 
 
-def query_builder(url):
-    root, checksum = load_tree(url)
+def query_builder(endpoint):
+    root, checksum = load_tree(endpoint)
 
     with redirect_stdout_to_stderr():
-        curses.wrapper(selector, url, root)
+        curses.wrapper(selector, endpoint, root)
 
-    write_tree_to_cache(root, url, checksum)
+    write_tree_to_cache(root, endpoint, checksum)
 
     return create_query(root)
 
 
-def post(url, query):
-    response = requests.post(url, json=query)
+def post(endpoint, query):
+    response = requests.post(endpoint, json=query)
 
     if response.status_code != 200:
         print(response.text, file=sys.stderr)
@@ -731,8 +734,8 @@ def post(url, query):
     return response
 
 
-def execute_query(url, query, format_yaml):
-    json_response = post(url, query).json()
+def execute_query(endpoint, query, format_yaml):
+    json_response = post(endpoint, query).json()
 
     if 'errors' in json_response:
         sys.exit(json_response['errors'])
@@ -751,7 +754,7 @@ def execute_query(url, query, format_yaml):
 CURL_COMMAND = '''\
 curl -X POST \\
      -H 'content-type: application/json' \\
-     '{url}' \\
+     '{endpoint}' \\
      -d '{query}'\
 '''
 
@@ -762,26 +765,26 @@ def main():
                         action='version',
                         version=__version__,
                         help='Print version information and exit.')
-    parser.add_argument('-q', '--query',
-                        action='store_true',
-                        help='Print the query instead of executing it.')
-    parser.add_argument('-c', '--curl',
-                        action='store_true',
-                        help='Print the cURL command instead of executing it.')
+    parser.add_argument(
+        '-e', '--endpoint',
+        default=default_endpoint(),
+        help=('GraphQL endpoint (default: %(default)s). Set environment variable '
+              'GQT_ENDPOINT to override default value.'))
     parser.add_argument('-r', '--repeat',
                         action='store_true',
                         help='Repeat last query.')
     parser.add_argument('-y', '--yaml',
                         action='store_true',
                         help='Print the response as YAML instead of JSON.')
+    parser.add_argument('-q', '--query',
+                        action='store_true',
+                        help='Print the query instead of executing it.')
+    parser.add_argument('-c', '--curl',
+                        action='store_true',
+                        help='Print the cURL command instead of executing it.')
     parser.add_argument('-C', '--clear-cache',
                         action='store_true',
                         help='Clear the cache and exit.')
-    parser.add_argument(
-        '-u', '--url',
-        default=default_url(),
-        help=('GraphQL URL (default: %(default)s). Set environment variable '
-              'GQT_URL to override default value.'))
     args = parser.parse_args()
 
     CACHE_PATH.mkdir(exist_ok=True, parents=True)
@@ -792,16 +795,16 @@ def main():
 
     try:
         if args.repeat:
-            query = last_query(args.url)
+            query = last_query(args.endpoint)
         else:
-            query = query_builder(args.url)
+            query = query_builder(args.endpoint)
 
         if args.query:
             print(json.dumps(query))
         elif args.curl:
-            print(CURL_COMMAND.format(url=args.url, query=json.dumps(query)))
+            print(CURL_COMMAND.format(endpoint=args.endpoint, query=json.dumps(query)))
         else:
-            print(execute_query(args.url, query, args.yaml))
+            print(execute_query(args.endpoint, query, args.yaml))
     except KeyboardInterrupt:
         sys.exit(1)
     except BaseException as error:

@@ -19,7 +19,7 @@ Set default GraphQL endpoint URL:
 
 .. code-block:: shell
 
-   $ export GQT_URL=https://mys-lang.org/graphql
+   $ export GQT_ENDPOINT=https://mys-lang.org/graphql
 
 Interactively create a query and execute it:
 
