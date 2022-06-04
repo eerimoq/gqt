@@ -479,10 +479,14 @@ def update(stdscr, url, root, key):
         root.select()
     elif key == '\n':
         return False
+    elif key == 'KEY_RESIZE':
+        pass
     elif key is not None:
         root.key(key)
 
     stdscr.erase()
+    _, x_max = stdscr.getmaxyx()
+    addstr(stdscr, 0, x_max - len(url), url)
     addstr(stdscr, 0, 0, '╭─ Query')
     cursor = [0, 0]
     y = root.show(stdscr, 1, 2, cursor)
@@ -675,7 +679,12 @@ def selector(stdscr, url, root):
     update(stdscr, url, root, None)
 
     while True:
-        if not update(stdscr, url, root, stdscr.getkey()):
+        try:
+            key = stdscr.getkey()
+        except curses.error:
+            continue
+
+        if not update(stdscr, url, root, key):
             break
 
 
