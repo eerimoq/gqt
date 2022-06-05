@@ -127,18 +127,7 @@ class Object(Node):
 
                 return CursorMove.DONE
             else:
-                cursor_move = field.key_up()
-
-                if cursor_move == CursorMove.FOUND:
-                    if i == -1:
-                        return CursorMove.FOUND
-                    else:
-                        cursor_move = set_cursor_up(self.fields[i])
-
-                    if cursor_move == CursorMove.FOUND:
-                        return CursorMove.FOUND
-
-                if cursor_move == CursorMove.DONE:
+                if field.key_up() == CursorMove.DONE:
                     return CursorMove.DONE
 
         return CursorMove.NOT_FOUND
