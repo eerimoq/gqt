@@ -12,7 +12,6 @@ class TreeTest(unittest.TestCase):
         schema = ('type Query {'
                   '  activity: Activity'
                   '}'
-                  ''
                   'type Activity {'
                   '  date: String!'
                   '  kind: String!'
@@ -33,3 +32,33 @@ class TreeTest(unittest.TestCase):
         tree.select()
         tree.select()
         self.assertEqual(tree.query(), '{activity {date message}}')
+
+    def test_move_up_into_expanded_object(self):
+        schema = ('type Query {'
+                  '  foo: Foo'
+                  '}'
+                  'type Foo {'
+                  '  bar: Bar'
+                  '  fie: String'
+                  '}'
+                  'type Bar {'
+                  '  a: String'
+                  '  b: String'
+                  '  c: String'
+                  '}')
+        tree = load_tree_from_schema(introspection_from_schema(build_schema(schema)))
+        # Expand foo.
+        tree.key_right()
+        tree.key_down()
+        # Expand bar.
+        tree.key_right()
+        tree.key_down()
+        tree.key_down()
+        tree.key_down()
+        tree.key_down()
+        # Select fie.
+        tree.select()
+        tree.key_up()
+        # Select c.
+        tree.select()
+        self.assertEqual(tree.query(), '{foo {bar {c} fie}}')
