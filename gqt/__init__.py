@@ -30,31 +30,31 @@ def default_endpoint():
     return os.environ.get('GQT_ENDPOINT', 'https://mys-lang.org/graphql')
 
 
-def update(stdscr, endpoint, root, key):
+def update(stdscr, endpoint, tree, key):
     if key == 'KEY_UP':
-        root.key_up()
+        tree.key_up()
     elif key == 'KEY_DOWN':
-        if root.key_down() == CursorMove.FOUND:
-            set_cursor_up(root.fields[-1])
+        if tree.key_down() == CursorMove.FOUND:
+            set_cursor_up(tree.fields[-1])
     elif key == 'KEY_LEFT':
-        root.key_left()
+        tree.key_left()
     elif key == 'KEY_RIGHT':
-        root.key_right()
+        tree.key_right()
     elif key == ' ':
-        root.select()
+        tree.select()
     elif key == '\n':
         return False
     elif key == 'KEY_RESIZE':
         pass
     elif key is not None:
-        root.key(key)
+        tree.key(key)
 
     stdscr.erase()
     _, x_max = stdscr.getmaxyx()
     addstr(stdscr, 0, x_max - len(endpoint), endpoint)
     addstr(stdscr, 0, 0, '╭─ Query')
     cursor = [0, 0]
-    y = root.show(stdscr, 1, 2, cursor)
+    y = tree.show(stdscr, 1, 2, cursor)
 
     for i in range(1, y):
         addstr(stdscr, i, 0, '│')
@@ -100,13 +100,13 @@ def load_tree(endpoint):
     except Exception:
         pass
 
-    root = load_tree_from_schema(schema)
-    root.fields[0].cursor = True
+    tree = load_tree_from_schema(schema)
+    tree.fields[0].cursor = True
 
-    return root, checksum
+    return tree, checksum
 
 
-def selector(stdscr, endpoint, root):
+def selector(stdscr, endpoint, tree):
     stdscr.clear()
     stdscr.keypad(True)
     curses.use_default_colors()
@@ -114,7 +114,7 @@ def selector(stdscr, endpoint, root):
     curses.init_pair(2, curses.COLOR_GREEN, -1)
     curses.init_pair(3, curses.COLOR_CYAN, -1)
 
-    update(stdscr, endpoint, root, None)
+    update(stdscr, endpoint, tree, None)
 
     while True:
         try:
@@ -122,7 +122,7 @@ def selector(stdscr, endpoint, root):
         except curses.error:
             continue
 
-        if not update(stdscr, endpoint, root, key):
+        if not update(stdscr, endpoint, tree, key):
             break
 
 
@@ -149,14 +149,14 @@ def redirect_stdout_to_stderr():
 
 
 def query_builder(endpoint):
-    root, checksum = load_tree(endpoint)
+    tree, checksum = load_tree(endpoint)
 
     with redirect_stdout_to_stderr():
-        curses.wrapper(selector, endpoint, root)
+        curses.wrapper(selector, endpoint, tree)
 
-    write_tree_to_cache(root, endpoint, checksum)
+    write_tree_to_cache(tree, endpoint, checksum)
 
-    return root
+    return tree
 
 
 def post(endpoint, query):
