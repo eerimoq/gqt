@@ -34,8 +34,7 @@ def update(stdscr, endpoint, tree, key):
     if key == 'KEY_UP':
         tree.key_up()
     elif key == 'KEY_DOWN':
-        if tree.key_down() == CursorMove.FOUND:
-            set_cursor_up(tree.fields[-1])
+        tree.key_down()
     elif key == 'KEY_LEFT':
         tree.key_left()
     elif key == 'KEY_RIGHT':

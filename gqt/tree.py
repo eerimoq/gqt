@@ -507,7 +507,8 @@ class Tree:
         return self._root.key_up()
 
     def key_down(self):
-        return self._root.key_down()
+        if self._root.key_down() == CursorMove.FOUND:
+            set_cursor_up(self._root.fields[-1])
 
     def key_left(self):
         return self._root.key_left()
