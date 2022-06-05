@@ -41,6 +41,13 @@ KEY_BINDINGS = {
 }
 
 
+class Cursor:
+
+    def __init__(self):
+        self.y = 0
+        self.x = 0
+
+
 class CursorMove:
     DONE = 0
     FOUND = 1
@@ -85,8 +92,8 @@ class Object(Node):
 
     def show(self, stdscr, y, x, cursor):
         if self.cursor:
-            cursor[0] = y
-            cursor[1] = x
+            cursor.y = y
+            cursor.x = x
 
         if self.is_root:
             for field in self.fields:
@@ -289,8 +296,8 @@ class Leaf(Node):
 
     def show(self, stdscr, y, x, cursor):
         if self.cursor:
-            cursor[0] = y
-            cursor[1] = x
+            cursor.y = y
+            cursor.x = x
 
         if self.is_selected:
             addstr(stdscr, y, x, '■', curses.color_pair(1))
@@ -335,12 +342,12 @@ class Argument(Node):
             offset = 0
 
         if self.cursor:
-            cursor[0] = y
+            cursor.y = y
 
             if self.state.cursor_at_input_field:
-                cursor[1] = x + len(self.name) + 4 + self.pos + offset
+                cursor.x = x + len(self.name) + 4 + self.pos + offset
             else:
-                cursor[1] = x
+                cursor.x = x
 
         addstr(stdscr, y, x, self.symbol, curses.color_pair(3))
         addstr(stdscr, y, x + 2, f'{self.name}:')

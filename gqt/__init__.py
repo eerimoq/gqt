@@ -24,6 +24,7 @@ from .screen import move
 from .tree import CursorMove
 from .tree import load_tree_from_schema
 from .tree import set_cursor_up
+from .tree import Cursor
 from .version import __version__
 
 
@@ -53,13 +54,13 @@ def update(stdscr, endpoint, tree, key):
     _, x_max = stdscr.getmaxyx()
     addstr(stdscr, 0, x_max - len(endpoint), endpoint)
     addstr(stdscr, 0, 0, '╭─ Query')
-    cursor = [0, 0]
+    cursor = Cursor()
     y = tree.show(stdscr, 1, 2, cursor)
 
     for i in range(1, y):
         addstr(stdscr, i, 0, '│')
 
-    move(stdscr, *cursor)
+    move(stdscr, cursor.y, cursor.x)
     stdscr.refresh()
 
     return True
