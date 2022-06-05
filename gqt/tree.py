@@ -158,7 +158,6 @@ class Leaf(Node):
         super().__init__()
         self.is_selected = False
         self.name = name
-        self.cursor = False
 
     def show(self, stdscr, y, x, cursor):
         if cursor.node is self:
@@ -187,7 +186,6 @@ class Argument(Node):
         self.state = state
         self.value = ''
         self.pos = 0
-        self.cursor = False
         self.symbol = '■'
         self.meta = False
 
