@@ -20,6 +20,7 @@ from .cache import read_tree_from_cache
 from .cache import write_cached_schema
 from .cache import write_tree_to_cache
 from .screen import addstr
+from .screen import move
 from .tree import CursorMove
 from .tree import load_tree_from_schema
 from .tree import set_cursor_up
@@ -58,11 +59,7 @@ def update(stdscr, endpoint, tree, key):
     for i in range(1, y):
         addstr(stdscr, i, 0, '│')
 
-    try:
-        stdscr.move(*cursor)
-    except curses.error:
-        pass
-
+    move(stdscr, *cursor)
     stdscr.refresh()
 
     return True
