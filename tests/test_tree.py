@@ -62,3 +62,30 @@ class TreeTest(unittest.TestCase):
         # Select c.
         tree.select()
         self.assertEqual(tree.query(), '{foo {bar {c} fie}}')
+
+    def test_move_up_through_expanded_objects(self):
+        schema = ('type Query {'
+                  '  a: String'
+                  '  b: Foo'
+                  '}'
+                  'type Foo {'
+                  '  c: Foo'
+                  '  d: String'
+                  '}')
+        tree = load_tree_from_schema(introspection_from_schema(build_schema(schema)))
+        tree.key_down()
+        # Expand b.
+        tree.key_right()
+        tree.key_down()
+        tree.key_right()
+        tree.key_down()
+        tree.key_down()
+        # Select d.
+        tree.select()
+        tree.key_up()
+        tree.key_up()
+        tree.key_up()
+        tree.key_up()
+        # Select a.
+        tree.select()
+        self.assertEqual(tree.query(), '{a b {c {d}}}')
