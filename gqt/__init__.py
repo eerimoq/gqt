@@ -256,8 +256,8 @@ def main():
             if args.query:
                 show(str(query), 'graphql')
             elif args.curl:
-                print(CURL_COMMAND.format(endpoint=args.endpoint,
-                                          query=json.dumps(create_query(query))))
+                query = json.dumps(create_query(query))
+                print(CURL_COMMAND.format(endpoint=args.endpoint, query=query))
             else:
                 data = execute_query(args.endpoint, create_query(query), args.yaml)
 
