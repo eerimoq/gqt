@@ -107,6 +107,7 @@ def fetch_schema(endpoint):
 
     return schema, checksum
 
+
 def fetch_schema_from_endpoint(endpoint):
     response = post(endpoint, SCHEMA_QUERY)
     checksum = blake2b(response.content).hexdigest()
