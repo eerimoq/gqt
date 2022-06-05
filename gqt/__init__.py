@@ -1,12 +1,10 @@
-import subprocess
 import argparse
 import curses
 import json
 import os
-import pickle
 import shutil
+import subprocess
 import sys
-from base64 import b64encode
 from contextlib import contextmanager
 from hashlib import blake2b
 
@@ -14,15 +12,17 @@ import requests
 import yaml
 from graphql import build_client_schema
 from graphql import print_schema
-from xdg import XDG_CACHE_HOME
 
+from .cache import CACHE_PATH
+from .cache import read_cached_schema
+from .cache import read_tree_from_cache
+from .cache import write_cached_schema
+from .cache import write_tree_to_cache
 from .screen import addstr
 from .tree import CursorMove
 from .tree import load_tree_from_schema
 from .tree import set_cursor_up
 from .version import __version__
-
-CACHE_PATH = XDG_CACHE_HOME / 'gqt' / 'cache'
 
 SCHEMA_QUERY = {
     "query": (
@@ -94,42 +94,6 @@ def update(stdscr, endpoint, root, key):
     stdscr.refresh()
 
     return True
-
-
-def make_endpoint_cache_name(endpoint):
-    return b64encode(endpoint.encode('utf-8')).decode('utf-8')
-
-
-def make_query_pickle_path(endpoint, checksum):
-    name = make_endpoint_cache_name(endpoint)
-
-    return CACHE_PATH / __version__ / name / f'query-{checksum}.pickle'
-
-
-def read_tree_from_cache(endpoint, checksum):
-    return pickle.loads(make_query_pickle_path(endpoint, checksum).read_bytes())
-
-
-def write_tree_to_cache(root, endpoint, checksum):
-    path = make_query_pickle_path(endpoint, checksum)
-    path.parent.mkdir(exist_ok=True, parents=True)
-    path.write_bytes(pickle.dumps(root))
-
-
-def make_schema_pickle_path(endpoint):
-    name = make_endpoint_cache_name(endpoint)
-
-    return CACHE_PATH / __version__ / name / 'schema.pickle'
-
-
-def read_cached_schema(endpoint):
-    return pickle.loads(make_schema_pickle_path(endpoint).read_bytes())
-
-
-def write_cached_schema(schema, checksum, endpoint):
-    path = make_schema_pickle_path(endpoint)
-    path.parent.mkdir(exist_ok=True, parents=True)
-    path.write_bytes(pickle.dumps((schema, checksum)))
 
 
 def fetch_schema(endpoint):
