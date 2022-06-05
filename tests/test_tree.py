@@ -1,7 +1,8 @@
 import unittest
 
-from graphql import introspection_from_schema
 from graphql import build_schema
+from graphql import introspection_from_schema
+
 from gqt.tree import load_tree_from_schema
 
 

@@ -21,10 +21,8 @@ from .cache import write_cached_schema
 from .cache import write_tree_to_cache
 from .screen import addstr
 from .screen import move
-from .tree import CursorMove
-from .tree import load_tree_from_schema
-from .tree import set_cursor_up
 from .tree import Cursor
+from .tree import load_tree_from_schema
 from .version import __version__
 
 
