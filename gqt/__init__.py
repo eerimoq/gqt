@@ -100,10 +100,7 @@ def load_tree(endpoint):
     except Exception:
         pass
 
-    tree = load_tree_from_schema(schema)
-    tree.fields[0].cursor = True
-
-    return tree, checksum
+    return load_tree_from_schema(schema), checksum
 
 
 def selector(stdscr, endpoint, tree):

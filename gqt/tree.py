@@ -188,7 +188,7 @@ class Object(Node):
 
                     return CursorMove.DONE
                 elif isinstance(field, Argument):
-                    if field.tree.cursor_at_input_field:
+                    if field.state.cursor_at_input_field:
                         field.key_left()
 
                         return CursorMove.DONE
@@ -218,7 +218,7 @@ class Object(Node):
                     else:
                         field.is_expanded = True
                 elif isinstance(field, Argument):
-                    if field.tree.cursor_at_input_field:
+                    if field.state.cursor_at_input_field:
                         field.key_right()
 
                 return CursorMove.DONE
@@ -308,10 +308,10 @@ class Leaf(Node):
 
 class Argument(Node):
 
-    def __init__(self, name, type, tree):
+    def __init__(self, name, type, state):
         self.name = name
         self.type = type
-        self.tree = tree
+        self.state = state
         self.value = ''
         self.pos = 0
         self.cursor = False
@@ -337,7 +337,7 @@ class Argument(Node):
         if self.cursor:
             cursor[0] = y
 
-            if self.tree.cursor_at_input_field:
+            if self.state.cursor_at_input_field:
                 cursor[1] = x + len(self.name) + 4 + self.pos + offset
             else:
                 cursor[1] = x
@@ -367,8 +367,8 @@ class Argument(Node):
             return
 
         if key == '\t':
-            self.tree.cursor_at_input_field = not self.tree.cursor_at_input_field
-        elif self.tree.cursor_at_input_field:
+            self.state.cursor_at_input_field = not self.state.cursor_at_input_field
+        elif self.state.cursor_at_input_field:
             if self.meta:
                 key = '\x1b' + key
                 self.meta = False
@@ -385,7 +385,7 @@ class Argument(Node):
         if not self.cursor:
             return
 
-        if self.tree.cursor_at_input_field:
+        if self.state.cursor_at_input_field:
             self.key(' ')
         else:
             self.next_symbol()
@@ -400,7 +400,7 @@ class Argument(Node):
             return str(self.value)
 
 
-class Tree:
+class State:
 
     def __init__(self):
         self.cursor_at_input_field = False
@@ -428,7 +428,7 @@ def find_type(types, name):
     raise Exception(f"Type '{name}' not found in schema.")
 
 
-def build_field(types, field, tree):
+def build_field(types, field, state):
     try:
         name = field['name']
     except Exception:
@@ -444,7 +444,7 @@ def build_field(types, field, tree):
                       ObjectFields(field['args'],
                                    find_type(types, item['name'])['fields'],
                                    types,
-                                   tree))
+                                   state))
     else:
         return Leaf(name)
 
@@ -466,20 +466,20 @@ class ObjectFieldsIterator:
 
 class ObjectFields:
 
-    def __init__(self, arguments, fields, types, tree):
+    def __init__(self, arguments, fields, types, state):
         self._arguments_info = arguments
         self._fields_info = fields
         self._types = types
-        self._tree = tree
+        self._state = state
         self._fields = None
 
     def fields(self):
         if self._fields is None:
             self._fields = [
-                Argument(arg['name'], arg['type'], self._tree)
+                Argument(arg['name'], arg['type'], self._state)
                 for arg in self._arguments_info
             ] + [
-                build_field(self._types, field, self._tree)
+                build_field(self._types, field, self._state)
                 for field in self._fields_info
             ]
 
@@ -495,11 +495,43 @@ class ObjectFields:
         return self.fields()[key]
 
 
+class Tree:
+
+    def __init__(self, root):
+        self._root = root
+
+    def show(self, stdscr, y, x, cursor):
+        return self._root.show(stdscr, y, x, cursor)
+
+    def key_up(self):
+        return self._root.key_up()
+
+    def key_down(self):
+        return self._root.key_down()
+
+    def key_left(self):
+        return self._root.key_left()
+
+    def key_right(self):
+        return self._root.key_right()
+
+    def select(self):
+        return self._root.select()
+
+    def key(self, key):
+        return self._root.key(key)
+
+    def query(self):
+        return self._root.query()
+
+
 def load_tree_from_schema(schema):
     types = schema['__schema']['types']
     query = find_type(types, schema['__schema']['queryType']['name'])
-    tree = Tree()
-
-    return Object(None,
-                  ObjectFields([], query['fields'], types, tree),
+    state = State()
+    tree = Object(None,
+                  ObjectFields([], query['fields'], types, state),
                   True)
+    tree.fields[0].cursor = True
+
+    return Tree(tree)
