@@ -89,3 +89,36 @@ class TreeTest(unittest.TestCase):
         # Select a.
         tree.select()
         self.assertEqual(tree.query(), '{a b {c {d}}}')
+
+    def test_move_left_collapse_objects(self):
+        schema = ('type Query {'
+                  '  a: Foo'
+                  '  b: String'
+                  '}'
+                  'type Foo {'
+                  '  c: Foo'
+                  '  d: String'
+                  '}')
+        tree = load_tree_from_schema(introspection_from_schema(build_schema(schema)))
+        # Expand.
+        tree.key_right()
+        tree.key_right()
+        tree.key_right()
+        tree.key_right()
+        tree.key_right()
+        tree.key_right()
+        tree.key_down()
+        # Select d.
+        tree.select()
+        self.assertEqual(tree.query(), '{a {c {c {d}}}}')
+        # Collapse.
+        tree.key_left()
+        tree.key_left()
+        tree.key_left()
+        tree.key_left()
+        tree.key_left()
+        tree.key_left()
+        tree.key_down()
+        # Select b.
+        tree.select()
+        self.assertEqual(tree.query(), '{b}')
