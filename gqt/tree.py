@@ -398,7 +398,10 @@ class Tree:
         if self._cursor.next is not None:
             self._cursor = self._cursor.next
         elif self._cursor.parent is not None:
-            self._cursor = self._find_first(self._cursor)
+            cursor = self._find_first_below(self._cursor)
+
+            if cursor is not None:
+                self._cursor = cursor
 
     def key_left(self):
         if self._cursor.key_left():
@@ -431,14 +434,14 @@ class Tree:
     def query(self):
         return self._root.query()
 
-    def _find_first(self, node):
+    def _find_first_below(self, node):
         if node.parent is not None:
             if node.parent.next is not None:
                 return node.parent.next
             else:
-                return self._find_first(node.parent)
+                return self._find_first_below(node.parent)
         else:
-            return node
+            return None
 
     def _find_last(self, node):
         if isinstance(node, Object):

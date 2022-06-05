@@ -30,7 +30,7 @@ def default_endpoint():
     return os.environ.get('GQT_ENDPOINT', 'https://mys-lang.org/graphql')
 
 
-def update(stdscr, endpoint, tree, key):
+def update(stdscr, endpoint, tree, key, y_offset):
     if key == 'KEY_UP':
         tree.key_up()
     elif key == 'KEY_DOWN':
@@ -42,26 +42,36 @@ def update(stdscr, endpoint, tree, key):
     elif key == ' ':
         tree.select()
     elif key == '\n':
-        return False
+        return True, y_offset
     elif key == 'KEY_RESIZE':
         pass
     elif key is not None:
         tree.key(key)
 
-    stdscr.erase()
-    _, x_max = stdscr.getmaxyx()
-    addstr(stdscr, 0, x_max - len(endpoint), endpoint)
-    addstr(stdscr, 0, 0, '╭─ Query')
     cursor = Cursor()
-    y = tree.show(stdscr, 1, 2, cursor)
 
-    for i in range(1, y):
-        addstr(stdscr, i, 0, '│')
+    while True:
+        stdscr.erase()
+        y_max, x_max = stdscr.getmaxyx()
+        y = tree.show(stdscr, y_offset, 2, cursor)
+
+        for i in range(1, y):
+            addstr(stdscr, i, 0, '│')
+
+        if cursor.y < 1:
+            y_offset += 1
+        elif cursor.y >= y_max:
+            y_offset -= 1
+        else:
+            addstr(stdscr, 0, 0, ' ' * x_max)
+            addstr(stdscr, 0, x_max - len(endpoint), endpoint)
+            addstr(stdscr, 0, 0, '╭─ Query')
+            break
 
     move(stdscr, cursor.y, cursor.x)
     stdscr.refresh()
 
-    return True
+    return False, y_offset
 
 
 def fetch_schema(endpoint):
@@ -106,16 +116,17 @@ def selector(stdscr, endpoint, tree):
     curses.init_pair(2, curses.COLOR_GREEN, -1)
     curses.init_pair(3, curses.COLOR_CYAN, -1)
 
-    update(stdscr, endpoint, tree, None)
+    y_offset = 1
+    update(stdscr, endpoint, tree, None, y_offset)
+    done = False
 
-    while True:
+    while not done:
         try:
             key = stdscr.getkey()
         except curses.error:
             continue
 
-        if not update(stdscr, endpoint, tree, key):
-            break
+        done, y_offset = update(stdscr, endpoint, tree, key, y_offset)
 
 
 def create_query(query):

@@ -144,3 +144,17 @@ class TreeTest(unittest.TestCase):
         tree.key_down()
         tree.select()
         self.assertEqual(tree.query(), '{a(b:"ABC",c:1) {d}}')
+
+    def test_move_down_at_expanded_object_at_bottom(self):
+        schema = ('type Query {'
+                  '  a: Foo'
+                  '}'
+                  'type Foo {'
+                  '  b: String'
+                  '}')
+        tree = load_tree_from_schema(introspection_from_schema(build_schema(schema)))
+        tree.key_right()
+        tree.key_down()
+        tree.key_down()
+        tree.select()
+        self.assertEqual(tree.query(), '{a {b}}')
