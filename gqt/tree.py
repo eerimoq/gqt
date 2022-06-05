@@ -44,32 +44,32 @@ KEY_BINDINGS = {
 class Cursor:
 
     def __init__(self):
+        self.node = None
         self.y = 0
         self.x = 0
 
 
-class CursorMove:
-    DONE = 0
-    FOUND = 1
-    NOT_FOUND = 2
-
-
 class Node:
+
+    def __init__(self):
+        self.parent = None
+        self.next = None
+        self.prev = None
 
     def show(self, stdscr, y, x, cursor):
         pass
 
     def key_up(self):
-        return CursorMove.NOT_FOUND
+        return False
 
     def key_down(self):
-        return CursorMove.NOT_FOUND
+        return False
 
     def key_left(self):
-        return CursorMove.NOT_FOUND
+        return False
 
     def key_right(self):
-        return CursorMove.NOT_FOUND
+        return False
 
     def select(self):
         pass
@@ -84,14 +84,18 @@ class Node:
 class Object(Node):
 
     def __init__(self, name, fields, is_root=False):
+        super().__init__()
         self.name = name
         self.fields = fields
-        self.cursor = False
+
+        if not is_root:
+            self.fields.parent = self
+
         self.is_root = is_root
         self.is_expanded = is_root
 
     def show(self, stdscr, y, x, cursor):
-        if self.cursor:
+        if cursor.node is self:
             cursor.y = y
             cursor.x = x
 
@@ -111,127 +115,6 @@ class Object(Node):
             y += 1
 
         return y
-
-    def key_up(self):
-        if not self.is_expanded:
-            return CursorMove.NOT_FOUND
-
-        for i, field in enumerate(self.fields, -1):
-            if field.cursor:
-                if i > -1:
-                    field.cursor = False
-                    set_cursor_up(self.fields[i])
-                elif not self.is_root:
-                    field.cursor = False
-                    self.cursor = True
-
-                return CursorMove.DONE
-            else:
-                if field.key_up() == CursorMove.DONE:
-                    return CursorMove.DONE
-
-        return CursorMove.NOT_FOUND
-
-    def key_down(self):
-        if not self.is_expanded:
-            return CursorMove.NOT_FOUND
-
-        for i, field in enumerate(self.fields, 1):
-            if field.cursor:
-                if isinstance(field, Object):
-                    if field.is_expanded:
-                        field.cursor = False
-                        field.fields[0].cursor = True
-
-                        return CursorMove.DONE
-
-                field.cursor = False
-
-                if i < len(self.fields):
-                    self.fields[i].cursor = True
-
-                    return CursorMove.DONE
-                else:
-                    return CursorMove.FOUND
-            else:
-                cursor_move = field.key_down()
-
-                if cursor_move == CursorMove.FOUND:
-                    if i < len(self.fields):
-                        self.fields[i].cursor = True
-
-                        return CursorMove.DONE
-                    else:
-                        return CursorMove.FOUND
-
-                if cursor_move == CursorMove.DONE:
-                    return CursorMove.DONE
-
-        return CursorMove.NOT_FOUND
-
-    def key_left(self):
-        if not self.is_expanded:
-            return CursorMove.NOT_FOUND
-
-        for field in self.fields:
-            if field.cursor:
-                if isinstance(field, Object):
-                    if field.is_expanded:
-                        field.is_expanded = False
-                    elif not self.is_root:
-                        field.cursor = False
-                        self.cursor = True
-
-                    return CursorMove.DONE
-                elif isinstance(field, Argument):
-                    if field.state.cursor_at_input_field:
-                        field.key_left()
-
-                        return CursorMove.DONE
-
-                field.cursor = False
-                self.cursor = True
-
-                return CursorMove.DONE
-            else:
-                cursor_move = field.key_left()
-
-                if cursor_move == CursorMove.DONE:
-                    return CursorMove.DONE
-
-        return CursorMove.NOT_FOUND
-
-    def key_right(self):
-        if not self.is_expanded:
-            return CursorMove.NOT_FOUND
-
-        for field in self.fields:
-            if field.cursor:
-                if isinstance(field, Object):
-                    if field.is_expanded:
-                        field.cursor = False
-                        field.fields[0].cursor = True
-                    else:
-                        field.is_expanded = True
-                elif isinstance(field, Argument):
-                    if field.state.cursor_at_input_field:
-                        field.key_right()
-
-                return CursorMove.DONE
-            else:
-                cursor_move = field.key_right()
-
-                if cursor_move == CursorMove.DONE:
-                    return CursorMove.DONE
-
-        return CursorMove.NOT_FOUND
-
-    def select(self):
-        if not self.is_expanded:
-            return CursorMove.NOT_FOUND
-
-        for field in self.fields:
-            field.select()
 
     def query(self):
         if not self.is_expanded:
@@ -268,23 +151,17 @@ class Object(Node):
         else:
             sys.exit(f"No fields selected in '{self.name}'.")
 
-    def key(self, key):
-        if not self.is_expanded:
-            return CursorMove.NOT_FOUND
-
-        for field in self.fields:
-            field.key(key)
-
 
 class Leaf(Node):
 
     def __init__(self, name):
+        super().__init__()
         self.is_selected = False
         self.name = name
         self.cursor = False
 
     def show(self, stdscr, y, x, cursor):
-        if self.cursor:
+        if cursor.node is self:
             cursor.y = y
             cursor.x = x
 
@@ -298,13 +175,13 @@ class Leaf(Node):
         return y + 1
 
     def select(self):
-        if self.cursor:
-            self.is_selected = not self.is_selected
+        self.is_selected = not self.is_selected
 
 
 class Argument(Node):
 
     def __init__(self, name, type, state):
+        super().__init__()
         self.name = name
         self.type = type
         self.state = state
@@ -330,7 +207,7 @@ class Argument(Node):
             value = str(self.value)
             offset = 0
 
-        if self.cursor:
+        if cursor.node is self:
             cursor.y = y
 
             if self.state.cursor_at_input_field:
@@ -353,15 +230,22 @@ class Argument(Node):
             self.symbol = '$'
 
     def key_left(self):
-        self.key('KEY_LEFT')
+        if self.state.cursor_at_input_field:
+            self.key('KEY_LEFT')
+
+            return True
+        else:
+            return False
 
     def key_right(self):
-        self.key('KEY_RIGHT')
+        if self.state.cursor_at_input_field:
+            self.key('KEY_RIGHT')
+
+            return True
+        else:
+            return False
 
     def key(self, key):
-        if not self.cursor:
-            return
-
         if key == '\t':
             self.state.cursor_at_input_field = not self.state.cursor_at_input_field
         elif self.state.cursor_at_input_field:
@@ -378,9 +262,6 @@ class Argument(Node):
                                         KEY_BINDINGS.get(key, key))
 
     def select(self):
-        if not self.cursor:
-            return
-
         if self.state.cursor_at_input_field:
             self.key(' ')
         else:
@@ -400,20 +281,6 @@ class State:
 
     def __init__(self):
         self.cursor_at_input_field = False
-
-
-def set_cursor_up(field):
-    if isinstance(field, Object):
-        if not field.is_expanded:
-            field.cursor = True
-
-            return CursorMove.DONE
-        else:
-            return set_cursor_up(field.fields[-1])
-    else:
-        field.cursor = True
-
-        return CursorMove.DONE
 
 
 def find_type(types, name):
@@ -468,6 +335,7 @@ class ObjectFields:
         self._types = types
         self._state = state
         self._fields = None
+        self.parent = None
 
     def fields(self):
         if self._fields is None:
@@ -478,6 +346,15 @@ class ObjectFields:
                 build_field(self._types, field, self._state)
                 for field in self._fields_info
             ]
+
+        for field in self._fields:
+            field.parent = self.parent
+
+        if len(self._fields) > 1:
+            for i in range(len(self._fields)):
+                if i > 0:
+                    self._fields[i - 1].next = self._fields[i]
+                    self._fields[i].prev = self._fields[i - 1]
 
         return self._fields
 
@@ -495,31 +372,84 @@ class Tree:
 
     def __init__(self, root):
         self._root = root
+        self._cursor = root.fields[0]
 
     def show(self, stdscr, y, x, cursor):
+        cursor.node = self._cursor
+
         return self._root.show(stdscr, y, x, cursor)
 
     def key_up(self):
-        return self._root.key_up()
+        if self._cursor.key_up():
+            return
+
+        if self._cursor.prev is not None:
+            self._cursor = self._find_last(self._cursor.prev)
+        elif self._cursor.parent is not None:
+            self._cursor = self._cursor.parent
 
     def key_down(self):
-        if self._root.key_down() == CursorMove.FOUND:
-            set_cursor_up(self._root.fields[-1])
+        if self._cursor.key_down():
+            return
+
+        if isinstance(self._cursor, Object):
+            if self._cursor.is_expanded:
+                self._cursor = self._cursor.fields[0]
+                return
+
+        if self._cursor.next is not None:
+            self._cursor = self._cursor.next
+        elif self._cursor.parent is not None:
+            self._cursor = self._find_first(self._cursor)
 
     def key_left(self):
-        return self._root.key_left()
+        if self._cursor.key_left():
+            return
+
+        if isinstance(self._cursor, Object):
+            if self._cursor.is_expanded:
+                self._cursor.is_expanded = False
+                return
+
+        if self._cursor.parent is not None:
+            self._cursor = self._cursor.parent
 
     def key_right(self):
-        return self._root.key_right()
+        if self._cursor.key_right():
+            return
+
+        if isinstance(self._cursor, Object):
+            if self._cursor.is_expanded:
+                self._cursor = self._cursor.fields[0]
+            else:
+                self._cursor.is_expanded = True
 
     def select(self):
-        return self._root.select()
+        self._cursor.select()
 
     def key(self, key):
-        return self._root.key(key)
+        self._cursor.key(key)
 
     def query(self):
         return self._root.query()
+
+    def _find_first(self, node):
+        if node.parent is not None:
+            if node.parent.next is not None:
+                return node.parent.next
+            else:
+                return self._find_first(node.parent)
+        else:
+            return node
+
+    def _find_last(self, node):
+        if isinstance(node, Object):
+            if node.is_expanded:
+                return self._find_last(node.fields[-1])
+            else:
+                return node
+        else:
+            return node
 
 
 def load_tree_from_schema(schema):
