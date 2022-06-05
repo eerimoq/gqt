@@ -11,6 +11,7 @@ from hashlib import blake2b
 import requests
 import yaml
 from graphql import build_client_schema
+from graphql import get_introspection_query
 from graphql import print_schema
 
 from .cache import CACHE_PATH
@@ -23,34 +24,6 @@ from .tree import CursorMove
 from .tree import load_tree_from_schema
 from .tree import set_cursor_up
 from .version import __version__
-
-SCHEMA_QUERY = {
-    "query": (
-        "\n    query IntrospectionQuery {\n      __schema {\n        queryType { "
-        "name }\n        mutationType { name }\n        subscriptionType { name }"
-        "\n        types {\n          ...FullType\n        }\n        directives "
-        "{\n          name\n          description\n          locations\n         "
-        " args {\n            ...InputValue\n          }\n        }\n      }\n   "
-        " }\n\n    fragment FullType on __Type {\n      kind\n      name\n      d"
-        "escription\n      fields(includeDeprecated: true) {\n        name\n     "
-        "   description\n        args {\n          ...InputValue\n        }\n    "
-        "    type {\n          ...TypeRef\n        }\n        isDeprecated\n     "
-        "   deprecationReason\n      }\n      inputFields {\n        ...InputValu"
-        "e\n      }\n      interfaces {\n        ...TypeRef\n      }\n      enumV"
-        "alues(includeDeprecated: true) {\n        name\n        description\n   "
-        "     isDeprecated\n        deprecationReason\n      }\n      possibleTyp"
-        "es {\n        ...TypeRef\n      }\n    }\n\n    fragment InputValue on _"
-        "_InputValue {\n      name\n      description\n      type { ...TypeRef }\n"
-        "      defaultValue\n    }\n\n    fragment TypeRef on __Type {\n      kin"
-        "d\n      name\n      ofType {\n        kind\n        name\n        ofTyp"
-        "e {\n          kind\n          name\n          ofType {\n            kin"
-        "d\n            name\n            ofType {\n              kind\n         "
-        "     name\n              ofType {\n                kind\n               "
-        " name\n                ofType {\n                  kind\n               "
-        "   name\n                  ofType {\n                    kind\n         "
-        "           name\n                  }\n                }\n              }"
-        "\n            }\n          }\n        }\n      }\n    }\n  ")
-}
 
 
 def default_endpoint():
@@ -109,7 +82,7 @@ def fetch_schema(endpoint):
 
 
 def fetch_schema_from_endpoint(endpoint):
-    response = post(endpoint, SCHEMA_QUERY)
+    response = post(endpoint, {"query": get_introspection_query()})
     checksum = blake2b(response.content).hexdigest()
     response = response.json()
 
