@@ -168,6 +168,18 @@ Ideas
      │         □ c:
      │     [2]
 
+  Input example:
+
+  .. code-block::
+
+     ╭─ Query
+     │ ▼ item
+     │   ■ config:
+     │     ■ unit: "metric"
+     │     □ width:
+     │   □ length
+     │   □ weight
+
   Variables example:
 
   .. code-block::
