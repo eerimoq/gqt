@@ -64,6 +64,7 @@ def update(stdscr, endpoint, tree, key, y_offset):
             description = tree.cursor_description()
 
             if description:
+                description = description.split('\n')[0].strip()
                 description = f' ─ {description}'
             else:
                 description = ''
