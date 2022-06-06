@@ -224,8 +224,7 @@ def main():
 
     try:
         if args.print_schema:
-            schema = fetch_schema(args.endpoint)
-            schema = print_schema(build_client_schema(schema))
+            schema = print_schema(build_client_schema(fetch_schema(args.endpoint)))
             show(schema, 'graphql')
         else:
             if args.repeat:
