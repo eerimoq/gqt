@@ -178,10 +178,16 @@ class Argument(Node):
         super().__init__()
         self.name = name
         self.type = get_type(type)['name']
+        self.is_optional = (type['kind'] != 'NON_NULL')
         self.state = state
         self.value = ''
         self.pos = 0
-        self.symbols = cycle('■□$n')
+
+        if self.is_optional:
+            self.symbols = cycle('□■$n')
+        else:
+            self.symbols = cycle('■$')
+
         self.symbol = None
         self.next_symbol()
         self.meta = False
@@ -203,7 +209,7 @@ class Argument(Node):
         addstr(stdscr,
                y,
                x + 2 + len(self.name) + 2,
-               str(self.value),
+               self.value,
                curses.color_pair(2))
 
         return y + 1
@@ -250,14 +256,17 @@ class Argument(Node):
             self.next_symbol()
 
     def query(self):
-        if not self.value:
+        if self.symbol == '■':
+            if self.is_string():
+                return f'"{self.value}"'
+            else:
+                return str(self.value)
+        elif self.symbol == '□':
             return None
-
-        if self.is_string():
-            return f'"{self.value}"'
+        elif self.symbol == '$':
+            return f'${self.value}'
         else:
-            return str(self.value)
-
+            return 'null'
 
 class State:
 
