@@ -108,6 +108,11 @@ Ideas
 
 - Show GraphQL API documentation.
 
+- Check for schema modifications when starting. Do it in the
+  background and notify the user if it was modified.
+
+  New schema fetched from the server. Use it? y/n
+
 - Mutations?
 
 - Subscriptions?
