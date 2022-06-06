@@ -59,8 +59,21 @@ def update(stdscr, endpoint, tree, key, y_offset):
             y_offset -= 1
         else:
             addstr(stdscr, 0, 0, ' ' * x_max)
-            addstr(stdscr, 0, x_max - len(endpoint), endpoint)
-            addstr(stdscr, 0, 0, f'╭─ Query ─ {tree.cursor_type()} ')
+            x_endpoint = (x_max - len(endpoint))
+            addstr(stdscr, 0, x_endpoint, endpoint)
+            description = tree.cursor_description()
+
+            if description:
+                description = f' ─ {description}'
+            else:
+                description = ''
+
+            line = f'╭─ Query ─ {tree.cursor_type()}{description} '
+
+            if len(line) >= x_max:
+                line = line[:x_max - 3] + '...'
+
+            addstr(stdscr, 0, 0, line)
             break
 
     move(stdscr, cursor.y, cursor.x)

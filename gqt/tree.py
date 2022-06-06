@@ -57,6 +57,7 @@ class Node:
         self.next = None
         self.prev = None
         self.type = None
+        self.description = None
 
     def show(self, stdscr, y, x, cursor):
         raise NotImplementedError()
@@ -79,10 +80,11 @@ class Node:
 
 class Object(Node):
 
-    def __init__(self, name, type, fields, is_root=False):
+    def __init__(self, name, type, description, fields, is_root=False):
         super().__init__()
         self.name = name
         self.type = type
+        self.description = description
         self.fields = fields
 
         if not is_root:
@@ -148,11 +150,12 @@ class Object(Node):
 
 class Leaf(Node):
 
-    def __init__(self, name, type):
+    def __init__(self, name, type, description):
         super().__init__()
         self.is_selected = False
         self.name = name
         self.type = type
+        self.description = description
 
     def show(self, stdscr, y, x, cursor):
         if cursor.node is self:
@@ -174,10 +177,11 @@ class Leaf(Node):
 
 class Argument(Node):
 
-    def __init__(self, name, type, state):
+    def __init__(self, name, type, description, state):
         super().__init__()
         self.name = name
         self.type = get_type(type)['name']
+        self.description = description
         self.is_optional = (type['kind'] != 'NON_NULL')
         self.state = state
         self.value = ''
@@ -297,16 +301,18 @@ def build_field(types, field, state):
 
     item = get_type(field['type'])
     type = item['name']
+    description = field['description']
 
     if item['kind'] == 'OBJECT':
         return Object(name,
                       type,
+                      description,
                       ObjectFields(field['args'],
                                    find_type(types, type)['fields'],
                                    types,
                                    state))
     else:
-        return Leaf(name, type)
+        return Leaf(name, type, description)
 
 
 class ObjectFieldsIterator:
@@ -337,7 +343,7 @@ class ObjectFields:
     def fields(self):
         if self._fields is None:
             self._fields = [
-                Argument(arg['name'], arg['type'], self._state)
+                Argument(arg['name'], arg['type'], arg['description'], self._state)
                 for arg in self._arguments_info
             ] + [
                 build_field(self._types, field, self._state)
@@ -370,6 +376,9 @@ class Tree:
 
     def cursor_type(self):
         return self._cursor.type
+
+    def cursor_description(self):
+        return self._cursor.description
 
     def show(self, stdscr, y, x):
         cursor = Cursor()
@@ -454,6 +463,7 @@ def load_tree_from_schema(schema):
     state = State()
     tree = Object(None,
                   query['name'],
+                  None,
                   ObjectFields([], query['fields'], types, state),
                   True)
     tree.fields[0].cursor = True
