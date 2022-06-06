@@ -6,7 +6,6 @@ import shutil
 import subprocess
 import sys
 from contextlib import contextmanager
-from hashlib import blake2b
 
 import requests
 import yaml
@@ -15,9 +14,7 @@ from graphql import get_introspection_query
 from graphql import print_schema
 
 from .cache import CACHE_PATH
-from .cache import read_cached_schema
 from .cache import read_tree_from_cache
-from .cache import write_cached_schema
 from .cache import write_tree_to_cache
 from .screen import addstr
 from .screen import move
@@ -48,12 +45,10 @@ def update(stdscr, endpoint, tree, key, y_offset):
     elif key is not None:
         tree.key(key)
 
-    cursor = Cursor()
-
     while True:
         stdscr.erase()
         y_max, x_max = stdscr.getmaxyx()
-        y = tree.show(stdscr, y_offset, 2, cursor)
+        y, cursor = tree.show(stdscr, y_offset, 2)
 
         for i in range(1, y):
             addstr(stdscr, i, 0, '│')
@@ -75,37 +70,20 @@ def update(stdscr, endpoint, tree, key, y_offset):
 
 
 def fetch_schema(endpoint):
-    try:
-        return read_cached_schema(endpoint)
-    except Exception:
-        pass
-
-    schema, checksum = fetch_schema_from_endpoint(endpoint)
-    write_cached_schema(schema, checksum, endpoint)
-
-    return schema, checksum
-
-
-def fetch_schema_from_endpoint(endpoint):
     response = post(endpoint, {"query": get_introspection_query()})
-    checksum = blake2b(response.content).hexdigest()
     response = response.json()
 
     if 'errors' in response:
         sys.exit(response['errors'])
 
-    return response['data'], checksum
+    return response['data']
 
 
 def load_tree(endpoint):
-    schema, checksum = fetch_schema(endpoint)
-
     try:
-        return read_tree_from_cache(endpoint, checksum), checksum
+        return read_tree_from_cache(endpoint)
     except Exception:
-        pass
-
-    return load_tree_from_schema(schema), checksum
+        return load_tree_from_schema(fetch_schema(endpoint))
 
 
 def selector(stdscr, endpoint, tree):
@@ -134,9 +112,10 @@ def create_query(query):
 
 
 def last_query(endpoint):
-    checksum = fetch_schema(endpoint)[1]
-
-    return read_tree_from_cache(endpoint, checksum)
+    try:
+        return read_tree_from_cache(endpoint)
+    except Exception:
+        sys.exit('No cached query found.')
 
 
 @contextmanager
@@ -152,12 +131,12 @@ def redirect_stdout_to_stderr():
 
 
 def query_builder(endpoint):
-    tree, checksum = load_tree(endpoint)
+    tree = load_tree(endpoint)
 
     with redirect_stdout_to_stderr():
         curses.wrapper(selector, endpoint, tree)
 
-    write_tree_to_cache(tree, endpoint, checksum)
+    write_tree_to_cache(tree, endpoint)
 
     return tree
 
@@ -245,7 +224,7 @@ def main():
 
     try:
         if args.print_schema:
-            schema, _ = fetch_schema_from_endpoint(args.endpoint)
+            schema = fetch_schema(args.endpoint)
             schema = print_schema(build_client_schema(schema))
             show(schema, 'graphql')
         else:
@@ -256,9 +235,9 @@ def main():
 
             query = query.query()
 
-            if args.query:
+            if args.print_query:
                 show(str(query), 'graphql')
-            elif args.curl:
+            elif args.print_curl:
                 query = json.dumps(create_query(query))
                 print(CURL_COMMAND.format(endpoint=args.endpoint, query=query))
             else:

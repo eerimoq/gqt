@@ -362,10 +362,12 @@ class Tree:
     def cursor_type(self):
         return self._cursor.type
 
-    def show(self, stdscr, y, x, cursor):
+    def show(self, stdscr, y, x):
+        cursor = Cursor()
         cursor.node = self._cursor
 
-        return self._root.show(stdscr, y, x, cursor)
+
+        return self._root.show(stdscr, y, x, cursor), cursor
 
     def key_up(self):
         if self._cursor.prev is not None:

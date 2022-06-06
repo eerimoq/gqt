@@ -12,33 +12,17 @@ def make_endpoint_cache_name(endpoint):
     return b64encode(endpoint.encode('utf-8')).decode('utf-8')
 
 
-def make_query_pickle_path(endpoint, checksum):
+def make_query_pickle_path(endpoint):
     name = make_endpoint_cache_name(endpoint)
 
-    return CACHE_PATH / __version__ / name / f'query-{checksum}.pickle'
+    return CACHE_PATH / __version__ / name / 'query.pickle'
 
 
-def read_tree_from_cache(endpoint, checksum):
-    return pickle.loads(make_query_pickle_path(endpoint, checksum).read_bytes())
+def read_tree_from_cache(endpoint):
+    return pickle.loads(make_query_pickle_path(endpoint).read_bytes())
 
 
-def write_tree_to_cache(root, endpoint, checksum):
-    path = make_query_pickle_path(endpoint, checksum)
+def write_tree_to_cache(root, endpoint):
+    path = make_query_pickle_path(endpoint)
     path.parent.mkdir(exist_ok=True, parents=True)
     path.write_bytes(pickle.dumps(root))
-
-
-def make_schema_pickle_path(endpoint):
-    name = make_endpoint_cache_name(endpoint)
-
-    return CACHE_PATH / __version__ / name / 'schema.pickle'
-
-
-def read_cached_schema(endpoint):
-    return pickle.loads(make_schema_pickle_path(endpoint).read_bytes())
-
-
-def write_cached_schema(schema, checksum, endpoint):
-    path = make_schema_pickle_path(endpoint)
-    path.parent.mkdir(exist_ok=True, parents=True)
-    path.write_bytes(pickle.dumps((schema, checksum)))
