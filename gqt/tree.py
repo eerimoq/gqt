@@ -1,5 +1,6 @@
 import curses
 import sys
+from itertools import cycle
 
 from readlike import edit
 
@@ -177,7 +178,9 @@ class Argument(Node):
         self.state = state
         self.value = ''
         self.pos = 0
-        self.symbol = '■'
+        self.symbols = cycle('■□$n')
+        self.symbol = None
+        self.next_symbol()
         self.meta = False
 
     def is_string(self):
@@ -211,12 +214,7 @@ class Argument(Node):
         return y + 1
 
     def next_symbol(self):
-        if self.symbol == '■':
-            self.symbol = '□'
-        elif self.symbol == '$':
-            self.symbol = '■'
-        else:
-            self.symbol = '$'
+        self.symbol = next(self.symbols)
 
     def key_left(self):
         if self.state.cursor_at_input_field:
