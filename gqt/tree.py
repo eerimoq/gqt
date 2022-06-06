@@ -57,13 +57,7 @@ class Node:
         self.prev = None
 
     def show(self, stdscr, y, x, cursor):
-        pass
-
-    def key_up(self):
-        return False
-
-    def key_down(self):
-        return False
+        raise NotImplementedError()
 
     def key_left(self):
         return False
@@ -78,7 +72,7 @@ class Node:
         pass
 
     def query(self):
-        pass
+        raise NotImplementedError()
 
 
 class Object(Node):
@@ -117,9 +111,6 @@ class Object(Node):
         return y
 
     def query(self):
-        if not self.is_expanded:
-            return
-
         items = []
         arguments = []
 
@@ -359,9 +350,6 @@ class ObjectFields:
     def __iter__(self):
         return ObjectFieldsIterator(self.fields())
 
-    def __len__(self):
-        return len(self.fields())
-
     def __getitem__(self, key):
         return self.fields()[key]
 
@@ -378,18 +366,12 @@ class Tree:
         return self._root.show(stdscr, y, x, cursor)
 
     def key_up(self):
-        if self._cursor.key_up():
-            return
-
         if self._cursor.prev is not None:
             self._cursor = self._find_last(self._cursor.prev)
         elif self._cursor.parent is not None:
             self._cursor = self._cursor.parent
 
     def key_down(self):
-        if self._cursor.key_down():
-            return
-
         if isinstance(self._cursor, Object):
             if self._cursor.is_expanded:
                 self._cursor = self._cursor.fields[0]

@@ -114,11 +114,29 @@ Ideas
 
 - Arguments and variables:
 
+  For required arguments without default value:
+
   .. code-block::
 
-     ■: not null
-     □: null
+     ■: non-null value
      $: variable
+
+  For required arguments with default value:
+
+  .. code-block::
+
+     □: omit
+     ■: non-null value
+     $: variable
+
+  For optional arguments:
+
+  .. code-block::
+
+     □: omit
+     ■: non-null value
+     $: variable
+     n: null
 
   Scalar example:
 

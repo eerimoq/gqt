@@ -1,5 +1,5 @@
 test:
-	coverage run -m unittest
+	coverage run --include "gqt/*" -m unittest
 	coverage html
 
 lint:

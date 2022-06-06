@@ -125,7 +125,7 @@ class TreeTest(unittest.TestCase):
 
     def test_argument(self):
         schema = ('type Query {'
-                  '  a(b: String, c: Int): Foo'
+                  '  a(b: String, c: Int, d: Int!): Foo'
                   '}'
                   'type Foo {'
                   '  d: String'
@@ -140,10 +140,11 @@ class TreeTest(unittest.TestCase):
         tree.key_right()
         tree.key('C')
         tree.key_down()
+        tree.key_down()
         tree.key('1')
         tree.key_down()
         tree.select()
-        self.assertEqual(tree.query(), '{a(b:"ABC",c:1) {d}}')
+        self.assertEqual(tree.query(), '{a(b:"ABC",d:1) {d}}')
 
     def test_move_down_at_expanded_object_at_bottom(self):
         schema = ('type Query {'
