@@ -223,10 +223,10 @@ def main():
     parser.add_argument('-y', '--yaml',
                         action='store_true',
                         help='Print the response as YAML instead of JSON.')
-    parser.add_argument('-q', '--query',
+    parser.add_argument('-q', '--print-query',
                         action='store_true',
                         help='Print the query instead of executing it.')
-    parser.add_argument('-c', '--curl',
+    parser.add_argument('-c', '--print-curl',
                         action='store_true',
                         help='Print the cURL command instead of executing it.')
     parser.add_argument('-p', '--print-schema',
