@@ -22,10 +22,13 @@ class TreeTest(unittest.TestCase):
                   '  message: String!'
                   '}')
         tree = load_tree(schema)
+        self.assertEqual(tree.cursor_type(), 'Activity')
         tree.key_up()
         tree.key_down()
         tree.key_right()
+        self.assertEqual(tree.cursor_type(), 'Activity')
         tree.key_down()
+        self.assertEqual(tree.cursor_type(), 'String')
         # Select date.
         tree.select()
         tree.key_down()
@@ -36,6 +39,7 @@ class TreeTest(unittest.TestCase):
         tree.select()
         tree.select()
         self.assertEqual(tree.query(), '{activity {date message}}')
+        self.assertEqual(tree.cursor_type(), 'String')
 
     def test_move_up_into_expanded_object(self):
         schema = ('type Query {'
@@ -66,6 +70,7 @@ class TreeTest(unittest.TestCase):
         # Select c.
         tree.select()
         self.assertEqual(tree.query(), '{foo {bar {c} fie}}')
+        self.assertEqual(tree.cursor_type(), 'String')
 
     def test_move_up_through_expanded_objects(self):
         schema = ('type Query {'
@@ -93,6 +98,7 @@ class TreeTest(unittest.TestCase):
         # Select a.
         tree.select()
         self.assertEqual(tree.query(), '{a b {c {d}}}')
+        self.assertEqual(tree.cursor_type(), 'String')
 
     def test_move_left_collapse_objects(self):
         schema = ('type Query {'
@@ -115,6 +121,7 @@ class TreeTest(unittest.TestCase):
         # Select d.
         tree.select()
         self.assertEqual(tree.query(), '{a {c {c {d}}}}')
+        self.assertEqual(tree.cursor_type(), 'String')
         # Collapse.
         tree.key_left()
         tree.key_left()
@@ -126,6 +133,7 @@ class TreeTest(unittest.TestCase):
         # Select b.
         tree.select()
         self.assertEqual(tree.query(), '{b}')
+        self.assertEqual(tree.cursor_type(), 'String')
 
     def test_argument(self):
         schema = ('type Query {'
@@ -149,6 +157,7 @@ class TreeTest(unittest.TestCase):
         tree.key_down()
         tree.select()
         self.assertEqual(tree.query(), '{a(b:"ABC",d:1) {d}}')
+        self.assertEqual(tree.cursor_type(), 'String')
 
     def test_move_down_at_expanded_object_at_bottom(self):
         schema = ('type Query {'
@@ -163,6 +172,7 @@ class TreeTest(unittest.TestCase):
         tree.key_down()
         tree.select()
         self.assertEqual(tree.query(), '{a {b}}')
+        self.assertEqual(tree.cursor_type(), 'String')
 
     def test_input_argument(self):
         with self.assertRaises(SystemExit):
@@ -194,3 +204,4 @@ class TreeTest(unittest.TestCase):
             tree.key_down()
             tree.select()
             self.assertEqual(tree.query(), '{info(config: {unit: "metric"}) {size}}')
+            self.assertEqual(tree.cursor_type(), 'todo')

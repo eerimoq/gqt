@@ -56,6 +56,7 @@ class Node:
         self.parent = None
         self.next = None
         self.prev = None
+        self.type = None
 
     def show(self, stdscr, y, x, cursor):
         raise NotImplementedError()
@@ -78,9 +79,10 @@ class Node:
 
 class Object(Node):
 
-    def __init__(self, name, fields, is_root=False):
+    def __init__(self, name, type, fields, is_root=False):
         super().__init__()
         self.name = name
+        self.type = type
         self.fields = fields
 
         if not is_root:
@@ -146,10 +148,11 @@ class Object(Node):
 
 class Leaf(Node):
 
-    def __init__(self, name):
+    def __init__(self, name, type):
         super().__init__()
         self.is_selected = False
         self.name = name
+        self.type = type
 
     def show(self, stdscr, y, x, cursor):
         if cursor.node is self:
@@ -174,7 +177,7 @@ class Argument(Node):
     def __init__(self, name, type, state):
         super().__init__()
         self.name = name
-        self.type = type
+        self.type = get_type(type)['name']
         self.state = state
         self.value = ''
         self.pos = 0
@@ -184,32 +187,24 @@ class Argument(Node):
         self.meta = False
 
     def is_string(self):
-        item = self.type
-
-        while item['kind'] == 'NON_NULL':
-            item = item['ofType']
-
-        return item['name'] in ['String', 'ID']
+        return self.type in ['String', 'ID']
 
     def show(self, stdscr, y, x, cursor):
-        if self.is_string():
-            value = f'"{self.value}"'
-            offset = 1
-        else:
-            value = str(self.value)
-            offset = 0
-
         if cursor.node is self:
             cursor.y = y
 
             if self.state.cursor_at_input_field:
-                cursor.x = x + len(self.name) + 4 + self.pos + offset
+                cursor.x = x + len(self.name) + 4 + self.pos
             else:
                 cursor.x = x
 
         addstr(stdscr, y, x, self.symbol, curses.color_pair(3))
         addstr(stdscr, y, x + 2, f'{self.name}:')
-        addstr(stdscr, y, x + 2 + len(self.name) + 2, value, curses.color_pair(2))
+        addstr(stdscr,
+               y,
+               x + 2 + len(self.name) + 2,
+               str(self.value),
+               curses.color_pair(2))
 
         return y + 1
 
@@ -278,25 +273,31 @@ def find_type(types, name):
     raise Exception(f"Type '{name}' not found in schema.")
 
 
+def get_type(type):
+    while type['kind'] in ['NON_NULL', 'LIST']:
+        type = type['ofType']
+
+    return type
+
+
 def build_field(types, field, state):
     try:
         name = field['name']
     except Exception:
         sys.exit("No field name.")
 
-    item = field['type']
-
-    while item['kind'] in ['NON_NULL', 'LIST']:
-        item = item['ofType']
+    item = get_type(field['type'])
+    type = item['name']
 
     if item['kind'] == 'OBJECT':
         return Object(name,
+                      type,
                       ObjectFields(field['args'],
-                                   find_type(types, item['name'])['fields'],
+                                   find_type(types, type)['fields'],
                                    types,
                                    state))
     else:
-        return Leaf(name)
+        return Leaf(name, type)
 
 
 class ObjectFieldsIterator:
@@ -357,6 +358,9 @@ class Tree:
     def __init__(self, root):
         self._root = root
         self._cursor = root.fields[0]
+
+    def cursor_type(self):
+        return self._cursor.type
 
     def show(self, stdscr, y, x, cursor):
         cursor.node = self._cursor
@@ -438,6 +442,7 @@ def load_tree_from_schema(schema):
     query = find_type(types, schema['__schema']['queryType']['name'])
     state = State()
     tree = Object(None,
+                  query['name'],
                   ObjectFields([], query['fields'], types, state),
                   True)
     tree.fields[0].cursor = True

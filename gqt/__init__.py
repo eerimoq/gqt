@@ -65,7 +65,7 @@ def update(stdscr, endpoint, tree, key, y_offset):
         else:
             addstr(stdscr, 0, 0, ' ' * x_max)
             addstr(stdscr, 0, x_max - len(endpoint), endpoint)
-            addstr(stdscr, 0, 0, '╭─ Query')
+            addstr(stdscr, 0, 0, f'╭─ Query ─ {tree.cursor_type()} ')
             break
 
     move(stdscr, cursor.y, cursor.x)
