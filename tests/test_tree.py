@@ -6,6 +6,10 @@ from graphql import introspection_from_schema
 from gqt.tree import load_tree_from_schema
 
 
+def load_tree(schema):
+    return load_tree_from_schema(introspection_from_schema(build_schema(schema)))
+
+
 class TreeTest(unittest.TestCase):
 
     def test_basic(self):
@@ -17,7 +21,7 @@ class TreeTest(unittest.TestCase):
                   '  kind: String!'
                   '  message: String!'
                   '}')
-        tree = load_tree_from_schema(introspection_from_schema(build_schema(schema)))
+        tree = load_tree(schema)
         tree.key_up()
         tree.key_down()
         tree.key_right()
@@ -46,7 +50,7 @@ class TreeTest(unittest.TestCase):
                   '  b: String'
                   '  c: String'
                   '}')
-        tree = load_tree_from_schema(introspection_from_schema(build_schema(schema)))
+        tree = load_tree(schema)
         # Expand foo.
         tree.key_right()
         tree.key_down()
@@ -72,7 +76,7 @@ class TreeTest(unittest.TestCase):
                   '  c: Foo'
                   '  d: String'
                   '}')
-        tree = load_tree_from_schema(introspection_from_schema(build_schema(schema)))
+        tree = load_tree(schema)
         tree.key_down()
         # Expand b.
         tree.key_right()
@@ -99,7 +103,7 @@ class TreeTest(unittest.TestCase):
                   '  c: Foo'
                   '  d: String'
                   '}')
-        tree = load_tree_from_schema(introspection_from_schema(build_schema(schema)))
+        tree = load_tree(schema)
         # Expand.
         tree.key_right()
         tree.key_right()
@@ -130,7 +134,7 @@ class TreeTest(unittest.TestCase):
                   'type Foo {'
                   '  d: String'
                   '}')
-        tree = load_tree_from_schema(introspection_from_schema(build_schema(schema)))
+        tree = load_tree(schema)
         tree.key_right()
         tree.key_down()
         tree.key('\t')
@@ -153,9 +157,40 @@ class TreeTest(unittest.TestCase):
                   'type Foo {'
                   '  b: String'
                   '}')
-        tree = load_tree_from_schema(introspection_from_schema(build_schema(schema)))
+        tree = load_tree(schema)
         tree.key_right()
         tree.key_down()
         tree.key_down()
         tree.select()
         self.assertEqual(tree.query(), '{a {b}}')
+
+    def test_input_argument(self):
+        with self.assertRaises(SystemExit):
+            schema = ('type Query {'
+                      '  info(config: ConfigInput): Info'
+                      '}'
+                      'type Info {'
+                      '  size: Int!'
+                      '}'
+                      'input ConfigInput {'
+                      '  unit: String!'
+                      '  width: Int'
+                      '}')
+            tree = load_tree(schema)
+            tree.key_right()
+            tree.key_down()
+            # Expand config argument.
+            tree.select()
+            tree.key_down()
+            tree.select()
+            tree.key('\t')
+            tree.key('m')
+            tree.key('e')
+            tree.key('t')
+            tree.key('r')
+            tree.key('i')
+            tree.key('c')
+            tree.key_down()
+            tree.key_down()
+            tree.select()
+            self.assertEqual(tree.query(), '{info(config: {unit: "metric"}) {size}}')
