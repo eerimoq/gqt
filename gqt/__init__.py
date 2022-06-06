@@ -270,5 +270,5 @@ def main():
                     show(data, 'json')
     except KeyboardInterrupt:
         sys.exit(1)
-    #except BaseException as error:
-    #    sys.exit(f'error: {error}')
+    except BaseException as error:
+        sys.exit(f'error: {error}')
