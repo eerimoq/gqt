@@ -198,5 +198,25 @@ Ideas
      $ gqt -v
      {"name": "foo", "kind": [{"a": "bar", "b": "ne"}]}
 
+- Leaves with arguments:
+
+  .. code-block::
+
+     type Query {
+         foo(id: Int, name: String): String
+     }
+
+     Unselected:
+
+     ╭─ Query
+     │ □ foo
+
+     Selected:
+
+     ╭─ Query
+     │ ■ foo
+     │   ■ id: 5
+     │   □ name:
+
 .. _jq: https://github.com/stedolan/jq
 .. _bat: https://github.com/sharkdp/bat
