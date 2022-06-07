@@ -15,11 +15,11 @@ from .tree import load_tree_from_schema
 
 def format_title(kind, tree, description, x_max):
     if tree is not None:
-        type = f' ─ {tree.cursor_type()}'
+        field_type = f' ─ {tree.cursor_type()}'
     else:
-        type = ''
+        field_type = ''
 
-    line = f'╭─ {kind}{type}{description} '
+    line = f'╭─ {kind}{field_type}{description} '
 
     if len(line) >= x_max:
         line = line[:x_max - 3] + '...'
@@ -90,8 +90,8 @@ def update(stdscr, endpoint, tree, key, y_offset):
     return False, y_offset
 
 
-def fetch_schema(endpoint):
-    response = post(endpoint, {"query": get_introspection_query()})
+def fetch_schema(endpoint, verify):
+    response = post(endpoint, {"query": get_introspection_query()}, verify)
     response = response.json()
 
     if 'errors' in response:
@@ -100,11 +100,11 @@ def fetch_schema(endpoint):
     return response['data']
 
 
-def load_tree(endpoint):
+def load_tree(endpoint, verify):
     try:
         return read_tree_from_cache(endpoint)
     except Exception:
-        return load_tree_from_schema(fetch_schema(endpoint))
+        return load_tree_from_schema(fetch_schema(endpoint, verify))
 
 
 def selector(stdscr, endpoint, tree):
@@ -140,8 +140,8 @@ def redirect_stdout_to_stderr():
         os.close(original_stdout)
 
 
-def query_builder(endpoint):
-    tree = load_tree(endpoint)
+def query_builder(endpoint, verify):
+    tree = load_tree(endpoint, verify)
 
     with redirect_stdout_to_stderr():
         curses.wrapper(selector, endpoint, tree)
@@ -151,8 +151,8 @@ def query_builder(endpoint):
     return tree
 
 
-def post(endpoint, query):
-    response = requests.post(endpoint, json=query)
+def post(endpoint, query, verify):
+    response = requests.post(endpoint, json=query, verify=verify)
 
     if response.status_code != 200:
         print(response.text, file=sys.stderr)

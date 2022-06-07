@@ -115,14 +115,14 @@ class Object(Node):
 
     def __init__(self,
                  name,
-                 type,
+                 field_type,
                  description,
                  fields,
                  number_of_query_fields,
                  is_root=False):
         super().__init__()
         self.name = name
-        self.type = type
+        self.type = field_type
         self.description = description
         self.fields = fields
 
@@ -191,11 +191,11 @@ class Object(Node):
 
 class Leaf(Node):
 
-    def __init__(self, name, type, description):
+    def __init__(self, name, field_type, description):
         super().__init__()
         self.is_selected = False
         self.name = name
-        self.type = type
+        self.type = field_type
         self.description = description
 
     def show(self, stdscr, y, x, cursor):
@@ -218,12 +218,12 @@ class Leaf(Node):
 
 class Argument(Node):
 
-    def __init__(self, name, type, description, state):
+    def __init__(self, name, field_type, description, state):
         super().__init__()
         self.name = name
-        self.type = get_type(type)['name']
+        self.type = get_type(field_type)['name']
         self.description = description
-        self.is_optional = (type['kind'] != 'NON_NULL')
+        self.is_optional = (field_type['kind'] != 'NON_NULL')
         self.state = state
         self.value = ''
         self.pos = 0
@@ -320,18 +320,18 @@ class State:
 
 
 def find_type(types, name):
-    for type in types:
-        if type['name'] == name:
-            return type
+    for type_info in types:
+        if type_info['name'] == name:
+            return type_info
 
     raise Exception(f"Type '{name}' not found in schema.")
 
 
-def get_type(type):
-    while type['kind'] in ['NON_NULL', 'LIST']:
-        type = type['ofType']
+def get_type(type_info):
+    while type_info['kind'] in ['NON_NULL', 'LIST']:
+        type_info = type_info['ofType']
 
-    return type
+    return type_info
 
 
 def build_field(types, field, state):
@@ -341,19 +341,19 @@ def build_field(types, field, state):
         sys.exit("No field name.")
 
     item = get_type(field['type'])
-    type = item['name']
+    field_type = item['name']
     description = field['description']
 
     if item['kind'] == 'OBJECT':
-        fields = find_type(types, type)['fields']
+        fields = find_type(types, field_type)['fields']
 
         return Object(name,
-                      type,
+                      field_type,
                       description,
                       ObjectFields(field['args'], fields, types, state),
                       len(fields))
     else:
-        return Leaf(name, type, description)
+        return Leaf(name, field_type, description)
 
 
 class ObjectFieldsIterator:

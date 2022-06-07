@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import os
 import shutil
 import subprocess
@@ -32,8 +33,8 @@ def last_query(endpoint):
         sys.exit('No cached query found.')
 
 
-def execute_query(endpoint, query, format_yaml):
-    json_response = post(endpoint, query).json()
+def execute_query(endpoint, query, version, format_yaml):
+    json_response = post(endpoint, query, version).json()
 
     if 'errors' in json_response:
         sys.exit(json_response['errors'])
@@ -95,6 +96,9 @@ def main():
     parser.add_argument('-C', '--clear-cache',
                         action='store_true',
                         help='Clear the cache and exit.')
+    parser.add_argument('--no-verify',
+                        action='store_true',
+                        help='No SSL verification.')
     args = parser.parse_args()
 
     CACHE_PATH.mkdir(exist_ok=True, parents=True)
@@ -103,15 +107,20 @@ def main():
         shutil.rmtree(CACHE_PATH)
         return
 
+    logging.captureWarnings(True)
+    verify = not args.no_verify
+
     try:
         if args.print_schema:
-            schema = print_schema(build_client_schema(fetch_schema(args.endpoint)))
+            schema = print_schema(
+                build_client_schema(
+                    fetch_schema(args.endpoint, verify)))
             show(schema, 'graphql')
         else:
             if args.repeat:
                 query = last_query(args.endpoint)
             else:
-                query = query_builder(args.endpoint)
+                query = query_builder(args.endpoint, verify)
 
             query = query.query()
 
@@ -121,7 +130,10 @@ def main():
                 query = json.dumps(create_query(query))
                 print(CURL_COMMAND.format(endpoint=args.endpoint, query=query))
             else:
-                data = execute_query(args.endpoint, create_query(query), args.yaml)
+                data = execute_query(args.endpoint,
+                                     create_query(query),
+                                     verify,
+                                     args.yaml)
 
                 if args.yaml:
                     show(data, 'yaml')
