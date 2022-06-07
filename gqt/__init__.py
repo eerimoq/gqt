@@ -14,7 +14,6 @@ from .cache import read_tree_from_cache
 from .query_builder import fetch_schema
 from .query_builder import post
 from .query_builder import query_builder
-from .screen import addstr
 from .version import __version__
 
 

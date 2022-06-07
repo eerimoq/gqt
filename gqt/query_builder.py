@@ -13,6 +13,20 @@ from .screen import move
 from .tree import load_tree_from_schema
 
 
+def format_title(kind, tree, description, x_max):
+    if tree is not None:
+        type = f' ─ {tree.cursor_type()}'
+    else:
+        type = ''
+
+    line = f'╭─ {kind}{type}{description} '
+
+    if len(line) >= x_max:
+        line = line[:x_max - 3] + '...'
+
+    return line
+
+
 def update(stdscr, endpoint, tree, key, y_offset):
     if key == 'KEY_UP':
         tree.key_up()
@@ -36,14 +50,14 @@ def update(stdscr, endpoint, tree, key, y_offset):
         y_max, x_max = stdscr.getmaxyx()
         y, cursor = tree.show(stdscr, y_offset, 2)
 
-        for i in range(1, y):
-            addstr(stdscr, i, 0, '│')
-
         if cursor.y < 1:
             y_offset += 1
         elif cursor.y >= y_max:
             y_offset -= 1
         else:
+            for i in range(y):
+                addstr(stdscr, i, 0, '│')
+
             addstr(stdscr, 0, 0, ' ' * x_max)
             x_endpoint = (x_max - len(endpoint))
             addstr(stdscr, 0, x_endpoint, endpoint)
@@ -55,12 +69,19 @@ def update(stdscr, endpoint, tree, key, y_offset):
             else:
                 description = ''
 
-            line = f'╭─ Query ─ {tree.cursor_type()}{description} '
+            if cursor.y_mutation == -1 or cursor.y < cursor.y_mutation:
+                query_line = format_title('Query', tree, description, x_max)
+                mutation_line = format_title('Mutation', None, '', x_max)
+            else:
+                query_line = format_title('Query', None, '', x_max)
+                mutation_line = format_title('Mutation', tree, description, x_max)
 
-            if len(line) >= x_max:
-                line = line[:x_max - 3] + '...'
+            addstr(stdscr, 0, 0, query_line)
 
-            addstr(stdscr, 0, 0, line)
+            if cursor.y_mutation != -1:
+                addstr(stdscr, cursor.y_mutation - 2, 0, ' ')
+                addstr(stdscr, cursor.y_mutation - 1, 0, mutation_line)
+
             break
 
     move(stdscr, cursor.y, cursor.x)

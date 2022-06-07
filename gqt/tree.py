@@ -42,12 +42,45 @@ KEY_BINDINGS = {
 }
 
 
+def find_root_field(cursor):
+    if cursor.parent is None:
+        return cursor
+    else:
+        return find_root_field(cursor.parent)
+
+
+def fields_query(fields):
+    items = []
+    arguments = []
+
+    for field in fields:
+        if isinstance(field, Leaf):
+            if field.is_selected:
+                items.append(field.name)
+        elif isinstance(field, Argument):
+            value = field.query()
+
+            if value is not None:
+                arguments.append(f'{field.name}:{value}')
+        elif isinstance(field, Object):
+            if field.is_expanded:
+                items.append(field.query())
+
+    if arguments:
+        arguments = '(' + ','.join(arguments) + ')'
+    else:
+        arguments = ''
+
+    return ' '.join(items), arguments
+
+
 class Cursor:
 
     def __init__(self):
         self.node = None
         self.y = 0
         self.x = 0
+        self.y_mutation = -1
 
 
 class Node:
@@ -80,7 +113,13 @@ class Node:
 
 class Object(Node):
 
-    def __init__(self, name, type, description, fields, is_root=False):
+    def __init__(self,
+                 name,
+                 type,
+                 description,
+                 fields,
+                 number_of_query_fields,
+                 is_root=False):
         super().__init__()
         self.name = name
         self.type = type
@@ -91,6 +130,7 @@ class Object(Node):
             self.fields.parent = self
 
         self.is_root = is_root
+        self.number_of_query_fields = number_of_query_fields
         self.is_expanded = is_root
 
     def show(self, stdscr, y, x, cursor):
@@ -99,7 +139,11 @@ class Object(Node):
             cursor.x = x
 
         if self.is_root:
-            for field in self.fields:
+            for i, field in enumerate(self.fields):
+                if i == self.number_of_query_fields:
+                    y += 2
+                    cursor.y_mutation = y
+
                 y = field.show(stdscr, y, x, cursor)
         elif self.is_expanded:
             addstr(stdscr, y, x, '▼', curses.color_pair(1))
@@ -116,36 +160,33 @@ class Object(Node):
         return y
 
     def query(self):
-        items = []
-        arguments = []
-
-        for field in self.fields:
-            if isinstance(field, Leaf):
-                if field.is_selected:
-                    items.append(field.name)
-            elif isinstance(field, Argument):
-                value = field.query()
-
-                if value is not None:
-                    arguments.append(f'{field.name}:{value}')
-            elif isinstance(field, Object):
-                if field.is_expanded:
-                    items.append(field.query())
-
-        if arguments:
-            arguments = '(' + ','.join(arguments) + ')'
-        else:
-            arguments = ''
+        items, arguments = fields_query(self.fields)
 
         if items:
-            if self.is_root:
-                return '{' + ' '.join(items) + '}'
-            else:
-                return f'{self.name}{arguments} {{' + ' '.join(items) + '}'
-        elif self.is_root:
-            sys.exit("No fields selected.")
+            return f'{self.name}{arguments} {{{items}}}'
         else:
             sys.exit(f"No fields selected in '{self.name}'.")
+
+    def query_root(self, cursor):
+        cursor_root_index = self.fields.index(find_root_field(cursor))
+        is_query = (cursor_root_index < self.number_of_query_fields)
+
+        if is_query:
+            fields = self.fields[:self.number_of_query_fields]
+        else:
+            fields = self.fields[self.number_of_query_fields:]
+
+        items, _ = fields_query(fields)
+
+        if items:
+            if is_query:
+                kind = 'query Query'
+            else:
+                kind = 'mutation Mutation'
+
+            return f"{kind} {{{items}}}"
+        else:
+            sys.exit("No fields selected.")
 
 
 class Leaf(Node):
@@ -304,13 +345,13 @@ def build_field(types, field, state):
     description = field['description']
 
     if item['kind'] == 'OBJECT':
+        fields = find_type(types, type)['fields']
+
         return Object(name,
                       type,
                       description,
-                      ObjectFields(field['args'],
-                                   find_type(types, type)['fields'],
-                                   types,
-                                   state))
+                      ObjectFields(field['args'], fields, types, state),
+                      len(fields))
     else:
         return Leaf(name, type, description)
 
@@ -364,6 +405,12 @@ class ObjectFields:
     def __iter__(self):
         return ObjectFieldsIterator(self.fields())
 
+    def __len__(self):
+        return len(self.fields())
+
+    def index(self, item):
+        return self.fields().index(item)
+
     def __getitem__(self, key):
         return self.fields()[key]
 
@@ -383,7 +430,6 @@ class Tree:
     def show(self, stdscr, y, x):
         cursor = Cursor()
         cursor.node = self._cursor
-
 
         return self._root.show(stdscr, y, x, cursor), cursor
 
@@ -436,7 +482,7 @@ class Tree:
         self._cursor.key(key)
 
     def query(self):
-        return self._root.query()
+        return self._root.query_root(self._cursor)
 
     def _find_first_below(self, node):
         if node.parent is not None:
@@ -459,12 +505,26 @@ class Tree:
 
 def load_tree_from_schema(schema):
     types = schema['__schema']['types']
-    query = find_type(types, schema['__schema']['queryType']['name'])
+    query_type = schema['__schema']['queryType']
+
+    if query_type is not None:
+        query_fields = find_type(types, query_type['name'])['fields']
+    else:
+        query_fields = []
+
+    mutation_type = schema['__schema']['mutationType']
+
+    if mutation_type is not None:
+        mutation_fields = find_type(types, mutation_type['name'])['fields']
+    else:
+        mutation_fields = []
+
     state = State()
     tree = Object(None,
-                  query['name'],
+                  '',
                   None,
-                  ObjectFields([], query['fields'], types, state),
+                  ObjectFields([], query_fields + mutation_fields, types, state),
+                  len(query_fields),
                   True)
     tree.fields[0].cursor = True
 
