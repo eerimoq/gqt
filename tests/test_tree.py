@@ -221,3 +221,25 @@ class TreeTest(unittest.TestCase):
             self.assertEqual(tree.query(),
                              'query Query {info(config: {unit: "metric"}) {size}}')
             self.assertEqual(tree.cursor_type(), 'todo')
+
+    def test_mutation(self):
+            schema = ('type Query {'
+                      '  a: String'
+                      '}'
+                      'type Mutation {'
+                      '  b(c: Int!): Info'
+                      '}'
+                      'type Info {'
+                      '  size: Int!'
+                      '}')
+            tree = load_tree(schema)
+            tree.key_down()
+            self.assertEqual(tree.cursor_type(), 'Info')
+            tree.key_right()
+            tree.key_down()
+            tree.key('\t')
+            tree.key('5')
+            tree.key_down()
+            self.assertEqual(tree.cursor_type(), 'Int')
+            tree.select()
+            self.assertEqual(tree.query(), 'mutation Mutation {b(c:5) {size}}')
