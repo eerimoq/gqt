@@ -189,39 +189,6 @@ class TreeTest(unittest.TestCase):
         self.assertEqual(tree.query(), 'query Query {a {b}}')
         self.assertEqual(tree.cursor_type(), 'String')
 
-    def test_input_argument(self):
-        with self.assertRaises(SystemExit):
-            schema = ('type Query {'
-                      '  info(config: ConfigInput): Info'
-                      '}'
-                      'type Info {'
-                      '  size: Int!'
-                      '}'
-                      'input ConfigInput {'
-                      '  unit: String!'
-                      '  width: Int'
-                      '}')
-            tree = load_tree(schema)
-            tree.key_right()
-            tree.key_down()
-            # Expand config argument.
-            tree.select()
-            tree.key_down()
-            tree.select()
-            tree.key('\t')
-            tree.key('m')
-            tree.key('e')
-            tree.key('t')
-            tree.key('r')
-            tree.key('i')
-            tree.key('c')
-            tree.key_down()
-            tree.key_down()
-            tree.select()
-            self.assertEqual(tree.query(),
-                             'query Query {info(config: {unit: "metric"}) {size}}')
-            self.assertEqual(tree.cursor_type(), 'todo')
-
     def test_mutation(self):
             schema = ('type Query {'
                       '  a: String'
@@ -243,3 +210,23 @@ class TreeTest(unittest.TestCase):
             self.assertEqual(tree.cursor_type(), 'Int')
             tree.select()
             self.assertEqual(tree.query(), 'mutation Mutation {b(c:5) {size}}')
+
+    def test_recursive_type(self):
+        schema = ('type Query {'
+                  '  foo: Foo'
+                  '}'
+                  'type Foo {'
+                  '  foo: Foo'
+                  '  value: String'
+                  '}')
+        tree = load_tree(schema)
+        # Expand foo.
+        tree.key_right()
+        tree.key_down()
+        tree.key_right()
+        tree.key_down()
+        # Select value.
+        tree.key_down()
+        self.assertEqual(tree.cursor_type(), 'String')
+        tree.select()
+        self.assertEqual(tree.query(), 'query Query {foo {foo {value}}}')
