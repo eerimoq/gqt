@@ -106,97 +106,12 @@ Known issues
 Ideas
 -----
 
-- Show GraphQL API documentation.
-
 - Check for schema modifications when starting. Do it in the
   background and notify the user if it was modified.
 
   New schema fetched from the server. Use it? y/n
 
-- Mutations?
-
-- Subscriptions?
-
-- Arguments and variables:
-
-  For required arguments with default value:
-
-  .. code-block::
-
-     □: omit
-     ■: non-null value
-     $: variable
-
-  Scalar example:
-
-  .. code-block::
-
-     ╭─ Query
-     │ ▼ standard_library
-     │   ▼ package
-     │     ■ name: ""
-     │     □ name
-     │   ▶ packages
-
-  List example:
-
-  .. code-block::
-
-     ╭─ Query
-     │ ▼ item
-     │   □ kinds:
-     │   ■ kinds2:
-     │     [0] ■ a: "foo"
-     │         ■ b: "eq"
-     │         ■ c:
-     │           [0] ■ a: "x"
-     │               ■ b: "y"
-     │           [1]
-     │     [1] ■ a: "bar"
-     │         ■ b: "ne"
-     │         □ c:
-     │     [2]
-
-  Input example:
-
-  .. code-block::
-
-     ╭─ Query
-     │ ▼ item
-     │   ■ config:
-     │     ■ unit: "metric"
-     │     □ width:
-     │   □ length
-     │   □ weight
-
-  Variables example:
-
-  .. code-block::
-
-     ╭─ Query
-     │ ▼ standardLibrary
-     │   ▼ package
-     │     $ name: name
-     │     ■ id: 5
-     │     $ kind: kind
-     │     □ name
-     │   □ numberOfDownloads
-     │ ▶ statistics
-
-     ╭─ Variables
-     │ name: "foo"
-     │ kind:
-     │   [0] ■ a: "bar"
-     │       ■ b: "ne"
-     │       □ c:
-     │   [1]
-
-  Print the variables:
-
-  .. code-block:: shell
-
-     $ gqt -v
-     {"name": "foo", "kind": [{"a": "bar", "b": "ne"}]}
+- Subscriptions. Probably out of scope.
 
 - Leaves with arguments:
 
@@ -217,6 +132,107 @@ Ideas
      │ ■ foo
      │   ■ id: 5
      │   □ name:
+
+- Required arguments with default value:
+
+  .. code-block::
+
+     □: omit
+     ■: non-null value
+     $: variable
+
+- List argument example:
+
+  .. code-block::
+
+     ╭─ Query
+     │ ▼ item
+     │   ■ kinds:
+     │     [0] ■ a: foo
+     │         ■ b: eq
+     │         ■ c:
+     │           [0] ■ a: x
+     │               ■ b: y
+     │           [1]
+     │     [1] ■ a: bar
+     │         ■ b: ne
+     │         □ c:
+     │     [2]
+
+- Input example:
+
+  .. code-block::
+
+     ╭─ Query
+     │ ▼ item
+     │   ■ config:
+     │     ■ unit: metric
+     │     □ width:
+     │   □ length
+     │   □ weight
+
+- Variables example:
+
+  .. code-block::
+
+     ╭─ Query
+     │ ▼ standardLibrary
+     │   ▼ package
+     │     $ name: name
+     │     ■ id: 5
+     │     $ kind: kind
+     │     □ name
+     │   □ numberOfDownloads
+     │ ▶ statistics
+
+     ╭─ Variables
+     │ name: time
+     │ kind:
+     │   [0] ■ a: bar
+     │       ■ b: ne
+     │       □ c:
+     │   [1]
+
+- Print variables:
+
+  .. code-block:: shell
+
+     $ gqt -v
+     {"name": "foo", "kind": [{"a": "bar", "b": "ne"}]}
+
+- Unions:
+
+  Always query ``__typename``.
+
+  .. code-block::
+
+     union SearchResult = Book | Author
+
+     type Book {
+       title: String!
+     }
+
+     type Author {
+       name: String!
+     }
+
+     type Query {
+       search(contains: String): [SearchResult!]
+     }
+
+     Unselected:
+
+     ╭─ Query
+     │ ▶ search
+
+     Selected:
+
+     ╭─ Query
+     │ ▼ search
+     │   ▶ Book
+     │     ■ title
+     │   ▶ Author
+     │     ■ name
 
 .. _jq: https://github.com/stedolan/jq
 .. _bat: https://github.com/sharkdp/bat
