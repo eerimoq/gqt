@@ -106,13 +106,6 @@ Known issues
 Ideas
 -----
 
-- Check for schema modifications when starting. Do it in the
-  background and notify the user if it was modified.
-
-  New schema fetched from the server. Use it? y/n
-
-- Subscriptions. Probably out of scope.
-
 - Leaves with arguments:
 
   .. code-block::
@@ -140,6 +133,11 @@ Ideas
      □: omit
      ■: non-null value
      $: variable
+
+- Check for schema modifications when starting. Do it in the
+  background and notify the user if it was modified.
+
+  New schema fetched from the server. Use it? y/n
 
 - List argument example:
 
@@ -233,6 +231,8 @@ Ideas
      │     ■ title
      │   ▶ Author
      │     ■ name
+
+- Subscriptions. Probably out of scope.
 
 .. _jq: https://github.com/stedolan/jq
 .. _bat: https://github.com/sharkdp/bat
