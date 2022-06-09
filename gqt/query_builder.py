@@ -27,6 +27,35 @@ def format_title(kind, tree, description, x_max):
     return line
 
 
+def show(stdscr, endpoint, tree, cursor, y_max, x_max, y):
+    for i in range(y):
+        addstr(stdscr, i, 0, '│')
+
+    addstr(stdscr, 0, 0, ' ' * x_max)
+    x_endpoint = (x_max - len(endpoint))
+    addstr(stdscr, 0, x_endpoint, endpoint)
+    description = tree.cursor_description()
+
+    if description:
+        description = description.split('\n')[0].strip()
+        description = f' ─ {description}'
+    else:
+        description = ''
+
+    if cursor.y_mutation == -1 or cursor.y < cursor.y_mutation:
+        query_line = format_title('Query', tree, description, x_max)
+        mutation_line = format_title('Mutation', None, '', x_max)
+    else:
+        query_line = format_title('Query', None, '', x_max)
+        mutation_line = format_title('Mutation', tree, description, x_max)
+
+    addstr(stdscr, 0, 0, query_line)
+
+    if cursor.y_mutation != -1:
+        addstr(stdscr, cursor.y_mutation - 2, 0, ' ')
+        addstr(stdscr, cursor.y_mutation - 1, 0, mutation_line)
+
+
 def update(stdscr, endpoint, tree, key, y_offset):
     if key == 'KEY_UP':
         tree.key_up()
@@ -55,33 +84,7 @@ def update(stdscr, endpoint, tree, key, y_offset):
         elif cursor.y >= y_max:
             y_offset -= 1
         else:
-            for i in range(y):
-                addstr(stdscr, i, 0, '│')
-
-            addstr(stdscr, 0, 0, ' ' * x_max)
-            x_endpoint = (x_max - len(endpoint))
-            addstr(stdscr, 0, x_endpoint, endpoint)
-            description = tree.cursor_description()
-
-            if description:
-                description = description.split('\n')[0].strip()
-                description = f' ─ {description}'
-            else:
-                description = ''
-
-            if cursor.y_mutation == -1 or cursor.y < cursor.y_mutation:
-                query_line = format_title('Query', tree, description, x_max)
-                mutation_line = format_title('Mutation', None, '', x_max)
-            else:
-                query_line = format_title('Query', None, '', x_max)
-                mutation_line = format_title('Mutation', tree, description, x_max)
-
-            addstr(stdscr, 0, 0, query_line)
-
-            if cursor.y_mutation != -1:
-                addstr(stdscr, cursor.y_mutation - 2, 0, ' ')
-                addstr(stdscr, cursor.y_mutation - 1, 0, mutation_line)
-
+            show(stdscr, endpoint, tree, cursor, y_max, x_max, y)
             break
 
     move(stdscr, cursor.y, cursor.x)
