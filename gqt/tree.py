@@ -92,7 +92,7 @@ class Node:
         self.type = None
         self.description = None
 
-    def show(self, stdscr, y, x, cursor):
+    def draw(self, stdscr, y, x, cursor):
         raise NotImplementedError()
 
     def key_left(self):
@@ -133,7 +133,7 @@ class Object(Node):
         self.number_of_query_fields = number_of_query_fields
         self.is_expanded = is_root
 
-    def show(self, stdscr, y, x, cursor):
+    def draw(self, stdscr, y, x, cursor):
         if cursor.node is self:
             cursor.y = y
             cursor.x = x
@@ -144,14 +144,14 @@ class Object(Node):
                     y += 2
                     cursor.y_mutation = y
 
-                y = field.show(stdscr, y, x, cursor)
+                y = field.draw(stdscr, y, x, cursor)
         elif self.is_expanded:
             addstr(stdscr, y, x, '▼', curses.color_pair(1))
             addstr(stdscr, y, x + 2, self.name)
             y += 1
 
             for field in self.fields:
-                y = field.show(stdscr, y, x + 2, cursor)
+                y = field.draw(stdscr, y, x + 2, cursor)
         else:
             addstr(stdscr, y, x, '▶', curses.color_pair(1))
             addstr(stdscr, y, x + 2, self.name)
@@ -198,7 +198,7 @@ class Leaf(Node):
         self.type = field_type
         self.description = description
 
-    def show(self, stdscr, y, x, cursor):
+    def draw(self, stdscr, y, x, cursor):
         if cursor.node is self:
             cursor.y = y
             cursor.x = x
@@ -240,7 +240,7 @@ class Argument(Node):
     def is_string(self):
         return self.type in ['String', 'ID']
 
-    def show(self, stdscr, y, x, cursor):
+    def draw(self, stdscr, y, x, cursor):
         if cursor.node is self:
             cursor.y = y
 
@@ -427,11 +427,11 @@ class Tree:
     def cursor_description(self):
         return self._cursor.description
 
-    def show(self, stdscr, y, x):
+    def draw(self, stdscr, y, x):
         cursor = Cursor()
         cursor.node = self._cursor
 
-        return self._root.show(stdscr, y, x, cursor), cursor
+        return self._root.draw(stdscr, y, x, cursor), cursor
 
     def key_up(self):
         if self._cursor.prev is not None:

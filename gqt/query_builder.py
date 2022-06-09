@@ -27,7 +27,7 @@ def format_title(kind, tree, description, x_max):
     return line
 
 
-def show(stdscr, endpoint, tree, cursor, y_max, x_max, y):
+def draw(stdscr, endpoint, tree, cursor, x_max, y):
     for i in range(y):
         addstr(stdscr, i, 0, '│')
 
@@ -77,14 +77,14 @@ def update(stdscr, endpoint, tree, key, y_offset):
     while True:
         stdscr.erase()
         y_max, x_max = stdscr.getmaxyx()
-        y, cursor = tree.show(stdscr, y_offset, 2)
+        y, cursor = tree.draw(stdscr, y_offset, 2)
 
         if cursor.y < 1:
             y_offset += 1
         elif cursor.y >= y_max:
             y_offset -= 1
         else:
-            show(stdscr, endpoint, tree, cursor, y_max, x_max, y)
+            draw(stdscr, endpoint, tree, cursor, x_max, y)
             break
 
     move(stdscr, cursor.y, cursor.x)
