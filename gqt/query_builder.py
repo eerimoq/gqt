@@ -56,7 +56,7 @@ def draw(stdscr, endpoint, tree, cursor, x_max, y):
         addstr(stdscr, cursor.y_mutation - 1, 0, mutation_line)
 
 
-def update(stdscr, endpoint, tree, key, y_offset):
+def update_key(tree, key):
     if key == 'KEY_UP':
         tree.key_up()
     elif key == 'KEY_DOWN':
@@ -68,11 +68,18 @@ def update(stdscr, endpoint, tree, key, y_offset):
     elif key == ' ':
         tree.select()
     elif key == '\n':
-        return True, y_offset
+        return True
     elif key == 'KEY_RESIZE':
         pass
     elif key is not None:
         tree.key(key)
+
+    return False
+
+
+def update(stdscr, endpoint, tree, key, y_offset):
+    if update_key(tree, key):
+        return True, y_offset
 
     while True:
         stdscr.erase()
