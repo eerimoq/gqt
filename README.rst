@@ -95,11 +95,9 @@ Print the schema:
 Known issues
 ------------
 
-- Arguments does not work very well.
+- Arguments does not work for scalar and input types.
 
-- Fragments and unions are not implemented.
-
-- Mutations and subscriptions are not implemented.
+- Unions are not implemented.
 
 - And much more.
 
