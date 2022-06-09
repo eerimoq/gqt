@@ -232,6 +232,26 @@ Ideas
      │   ▶ Author
      │     ■ name
 
+- Alias?
+
+  - Press ``a`` to create an alias.
+
+  - Press ``d`` to delete an alias.
+
+  ``smallPicture`` and ``mediumPicture`` are aliases of ``picture``.
+
+  .. code-block::
+
+     ╭─ Query
+     │ ▶ Book
+     │   ▶ picture
+     │   ▼ smallPicture: picture
+     │     ■ width: 320
+     │     ■ height: 240
+     │   ▼ mediumPicture: picture
+     │     ■ width: 800
+     │     ■ height: 600
+
 - Subscriptions. Probably out of scope.
 
 .. _jq: https://github.com/stedolan/jq
