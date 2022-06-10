@@ -9,8 +9,8 @@ import sys
 import yaml
 from graphql import build_client_schema
 from graphql import print_schema
-from graphql.language import print_ast
 from graphql.language import parse
+from graphql.language import print_ast
 
 from .cache import CACHE_PATH
 from .cache import read_tree_from_cache
