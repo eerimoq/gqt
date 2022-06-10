@@ -59,7 +59,7 @@ class QueryBuilder:
         else:
             description = ''
 
-        if cursor.y_mutation == -1 or cursor.y < cursor.y_mutation:
+        if cursor.y_mutation is None or cursor.y < cursor.y_mutation:
             query_line = format_title('Query', self.tree, description, x_max)
             mutation_line = format_title('Mutation', None, '', x_max)
         else:
@@ -68,9 +68,9 @@ class QueryBuilder:
 
         self.draw_title(0, query_line)
 
-        if cursor.y_mutation != -1:
-            self.addstr(cursor.y_mutation - 2, 0, ' ')
-            self.draw_title(cursor.y_mutation - 1, mutation_line)
+        if cursor.y_mutation is not None:
+            self.addstr(max(cursor.y_mutation - 2, 0), 0, ' ')
+            self.draw_title(max(cursor.y_mutation - 1, 0), mutation_line)
 
     def update_key(self, key):
         if key == 'KEY_UP':

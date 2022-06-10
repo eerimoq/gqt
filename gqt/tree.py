@@ -80,7 +80,7 @@ class Cursor:
         self.node = None
         self.y = 0
         self.x = 0
-        self.y_mutation = -1
+        self.y_mutation = None
 
 
 class Node:
