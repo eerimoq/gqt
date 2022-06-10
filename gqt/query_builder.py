@@ -94,10 +94,18 @@ class QueryBuilder:
 
         return False
 
+    def update_key_help(self, key):
+        if key in ['h', '?']:
+            self.show_help = not self.show_help
+
     def update(self, key):
-        if self.update_key(key):
-            return True
-        elif self.show_help:
+        if self.show_help:
+            self.update_key_help(key)
+        else:
+            if self.update_key(key):
+                return True
+
+        if self.show_help:
             self.draw_help()
         else:
             self.draw_selector()
