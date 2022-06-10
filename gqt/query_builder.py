@@ -11,14 +11,14 @@ from .screen import move
 from .tree import load_tree_from_schema
 
 HELP_TEXT = '''\
-Move:         <Left>, <Right>, <Up> and <Down>
+Move:         <Left>, <Right>, <Up>, <Down> and <Tab>
 Select:       <Space>
 Execute:      <Enter>
 Help:         h or ?
 Quit:         <Ctrl-C>\
 '''
 
-HELP_NCOLS = 50
+HELP_NCOLS = 57
 
 
 def format_title(kind, tree, description, x_max):
