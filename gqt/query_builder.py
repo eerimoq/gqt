@@ -10,7 +10,6 @@ from .screen import addstr
 from .screen import move
 from .tree import load_tree_from_schema
 
-
 HELP_TEXT = '''\
 Move:         <Left>, <Right>, <Up> and <Down>
 Select:       <Space>

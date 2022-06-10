@@ -104,7 +104,7 @@ class Node:
     def select(self):
         pass
 
-    def key(self, key):
+    def key(self, _key):
         return False
 
     def query(self):
