@@ -3,11 +3,9 @@ import os
 import sys
 from contextlib import contextmanager
 
-import requests
-from graphql import get_introspection_query
-
 from .cache import read_tree_from_cache
 from .cache import write_tree_to_cache
+from .endpoint import fetch_schema
 from .screen import addstr
 from .screen import move
 from .tree import load_tree_from_schema
@@ -27,87 +25,114 @@ def format_title(kind, tree, description, x_max):
     return line
 
 
-def draw(stdscr, endpoint, tree, cursor, x_max, y):
-    for i in range(y):
-        addstr(stdscr, i, 0, '│')
+class QueryBuilder:
 
-    addstr(stdscr, 0, 0, ' ' * x_max)
-    x_endpoint = (x_max - len(endpoint))
-    addstr(stdscr, 0, x_endpoint, endpoint)
-    description = tree.cursor_description()
+    def __init__(self, stdscr, endpoint, tree):
+        self.stdscr = stdscr
+        self.endpoint = endpoint
+        self.tree = tree
+        self.show_help = False
+        self.y_offset = 1
 
-    if description:
-        description = description.split('\n')[0].strip()
-        description = f' ─ {description}'
-    else:
-        description = ''
+    def draw(self, cursor, x_max, y):
+        for i in range(y):
+            self.addstr(i, 0, '│')
 
-    if cursor.y_mutation == -1 or cursor.y < cursor.y_mutation:
-        query_line = format_title('Query', tree, description, x_max)
-        mutation_line = format_title('Mutation', None, '', x_max)
-    else:
-        query_line = format_title('Query', None, '', x_max)
-        mutation_line = format_title('Mutation', tree, description, x_max)
+        self.addstr(0, 0, ' ' * x_max)
+        x_endpoint = (x_max - len(self.endpoint))
+        self.addstr(0, x_endpoint, self.endpoint)
+        description = self.tree.cursor_description()
 
-    addstr(stdscr, 0, 0, query_line)
-
-    if cursor.y_mutation != -1:
-        addstr(stdscr, cursor.y_mutation - 2, 0, ' ')
-        addstr(stdscr, cursor.y_mutation - 1, 0, mutation_line)
-
-
-def update_key(tree, key):
-    if key == 'KEY_UP':
-        tree.key_up()
-    elif key == 'KEY_DOWN':
-        tree.key_down()
-    elif key == 'KEY_LEFT':
-        tree.key_left()
-    elif key == 'KEY_RIGHT':
-        tree.key_right()
-    elif key == ' ':
-        tree.select()
-    elif key == '\n':
-        return True
-    elif key == 'KEY_RESIZE':
-        pass
-    elif key is not None:
-        tree.key(key)
-
-    return False
-
-
-def update(stdscr, endpoint, tree, key, y_offset):
-    if update_key(tree, key):
-        return True, y_offset
-
-    while True:
-        stdscr.erase()
-        y_max, x_max = stdscr.getmaxyx()
-        y, cursor = tree.draw(stdscr, y_offset, 2)
-
-        if cursor.y < 1:
-            y_offset += 1
-        elif cursor.y >= y_max:
-            y_offset -= 1
+        if description:
+            description = description.split('\n')[0].strip()
+            description = f' ─ {description}'
         else:
-            draw(stdscr, endpoint, tree, cursor, x_max, y)
-            break
+            description = ''
 
-    move(stdscr, cursor.y, cursor.x)
-    stdscr.refresh()
+        if cursor.y_mutation == -1 or cursor.y < cursor.y_mutation:
+            query_line = format_title('Query', self.tree, description, x_max)
+            mutation_line = format_title('Mutation', None, '', x_max)
+        else:
+            query_line = format_title('Query', None, '', x_max)
+            mutation_line = format_title('Mutation', self.tree, description, x_max)
 
-    return False, y_offset
+        self.addstr(0, 0, query_line)
 
+        if cursor.y_mutation != -1:
+            self.addstr(cursor.y_mutation - 2, 0, ' ')
+            self.addstr(cursor.y_mutation - 1, 0, mutation_line)
 
-def fetch_schema(endpoint, verify):
-    response = post(endpoint, {"query": get_introspection_query()}, verify)
-    response = response.json()
+    def update_key(self, key):
+        if key == 'KEY_UP':
+            self.tree.key_up()
+        elif key == 'KEY_DOWN':
+            self.tree.key_down()
+        elif key == 'KEY_LEFT':
+            self.tree.key_left()
+        elif key == 'KEY_RIGHT':
+            self.tree.key_right()
+        elif key == ' ':
+            self.tree.select()
+        elif key == '\n':
+            return True
+        elif key == 'KEY_RESIZE':
+            pass
+        elif key is not None:
+            self.tree.key(key)
 
-    if 'errors' in response:
-        sys.exit(response['errors'])
+        return False
 
-    return response['data']
+    def update(self, key):
+        if self.update_key(key):
+            return True
+        elif self.show_help:
+            self.draw_help()
+        else:
+            self.draw_selector()
+
+        return False
+
+    def draw_help(self):
+        pass
+
+    def draw_selector(self):
+        while True:
+            self.stdscr.erase()
+            y_max, x_max = self.stdscr.getmaxyx()
+            y, cursor = self.tree.draw(self.stdscr, self.y_offset, 2)
+
+            if cursor.y < 1:
+                self.y_offset += 1
+            elif cursor.y >= y_max:
+                self.y_offset -= 1
+            else:
+                self.draw(cursor, x_max, y)
+                break
+
+        move(self.stdscr, cursor.y, cursor.x)
+        self.stdscr.refresh()
+
+    def run(self):
+        self.stdscr.clear()
+        self.stdscr.keypad(True)
+        curses.use_default_colors()
+        curses.init_pair(1, curses.COLOR_YELLOW, -1)
+        curses.init_pair(2, curses.COLOR_GREEN, -1)
+        curses.init_pair(3, curses.COLOR_CYAN, -1)
+
+        self.update(None)
+        done = False
+
+        while not done:
+            try:
+                key = self.stdscr.getkey()
+            except curses.error:
+                continue
+
+            done = self.update(key)
+
+    def addstr(self, y, x, text):
+        addstr(self.stdscr, y, x, text)
 
 
 def load_tree(endpoint, verify):
@@ -118,24 +143,7 @@ def load_tree(endpoint, verify):
 
 
 def selector(stdscr, endpoint, tree):
-    stdscr.clear()
-    stdscr.keypad(True)
-    curses.use_default_colors()
-    curses.init_pair(1, curses.COLOR_YELLOW, -1)
-    curses.init_pair(2, curses.COLOR_GREEN, -1)
-    curses.init_pair(3, curses.COLOR_CYAN, -1)
-
-    y_offset = 1
-    update(stdscr, endpoint, tree, None, y_offset)
-    done = False
-
-    while not done:
-        try:
-            key = stdscr.getkey()
-        except curses.error:
-            continue
-
-        done, y_offset = update(stdscr, endpoint, tree, key, y_offset)
+    QueryBuilder(stdscr, endpoint, tree).run()
 
 
 @contextmanager
@@ -159,13 +167,3 @@ def query_builder(endpoint, verify):
     write_tree_to_cache(tree, endpoint)
 
     return tree
-
-
-def post(endpoint, query, verify):
-    response = requests.post(endpoint, json=query, verify=verify)
-
-    if response.status_code != 200:
-        print(response.text, file=sys.stderr)
-        response.raise_for_status()
-
-    return response

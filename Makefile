@@ -1,7 +1,7 @@
 all:
-	$(MAKE) test
 	$(MAKE) style
 	$(MAKE) lint
+	$(MAKE) test
 
 test:
 	coverage run --include "gqt/*" -m unittest
