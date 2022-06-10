@@ -135,6 +135,8 @@ Ideas
 
   New schema fetched from the server. Use it? y/n
 
+- Show errors in query builder to simplify query creation.
+
 - List argument example:
 
   .. code-block::
