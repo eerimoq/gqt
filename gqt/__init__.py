@@ -9,6 +9,8 @@ import sys
 import yaml
 from graphql import build_client_schema
 from graphql import print_schema
+from graphql.language import print_ast
+from graphql.language import parse
 
 from .cache import CACHE_PATH
 from .cache import read_tree_from_cache
@@ -125,7 +127,7 @@ def main():
             query = query.query()
 
             if args.print_query:
-                show(str(query), 'graphql')
+                show(print_ast(parse(str(query))), 'graphql')
             elif args.print_curl:
                 query = json.dumps(create_query(query))
                 print(CURL_COMMAND.format(endpoint=args.endpoint, query=query))

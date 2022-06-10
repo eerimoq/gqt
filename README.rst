@@ -63,7 +63,11 @@ Print the query instead of executing it:
 .. code-block:: shell
 
    $ gqt -q
-   query Query {statistics {numberOfGraphqlRequests}}
+   query Query {
+     statistics {
+       numberOfGraphqlRequests
+     }
+   }
 
 YAML output:
 
