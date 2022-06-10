@@ -19,13 +19,7 @@ It's recommended to install `bat`_ for pretty output.
 Controls
 --------
 
-- Navigate with arrow keys.
-
-- Select fields with <Space>.
-
-- Toggle between argument selection and its value with <Tab>.
-
-- End with <Enter>.
+- Press ``h`` or ``?`` for help.
 
 Examples
 --------
