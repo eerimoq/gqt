@@ -1,5 +1,4 @@
 import curses
-import sys
 from itertools import cycle
 
 from readlike import edit
@@ -165,7 +164,7 @@ class Object(Node):
         if items:
             return f'{self.name}{arguments} {{{items}}}'
         else:
-            sys.exit(f"No fields selected in '{self.name}'.")
+            raise Exception(f"No fields selected in '{self.name}'.")
 
     def query_root(self, cursor):
         cursor_root_index = self.fields.index(find_root_field(cursor))
@@ -186,7 +185,7 @@ class Object(Node):
 
             return f"{kind} {{{items}}}"
         else:
-            sys.exit("No fields selected.")
+            raise Exception("No fields selected.")
 
 
 class Leaf(Node):
@@ -356,7 +355,7 @@ def build_field(types, field, state):
     try:
         name = field['name']
     except Exception:
-        sys.exit("No field name.")
+        raise Exception("No field name.")
 
     item = get_type(field['type'])
     field_type = item['name']

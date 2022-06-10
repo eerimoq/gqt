@@ -43,8 +43,9 @@ class QueryBuilder:
         self.tree = tree
         self.show_help = False
         self.y_offset = 1
+        self.error = None
 
-    def draw(self, cursor, x_max, y):
+    def draw(self, cursor, y_max, x_max, y):
         for i in range(y):
             self.addstr_frame(i, 0, '│')
 
@@ -71,6 +72,10 @@ class QueryBuilder:
         if cursor.y_mutation is not None:
             self.addstr(max(cursor.y_mutation - 2, 0), 0, ' ')
             self.draw_title(max(cursor.y_mutation - 1, 0), mutation_line)
+
+        if self.error is not None:
+            self.addstr_error(y_max - 1, 0, self.error)
+            self.error = None
 
     def update_key(self, key):
         if key == 'KEY_UP':
@@ -103,7 +108,12 @@ class QueryBuilder:
             self.update_key_help(key)
         else:
             if self.update_key(key):
-                return True
+                try:
+                    self.tree.query()
+
+                    return True
+                except Exception as error:
+                    self.error = str(error)
 
         if self.show_help:
             self.draw_help()
@@ -148,7 +158,7 @@ class QueryBuilder:
             elif cursor.y >= y_max:
                 self.y_offset -= 1
             else:
-                self.draw(cursor, x_max, y)
+                self.draw(cursor, y_max, x_max, y)
                 break
 
         move(self.stdscr, cursor.y, cursor.x)
@@ -161,6 +171,7 @@ class QueryBuilder:
         curses.init_pair(1, curses.COLOR_YELLOW, -1)
         curses.init_pair(2, curses.COLOR_GREEN, -1)
         curses.init_pair(3, curses.COLOR_CYAN, -1)
+        curses.init_pair(4, curses.COLOR_RED, -1)
 
         self.update(None)
         done = False
@@ -178,6 +189,13 @@ class QueryBuilder:
 
     def addstr_frame(self, y, x, text):
         addstr(self.stdscr, y, x, text, curses.color_pair(3))
+
+    def addstr_error(self, y, x, text):
+        addstr(self.stdscr,
+               y,
+               x,
+               text,
+               curses.color_pair(4) | curses.A_BOLD)
 
     def draw_title(self, y, line):
         x = 0
