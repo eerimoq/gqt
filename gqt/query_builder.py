@@ -11,6 +11,17 @@ from .screen import move
 from .tree import load_tree_from_schema
 
 
+HELP_TEXT = '''\
+Move:         <Left>, <Right>, <Up> and <Down>
+Select:       <Space>
+Execute:      <Enter>
+Help:         h or ?
+Quit:         <Ctrl-C>\
+'''
+
+HELP_NCOLS = 50
+
+
 def format_title(kind, tree, description, x_max):
     if tree is not None:
         field_type = f' ─ {tree.cursor_type()}'
@@ -36,7 +47,7 @@ class QueryBuilder:
 
     def draw(self, cursor, x_max, y):
         for i in range(y):
-            self.addstr(i, 0, '│')
+            self.addstr_frame(i, 0, '│')
 
         self.addstr(0, 0, ' ' * x_max)
         x_endpoint = (x_max - len(self.endpoint))
@@ -56,11 +67,11 @@ class QueryBuilder:
             query_line = format_title('Query', None, '', x_max)
             mutation_line = format_title('Mutation', self.tree, description, x_max)
 
-        self.addstr(0, 0, query_line)
+        self.draw_title(0, query_line)
 
         if cursor.y_mutation != -1:
             self.addstr(cursor.y_mutation - 2, 0, ' ')
-            self.addstr(cursor.y_mutation - 1, 0, mutation_line)
+            self.draw_title(cursor.y_mutation - 1, mutation_line)
 
     def update_key(self, key):
         if key == 'KEY_UP':
@@ -78,7 +89,9 @@ class QueryBuilder:
         elif key == 'KEY_RESIZE':
             pass
         elif key is not None:
-            self.tree.key(key)
+            if not self.tree.key(key):
+                if key in ['h', '?']:
+                    self.show_help = not self.show_help
 
         return False
 
@@ -93,9 +106,31 @@ class QueryBuilder:
         return False
 
     def draw_help(self):
-        pass
+        curses.curs_set(False)
+        self.stdscr.erase()
+        y_max, x_max = self.stdscr.getmaxyx()
+        margin = (x_max - HELP_NCOLS) // 2
+        text_col_left = margin + 2
+        help_lines = HELP_TEXT.splitlines()
+        horizontal_line = '─' * (HELP_NCOLS - 2)
+        row = min((y_max - 6) // 2, y_max // 3)
+
+        self.addstr_frame(row, margin, f'┌{horizontal_line}┐')
+        self.addstr(row, margin + 1, ' Help ')
+        row += 1
+
+        for line in help_lines:
+            self.addstr_frame(row, margin, '│')
+            self.addstr_frame(row, margin + HELP_NCOLS - 1, '│')
+            self.addstr(row, text_col_left, line)
+            row += 1
+
+        self.addstr_frame(row, margin, f'└{horizontal_line}┘')
+        self.stdscr.refresh()
 
     def draw_selector(self):
+        curses.curs_set(True)
+
         while True:
             self.stdscr.erase()
             y_max, x_max = self.stdscr.getmaxyx()
@@ -133,6 +168,22 @@ class QueryBuilder:
 
     def addstr(self, y, x, text):
         addstr(self.stdscr, y, x, text)
+
+    def addstr_frame(self, y, x, text):
+        addstr(self.stdscr, y, x, text, curses.color_pair(3))
+
+    def draw_title(self, y, line):
+        x = 0
+        parts = line.split(' ')
+        self.addstr_frame(y, x, parts[0])
+        x += 3
+        self.addstr(y, x, parts[1])
+        x += len(parts[1]) + 1
+
+        if len(parts) > 2:
+            self.addstr_frame(y, x, parts[2])
+            x += 2
+            self.addstr(y, x, ' '.join(parts[3:]))
 
 
 def load_tree(endpoint, verify):

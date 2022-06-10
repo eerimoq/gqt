@@ -105,7 +105,7 @@ class Node:
         pass
 
     def key(self, key):
-        pass
+        return False
 
     def query(self):
         raise NotImplementedError()
@@ -281,6 +281,8 @@ class Argument(Node):
     def key(self, key):
         if key == '\t':
             self.state.cursor_at_input_field = not self.state.cursor_at_input_field
+
+            return True
         elif self.state.cursor_at_input_field:
             if self.meta:
                 key = '\x1b' + key
@@ -288,11 +290,15 @@ class Argument(Node):
             elif key == '\x1b':
                 self.meta = True
 
-                return
+                return True
 
             self.value, self.pos = edit(self.value,
                                         self.pos,
                                         KEY_BINDINGS.get(key, key))
+
+            return True
+
+        return False
 
     def select(self):
         if self.state.cursor_at_input_field:
@@ -479,7 +485,7 @@ class Tree:
         self._cursor.select()
 
     def key(self, key):
-        self._cursor.key(key)
+        return self._cursor.key(key)
 
     def query(self):
         return self._root.query_root(self._cursor)
