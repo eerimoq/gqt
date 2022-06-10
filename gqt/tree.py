@@ -221,7 +221,8 @@ class Argument(Node):
     def __init__(self, name, field_type, description, state):
         super().__init__()
         self.name = name
-        self.type = get_type(field_type)['name']
+        self._type = get_type(field_type)['name']
+        self.type = get_type_string(field_type)
         self.description = description
         self.is_optional = (field_type['kind'] != 'NON_NULL')
         self.state = state
@@ -238,7 +239,7 @@ class Argument(Node):
         self.meta = False
 
     def is_string(self):
-        return self.type in ['String', 'ID']
+        return self._type in ['String', 'ID']
 
     def draw(self, stdscr, y, x, cursor):
         if cursor.node is self:
@@ -340,6 +341,17 @@ def get_type(type_info):
     return type_info
 
 
+def get_type_string(type_info):
+    kind = type_info['kind']
+
+    if kind == 'NON_NULL':
+        return f"{get_type_string(type_info['ofType'])}!"
+    elif kind == 'LIST':
+        return f"[{get_type_string(type_info['ofType'])}]"
+    else:
+        return type_info['name']
+
+
 def build_field(types, field, state):
     try:
         name = field['name']
@@ -348,18 +360,19 @@ def build_field(types, field, state):
 
     item = get_type(field['type'])
     field_type = item['name']
+    field_type_string = get_type_string(field['type'])
     description = field['description']
 
     if item['kind'] == 'OBJECT':
         fields = find_type(types, field_type)['fields']
 
         return Object(name,
-                      field_type,
+                      field_type_string,
                       description,
                       ObjectFields(field['args'], fields, types, state),
                       len(fields))
     else:
-        return Leaf(name, field_type, description)
+        return Leaf(name, field_type_string, description)
 
 
 class ObjectFieldsIterator:

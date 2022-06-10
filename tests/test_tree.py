@@ -28,7 +28,7 @@ class TreeTest(unittest.TestCase):
         tree.key_right()
         self.assertEqual(tree.cursor_type(), 'Activity')
         tree.key_down()
-        self.assertEqual(tree.cursor_type(), 'String')
+        self.assertEqual(tree.cursor_type(), 'String!')
         # Select date.
         tree.select()
         tree.key_down()
@@ -39,7 +39,7 @@ class TreeTest(unittest.TestCase):
         tree.select()
         tree.select()
         self.assertEqual(tree.query(), 'query Query {activity {date message}}')
-        self.assertEqual(tree.cursor_type(), 'String')
+        self.assertEqual(tree.cursor_type(), 'String!')
 
     def test_move_up_into_expanded_object(self):
         schema = ('type Query {'
@@ -207,7 +207,7 @@ class TreeTest(unittest.TestCase):
         tree.key('\t')
         tree.key('5')
         tree.key_down()
-        self.assertEqual(tree.cursor_type(), 'Int')
+        self.assertEqual(tree.cursor_type(), 'Int!')
         tree.select()
         self.assertEqual(tree.query(), 'mutation Mutation {b(c:5) {size}}')
 
