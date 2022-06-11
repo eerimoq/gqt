@@ -35,8 +35,8 @@ def last_query(endpoint):
         sys.exit('No cached query found.')
 
 
-def execute_query(endpoint, query, version, format_yaml):
-    json_response = post(endpoint, query, version).json()
+def execute_query(endpoint, query, verify, format_yaml):
+    json_response = post(endpoint, query, verify).json()
 
     if 'errors' in json_response:
         sys.exit(json_response['errors'])
