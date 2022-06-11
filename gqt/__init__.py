@@ -34,9 +34,10 @@ def last_query(endpoint):
 
 def execute_query(endpoint, query, verify):
     response = post(endpoint, query, verify).json()
+    errors = response.get('errors')
 
-    if 'errors' in response:
-        for error in response['errors']:
+    if errors is not None:
+        for error in errors:
             print('error:', error['message'], file=sys.stderr)
 
         sys.exit(1)
@@ -125,11 +126,8 @@ def main():
         else:
             if args.repeat:
                 query = last_query(args.endpoint)
-                response = None
             else:
-                query, response = query_builder(args.endpoint,
-                                                verify,
-                                                args.print_query or args.print_curl)
+                query = query_builder(args.endpoint, verify)
 
             query = query.query()
 
@@ -139,11 +137,9 @@ def main():
                 query = json.dumps(create_query(query))
                 print(CURL_COMMAND.format(endpoint=args.endpoint, query=query))
             else:
-                if response is None:
-                    response = execute_query(args.endpoint,
-                                             create_query(query),
-                                             verify)
-
+                response = execute_query(args.endpoint,
+                                         create_query(query),
+                                         verify)
                 response = style_response(response, args.yaml)
 
                 if args.yaml:

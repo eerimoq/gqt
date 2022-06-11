@@ -5,9 +5,7 @@ from contextlib import contextmanager
 
 from .cache import read_tree_from_cache
 from .cache import write_tree_to_cache
-from .endpoint import create_query
 from .endpoint import fetch_schema
-from .endpoint import post
 from .screen import addstr
 from .screen import move
 from .tree import load_tree_from_schema
@@ -39,16 +37,14 @@ def format_title(kind, tree, description, x_max):
 
 class QueryBuilder:
 
-    def __init__(self, stdscr, endpoint, verify, no_execute, tree):
+    def __init__(self, stdscr, endpoint, verify, tree):
         self.stdscr = stdscr
         self.endpoint = endpoint
         self.verify = verify
-        self.no_execute = no_execute
         self.tree = tree
         self.show_help = False
         self.y_offset = 1
-        self.errors = None
-        self.response = None
+        self.error = None
 
     def draw(self, cursor, y_max, x_max, y):
         for i in range(y):
@@ -78,12 +74,10 @@ class QueryBuilder:
             self.addstr(max(cursor.y_mutation - 2, 0), 0, ' ')
             self.draw_title(max(cursor.y_mutation - 1, 0), mutation_line)
 
-        if self.errors is not None:
-            for i, error in enumerate(self.errors, -len(self.errors)):
-                self.addstr(y_max + i, 0, ' ' * x_max)
-                self.addstr_error(y_max + i, 0, error)
-
-            self.errors = None
+        if self.error is not None:
+            self.addstr(y_max - 1, 0, ' ' * x_max)
+            self.addstr_error(y_max - 1, 0, self.error)
+            self.error = None
 
     def update_key(self, key):
         if key == 'KEY_UP':
@@ -111,45 +105,24 @@ class QueryBuilder:
         if key in ['h', '?']:
             self.show_help = not self.show_help
 
-    def update_key_enter(self):
-        try:
-            query = self.tree.query()
-
-            if self.no_execute:
-                return True, None
-
-            response = post(self.endpoint,
-                            create_query(query),
-                            self.verify).json()
-
-            if 'errors' not in response:
-                return True, response['data']
-
-            self.errors = [
-                error['message']
-                for error in response['errors']
-            ]
-        except Exception as error:
-            self.errors = [str(error)]
-
-        return False, None
-
     def update(self, key):
         if self.show_help:
             self.update_key_help(key)
         else:
             if self.update_key(key):
-                done, response = self.update_key_enter()
+                try:
+                    self.tree.query()
 
-                if done:
-                    return done, response
+                    return True
+                except Exception as error:
+                    self.error = str(error)
 
         if self.show_help:
             self.draw_help()
         else:
             self.draw_selector()
 
-        return False, None
+        return False
 
     def draw_help(self):
         curses.curs_set(False)
@@ -211,9 +184,7 @@ class QueryBuilder:
             except curses.error:
                 continue
 
-            done, response = self.update(key)
-
-        return response
+            done = self.update(key)
 
     def addstr(self, y, x, text):
         addstr(self.stdscr, y, x, text)
@@ -249,8 +220,8 @@ def load_tree(endpoint, verify):
         return load_tree_from_schema(fetch_schema(endpoint, verify))
 
 
-def selector(stdscr, endpoint, verify, no_execute, tree):
-    return QueryBuilder(stdscr, endpoint, verify, no_execute, tree).run()
+def selector(stdscr, endpoint, verify, tree):
+    return QueryBuilder(stdscr, endpoint, verify, tree).run()
 
 
 @contextmanager
@@ -265,12 +236,12 @@ def redirect_stdout_to_stderr():
         os.close(original_stdout)
 
 
-def query_builder(endpoint, verify, no_execute):
+def query_builder(endpoint, verify):
     tree = load_tree(endpoint, verify)
 
     with redirect_stdout_to_stderr():
-        response = curses.wrapper(selector, endpoint, verify, no_execute, tree)
+        curses.wrapper(selector, endpoint, verify, tree)
 
     write_tree_to_cache(tree, endpoint)
 
-    return tree, response
+    return tree
