@@ -232,7 +232,7 @@ class QueryBuilder:
             self.addstr(y, x, ' '.join(parts[3:]))
 
     def page_up_down_lines(self):
-        return int(self.stdscr.getmaxyx()[0] * 0.75)
+        return int(self.stdscr.getmaxyx()[0] * 0.5)
 
 
 def load_tree(endpoint, headers, verify):
@@ -261,9 +261,10 @@ def redirect_stdout_to_stderr():
 def query_builder(endpoint, headers, verify):
     tree = load_tree(endpoint, headers, verify)
 
-    with redirect_stdout_to_stderr():
-        curses.wrapper(selector, endpoint, tree)
-
-    write_tree_to_cache(tree, endpoint)
+    try:
+        with redirect_stdout_to_stderr():
+            curses.wrapper(selector, endpoint, tree)
+    finally:
+        write_tree_to_cache(tree, endpoint)
 
     return tree
