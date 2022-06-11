@@ -37,10 +37,9 @@ def format_title(kind, tree, description, x_max):
 
 class QueryBuilder:
 
-    def __init__(self, stdscr, endpoint, verify, tree):
+    def __init__(self, stdscr, endpoint, tree):
         self.stdscr = stdscr
         self.endpoint = endpoint
-        self.verify = verify
         self.tree = tree
         self.show_help = False
         self.y_offset = 1
@@ -213,15 +212,15 @@ class QueryBuilder:
             self.addstr(y, x, ' '.join(parts[3:]))
 
 
-def load_tree(endpoint, verify):
+def load_tree(endpoint, headers, verify):
     try:
         return read_tree_from_cache(endpoint)
     except Exception:
-        return load_tree_from_schema(fetch_schema(endpoint, verify))
+        return load_tree_from_schema(fetch_schema(endpoint, headers, verify))
 
 
-def selector(stdscr, endpoint, verify, tree):
-    return QueryBuilder(stdscr, endpoint, verify, tree).run()
+def selector(stdscr, endpoint, tree):
+    return QueryBuilder(stdscr, endpoint, tree).run()
 
 
 @contextmanager
@@ -236,11 +235,11 @@ def redirect_stdout_to_stderr():
         os.close(original_stdout)
 
 
-def query_builder(endpoint, verify):
-    tree = load_tree(endpoint, verify)
+def query_builder(endpoint, headers, verify):
+    tree = load_tree(endpoint, headers, verify)
 
     with redirect_stdout_to_stderr():
-        curses.wrapper(selector, endpoint, verify, tree)
+        curses.wrapper(selector, endpoint, tree)
 
     write_tree_to_cache(tree, endpoint)
 

@@ -32,8 +32,8 @@ def last_query(endpoint):
         sys.exit('No cached query found.')
 
 
-def execute_query(endpoint, query, verify):
-    response = post(endpoint, query, verify).json()
+def execute_query(endpoint, query, headers, verify):
+    response = post(endpoint, query, headers, verify).json()
     errors = response.get('errors')
 
     if errors is not None:
@@ -60,6 +60,7 @@ def style_response(response, format_yaml):
 CURL_COMMAND = '''\
 curl -X POST \\
      -H 'content-type: application/json' \\
+{headers}\
      '{endpoint}' \\
      -d '{query}'\
 '''
@@ -71,6 +72,29 @@ def show(data, language):
         subprocess.run(['bat', '-p', '-l', language], input=data, text=True)
     else:
         print(data)
+
+
+def make_headers(headers_list):
+    if not headers_list:
+        return None
+
+    headers = {}
+
+    for header in headers_list:
+        key, _, value = header.partition(':')
+        headers[key] = value.strip()
+
+    return headers
+
+
+def make_curl_headers(headers_list):
+    if not headers_list:
+        return ''
+
+    return '\n'.join([
+        f"     -H '{header}' \\"
+        for header in headers_list
+    ]) + '\n'
 
 
 def main():
@@ -106,7 +130,15 @@ def main():
     parser.add_argument('--no-verify',
                         action='store_true',
                         help='No SSL verification.')
+    parser.add_argument('-H', '--header',
+                        action='append',
+                        help='Extra HTTP headers.')
     args = parser.parse_args()
+
+    try:
+        headers = make_headers(args.header)
+    except Exception:
+        sys.exit('Bad header given.')
 
     CACHE_PATH.mkdir(exist_ok=True, parents=True)
 
@@ -121,13 +153,13 @@ def main():
         if args.print_schema:
             schema = print_schema(
                 build_client_schema(
-                    fetch_schema(args.endpoint, verify)))
+                    fetch_schema(args.endpoint, headers, verify)))
             show(schema, 'graphql')
         else:
             if args.repeat:
                 query = last_query(args.endpoint)
             else:
-                query = query_builder(args.endpoint, verify)
+                query = query_builder(args.endpoint, headers, verify)
 
             query = query.query()
 
@@ -135,10 +167,13 @@ def main():
                 show(print_ast(parse(str(query))), 'graphql')
             elif args.print_curl:
                 query = json.dumps(create_query(query))
-                print(CURL_COMMAND.format(endpoint=args.endpoint, query=query))
+                print(CURL_COMMAND.format(endpoint=args.endpoint,
+                                          query=query,
+                                          headers=make_curl_headers(args.header)))
             else:
                 response = execute_query(args.endpoint,
                                          create_query(query),
+                                         headers,
                                          verify)
                 response = style_response(response, args.yaml)
 
