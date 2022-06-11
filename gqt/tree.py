@@ -1,5 +1,4 @@
 import curses
-from itertools import cycle
 
 from readlike import edit
 
@@ -229,12 +228,9 @@ class Argument(Node):
         self.pos = 0
 
         if self.is_optional:
-            self.symbols = cycle('□■$n')
+            self.symbol = '□'
         else:
-            self.symbols = cycle('■$')
-
-        self.symbol = None
-        self.next_symbol()
+            self.symbol = '■'
 
     def is_string(self):
         return self._type in ['String', 'ID']
@@ -259,7 +255,17 @@ class Argument(Node):
         return y + 1
 
     def next_symbol(self):
-        self.symbol = next(self.symbols)
+        if self.is_optional:
+            table = {
+                '□': '■',
+                '■': '□'
+            }
+        else:
+            table = {
+                '■': '■'
+            }
+
+        self.symbol = table[self.symbol]
 
     def key_left(self):
         if self.state.cursor_at_input_field:
@@ -283,9 +289,16 @@ class Argument(Node):
 
             return True
         elif self.state.cursor_at_input_field:
+            if self.value == '' and self.symbol == '□':
+                self.symbol = '■'
+
             self.value, self.pos = edit(self.value,
                                         self.pos,
                                         KEY_BINDINGS.get(key, key))
+
+            if self.is_optional:
+                if self.value == '' and self.symbol == '■':
+                    self.symbol = '□'
 
             return True
 

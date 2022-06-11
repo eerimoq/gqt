@@ -165,14 +165,7 @@ class TreeTest(unittest.TestCase):
         tree.key_up()
         tree.key('\t')
         tree.select()
-        tree.select()
-        self.assertEqual(tree.query(), 'query Query {a(b:"ABC",d:null) {d}}')
-        tree.select()
         self.assertEqual(tree.query(), 'query Query {a(b:"ABC") {d}}')
-        tree.key_up()
-        tree.key_up()
-        tree.select()
-        self.assertEqual(tree.query(), 'query Query {a(b:$ABC) {d}}')
 
     def test_move_down_at_expanded_object_at_bottom(self):
         schema = ('type Query {'
