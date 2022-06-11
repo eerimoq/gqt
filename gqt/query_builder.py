@@ -5,7 +5,9 @@ from contextlib import contextmanager
 
 from .cache import read_tree_from_cache
 from .cache import write_tree_to_cache
+from .endpoint import create_query
 from .endpoint import fetch_schema
+from .endpoint import post
 from .screen import addstr
 from .screen import move
 from .tree import load_tree_from_schema
@@ -37,13 +39,16 @@ def format_title(kind, tree, description, x_max):
 
 class QueryBuilder:
 
-    def __init__(self, stdscr, endpoint, tree):
+    def __init__(self, stdscr, endpoint, verify, no_execute, tree):
         self.stdscr = stdscr
         self.endpoint = endpoint
+        self.verify = verify
+        self.no_execute = no_execute
         self.tree = tree
         self.show_help = False
         self.y_offset = 1
-        self.error = None
+        self.errors = None
+        self.response = None
 
     def draw(self, cursor, y_max, x_max, y):
         for i in range(y):
@@ -73,9 +78,12 @@ class QueryBuilder:
             self.addstr(max(cursor.y_mutation - 2, 0), 0, ' ')
             self.draw_title(max(cursor.y_mutation - 1, 0), mutation_line)
 
-        if self.error is not None:
-            self.addstr_error(y_max - 1, 0, self.error)
-            self.error = None
+        if self.errors is not None:
+            for i, error in enumerate(self.errors, -len(self.errors)):
+                self.addstr(y_max + i, 0, ' ' * x_max)
+                self.addstr_error(y_max + i, 0, error)
+
+            self.errors = None
 
     def update_key(self, key):
         if key == 'KEY_UP':
@@ -103,24 +111,45 @@ class QueryBuilder:
         if key in ['h', '?']:
             self.show_help = not self.show_help
 
+    def update_key_enter(self):
+        try:
+            query = self.tree.query()
+
+            if self.no_execute:
+                return True, None
+
+            response = post(self.endpoint,
+                            create_query(query),
+                            self.verify).json()
+
+            if 'errors' not in response:
+                return True, response['data']
+
+            self.errors = [
+                error['message']
+                for error in response['errors']
+            ]
+        except Exception as error:
+            self.errors = [str(error)]
+
+        return False, None
+
     def update(self, key):
         if self.show_help:
             self.update_key_help(key)
         else:
             if self.update_key(key):
-                try:
-                    self.tree.query()
+                done, response = self.update_key_enter()
 
-                    return True
-                except Exception as error:
-                    self.error = str(error)
+                if done:
+                    return done, response
 
         if self.show_help:
             self.draw_help()
         else:
             self.draw_selector()
 
-        return False
+        return False, None
 
     def draw_help(self):
         curses.curs_set(False)
@@ -182,7 +211,9 @@ class QueryBuilder:
             except curses.error:
                 continue
 
-            done = self.update(key)
+            done, response = self.update(key)
+
+        return response
 
     def addstr(self, y, x, text):
         addstr(self.stdscr, y, x, text)
@@ -218,8 +249,8 @@ def load_tree(endpoint, verify):
         return load_tree_from_schema(fetch_schema(endpoint, verify))
 
 
-def selector(stdscr, endpoint, tree):
-    QueryBuilder(stdscr, endpoint, tree).run()
+def selector(stdscr, endpoint, verify, no_execute, tree):
+    return QueryBuilder(stdscr, endpoint, verify, no_execute, tree).run()
 
 
 @contextmanager
@@ -234,12 +265,12 @@ def redirect_stdout_to_stderr():
         os.close(original_stdout)
 
 
-def query_builder(endpoint, verify):
+def query_builder(endpoint, verify, no_execute):
     tree = load_tree(endpoint, verify)
 
     with redirect_stdout_to_stderr():
-        curses.wrapper(selector, endpoint, tree)
+        response = curses.wrapper(selector, endpoint, verify, no_execute, tree)
 
     write_tree_to_cache(tree, endpoint)
 
-    return tree
+    return tree, response

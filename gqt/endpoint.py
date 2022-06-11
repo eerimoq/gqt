@@ -18,7 +18,10 @@ def post(endpoint, query, verify):
     response = requests.post(endpoint, json=query, verify=verify)
 
     if response.status_code != 200:
-        print(response.text, file=sys.stderr)
         response.raise_for_status()
 
     return response
+
+
+def create_query(query):
+    return {"query": query}

@@ -14,6 +14,7 @@ from graphql.language import print_ast
 
 from .cache import CACHE_PATH
 from .cache import read_tree_from_cache
+from .endpoint import create_query
 from .endpoint import fetch_schema
 from .endpoint import post
 from .query_builder import query_builder
@@ -24,10 +25,6 @@ def default_endpoint():
     return os.environ.get('GQT_ENDPOINT', 'https://mys-lang.org/graphql')
 
 
-def create_query(query):
-    return {"query": query}
-
-
 def last_query(endpoint):
     try:
         return read_tree_from_cache(endpoint)
@@ -35,13 +32,20 @@ def last_query(endpoint):
         sys.exit('No cached query found.')
 
 
-def execute_query(endpoint, query, verify, format_yaml):
-    json_response = post(endpoint, query, verify).json()
+def execute_query(endpoint, query, verify):
+    response = post(endpoint, query, verify).json()
 
-    if 'errors' in json_response:
-        sys.exit(json_response['errors'])
+    if 'errors' in response:
+        for error in response['errors']:
+            print('error:', error['message'], file=sys.stderr)
 
-    json_data = json.dumps(json_response['data'], ensure_ascii=False, indent=4)
+        sys.exit(1)
+
+    return response['data']
+
+
+def style_response(response, format_yaml):
+    json_data = json.dumps(response, ensure_ascii=False, indent=4)
 
     if format_yaml:
         return yaml.dump(yaml.load(json_data, Loader=yaml.Loader),
@@ -121,8 +125,11 @@ def main():
         else:
             if args.repeat:
                 query = last_query(args.endpoint)
+                response = None
             else:
-                query = query_builder(args.endpoint, verify)
+                query, response = query_builder(args.endpoint,
+                                                verify,
+                                                args.print_query or args.print_curl)
 
             query = query.query()
 
@@ -132,16 +139,20 @@ def main():
                 query = json.dumps(create_query(query))
                 print(CURL_COMMAND.format(endpoint=args.endpoint, query=query))
             else:
-                data = execute_query(args.endpoint,
-                                     create_query(query),
-                                     verify,
-                                     args.yaml)
+                if response is None:
+                    response = execute_query(args.endpoint,
+                                             create_query(query),
+                                             verify)
+
+                response = style_response(response, args.yaml)
 
                 if args.yaml:
-                    show(data, 'yaml')
+                    show(response, 'yaml')
                 else:
-                    show(data, 'json')
+                    show(response, 'json')
     except KeyboardInterrupt:
         sys.exit(1)
+    except SystemExit:
+        raise
     except BaseException as error:
         sys.exit(f'error: {error}')
