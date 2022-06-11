@@ -132,7 +132,7 @@ def main():
                         help='No SSL verification.')
     parser.add_argument('-H', '--header',
                         action='append',
-                        help='Extra HTTP headers.')
+                        help='Extra HTTP header. May be given multiple times.')
     args = parser.parse_args()
 
     try:
