@@ -11,14 +11,17 @@ from .screen import move
 from .tree import load_tree_from_schema
 
 HELP_TEXT = '''\
-Move:         <Left>, <Right>, <Up>, <Down> and <Tab>
+Move:         <Left>, <Right>, <Up> and <Down>
+              <Page-Up> and <Page-Down>
+              <Meta-<> and <Meta->>
+              <Tab>
 Select:       <Space>
 Execute:      <Enter>
 Help:         h or ?
 Quit:         <Ctrl-C>\
 '''
 
-HELP_NCOLS = 57
+HELP_NCOLS = 50
 
 
 def format_title(kind, tree, description, x_max):
@@ -44,6 +47,7 @@ class QueryBuilder:
         self.show_help = False
         self.y_offset = 1
         self.error = None
+        self.meta = False
 
     def draw(self, cursor, y_max, x_max, y):
         for i in range(y):
@@ -87,12 +91,28 @@ class QueryBuilder:
             self.tree.key_left()
         elif key == 'KEY_RIGHT':
             self.tree.key_right()
+        elif key == 'KEY_PPAGE':
+            for _ in range(self.page_up_down_lines()):
+                self.tree.key_up()
+        elif key == 'KEY_NPAGE':
+            for _ in range(self.page_up_down_lines()):
+                self.tree.key_down()
         elif key == ' ':
             self.tree.select()
         elif key == '\n':
             return True
         elif key == 'KEY_RESIZE':
             pass
+        elif self.meta:
+            self.meta = False
+            if key == '<':
+                self.tree.go_to_begin()
+            elif key == '>':
+                self.tree.go_to_end()
+            else:
+                self.tree.key('\x1b' + key)
+        elif key == '\x1b':
+            self.meta = True
         elif key is not None:
             if not self.tree.key(key):
                 if key in ['h', '?']:
@@ -210,6 +230,9 @@ class QueryBuilder:
             self.addstr_frame(y, x, parts[2])
             x += 2
             self.addstr(y, x, ' '.join(parts[3:]))
+
+    def page_up_down_lines(self):
+        return int(self.stdscr.getmaxyx()[0] * 0.75)
 
 
 def load_tree(endpoint, headers, verify):

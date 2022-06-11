@@ -235,7 +235,6 @@ class Argument(Node):
 
         self.symbol = None
         self.next_symbol()
-        self.meta = False
 
     def is_string(self):
         return self._type in ['String', 'ID']
@@ -284,14 +283,6 @@ class Argument(Node):
 
             return True
         elif self.state.cursor_at_input_field:
-            if self.meta:
-                key = '\x1b' + key
-                self.meta = False
-            elif key == '\x1b':
-                self.meta = True
-
-                return True
-
             self.value, self.pos = edit(self.value,
                                         self.pos,
                                         KEY_BINDINGS.get(key, key))
@@ -501,6 +492,12 @@ class Tree:
 
     def query(self):
         return self._root.query_root(self._cursor)
+
+    def go_to_begin(self):
+        self._cursor = self._root.fields[0]
+
+    def go_to_end(self):
+        self._cursor = self._find_last(self._root.fields[-1])
 
     def _find_first_below(self, node):
         if node.parent is not None:
