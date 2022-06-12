@@ -55,7 +55,7 @@ def fields_query(fields):
         if isinstance(field, Leaf):
             if field.is_selected:
                 items.append(field.query())
-        elif isinstance(field, LeafArgument):
+        elif isinstance(field, ScalarArgument):
             value = field.query()
 
             if value is not None:
@@ -251,7 +251,7 @@ class Leaf(Node):
         return f'{self.name}{arguments}'
 
 
-class LeafArgument(Node):
+class ScalarArgument(Node):
 
     def __init__(self, name, field_type, description, state, types):
         super().__init__()
@@ -422,11 +422,11 @@ def build_field(field, types, state):
 
 
 def build_argument(argument, types, state):
-    return LeafArgument(argument['name'],
-                        argument['type'],
-                        argument['description'],
-                        state,
-                        types)
+    return ScalarArgument(argument['name'],
+                          argument['type'],
+                          argument['description'],
+                          state,
+                          types)
 
 
 class ObjectFieldsIterator:
