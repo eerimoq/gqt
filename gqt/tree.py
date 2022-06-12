@@ -55,7 +55,7 @@ def fields_query(fields):
         if isinstance(field, Leaf):
             if field.is_selected:
                 items.append(field.query())
-        elif isinstance(field, ScalarArgument):
+        elif isinstance(field, (ScalarArgument, ListArgument)):
             value = field.query()
 
             if value is not None:
@@ -253,7 +253,12 @@ class Leaf(Node):
 
 class ScalarArgument(Node):
 
-    def __init__(self, name, field_type, description, state, types):
+    def __init__(self,
+                 name,
+                 field_type,
+                 description,
+                 state,
+                 types):
         super().__init__()
         self.name = name
         self._type = get_type(field_type)['name']
@@ -361,6 +366,143 @@ class ScalarArgument(Node):
             return 'null'
 
 
+class InputArgument(ScalarArgument):
+    pass
+
+
+class ListItem(Node):
+
+    def __init__(self, item, item_type):
+        super().__init__()
+        self.type = get_type_string(item_type)
+        self.is_selected = False
+        self.item = item
+        self.item.parent = self
+
+    def draw_item(self, stdscr, y, x, i, cursor):
+        if cursor.node is self:
+            cursor.y = y
+            cursor.x = x + 1
+
+        index = f'[{i}]'
+        addstr(stdscr, y, x, index)
+        x += len(index) + 1
+        y += 1
+
+        if self.is_selected:
+            y = self.item.draw(stdscr, y, x, cursor)
+
+        return y
+
+    def select(self):
+        if not self.is_selected:
+            self.parent.item_selected(self)
+
+        self.is_selected = not self.is_selected
+
+    def query(self):
+        value = self.item.query()
+
+        if value is None:
+            value = 'null'
+
+        return value
+
+
+class ListArgument(Node):
+
+    def __init__(self,
+                 name,
+                 field_type,
+                 description,
+                 state,
+                 types):
+        super().__init__()
+        self.name = name
+        self.type = get_type_string(field_type)
+        self.description = description
+        self.is_optional = (field_type['kind'] != 'NON_NULL')
+        self.state = state
+        self.field_type = field_type
+        self.types = types
+
+        if self.is_optional:
+            self.symbol = '□'
+        else:
+            self.symbol = '■'
+
+        self.items = []
+        self.append_item()
+
+    def append_item(self):
+        if self.is_optional:
+            item_type = self.field_type['ofType']
+        else:
+            item_type = self.field_type['ofType']['ofType']
+
+        item = ListItem(ScalarArgument('value',
+                                       item_type,
+                                       '',
+                                       self.state,
+                                       self.types),
+                        item_type)
+
+        if len(self.items) > 0:
+            self.items[-1].next = item
+            item.prev = self.items[-1]
+
+        item.parent = self
+
+        self.items.append(item)
+
+    def draw(self, stdscr, y, x, cursor):
+        if cursor.node is self:
+            cursor.y = y
+            cursor.x = x
+
+        addstr(stdscr, y, x, self.symbol, curses.color_pair(3))
+        addstr(stdscr, y, x + 2, f'{self.name}:')
+        y += 1
+
+        if self.symbol == '■':
+            for i, item in enumerate(self.items):
+                y = item.draw_item(stdscr, y, x + 2, i, cursor)
+
+        return y
+
+    def next_symbol(self):
+        if self.is_optional:
+            table = {
+                '□': '■',
+                '■': '□'
+            }
+        else:
+            table = {
+                '■': '■'
+            }
+
+        self.symbol = table[self.symbol]
+
+    def item_selected(self, item):
+        if item is self.items[-1]:
+            self.append_item()
+
+    def select(self):
+        self.next_symbol()
+
+    def query(self):
+        if self.symbol == '■':
+            items = []
+
+            for item in self.items:
+                if item.is_selected:
+                    items.append(item.query())
+
+            return f'[{", ".join(items)}]'
+        else:
+            return None
+
+
 class State:
 
     def __init__(self):
@@ -422,11 +564,20 @@ def build_field(field, types, state):
 
 
 def build_argument(argument, types, state):
-    return ScalarArgument(argument['name'],
-                          argument['type'],
-                          argument['description'],
-                          state,
-                          types)
+    name = argument['name']
+    description = argument['description']
+    arg_type = argument['type']
+    kind = arg_type['kind']
+
+    if kind == 'NON_NULL':
+        kind = arg_type['ofType']['kind']
+
+    if kind == 'LIST':
+        return ListArgument(name, arg_type, description, state, types)
+    elif kind == 'INPUT_OBJECT':
+        return InputArgument(name, arg_type, description, state, types)
+    else:
+        return ScalarArgument(name, arg_type, description, state, types)
 
 
 class ObjectFieldsIterator:
@@ -521,6 +672,14 @@ class Tree:
             if self._cursor.fields is not None and self._cursor.is_selected:
                 self._cursor = self._cursor.fields[0]
                 return
+        elif isinstance(self._cursor, ListItem):
+            if self._cursor.is_selected:
+                self._cursor = self._cursor.item
+                return
+        elif isinstance(self._cursor, ListArgument):
+            if self._cursor.symbol == '■':
+                self._cursor = self._cursor.items[0]
+                return
 
         if self._cursor.next is not None:
             self._cursor = self._cursor.next
@@ -551,6 +710,9 @@ class Tree:
                 self._cursor = self._cursor.fields[0]
             else:
                 self._cursor.is_expanded = True
+        elif isinstance(self._cursor, ListItem):
+            if self._cursor.is_selected:
+                self._cursor = self._cursor.item
 
     def select(self):
         self._cursor.select()
@@ -583,6 +745,12 @@ class Tree:
         elif isinstance(node, Leaf):
             if node.fields is not None and node.is_selected:
                 return self._find_last(node.fields[-1])
+        elif isinstance(node, ListItem):
+            if node.is_selected:
+                return self._find_last(node.item)
+        elif isinstance(node, ListArgument):
+            if node.symbol == '■':
+                return self._find_last(node.items[-1])
 
         return node
 
