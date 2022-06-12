@@ -102,38 +102,17 @@ Known issues
 Ideas
 -----
 
-- Leaves with arguments:
+- Input example:
 
   .. code-block::
 
-     type Query {
-         foo(id: Int, name: String): String
-     }
-
-     Unselected:
-
      ╭─ Query
-     │ □ foo
-
-     Selected:
-
-     ╭─ Query
-     │ ■ foo
-     │   ■ id: 5
-     │   □ name:
-
-- Required arguments with default value:
-
-  .. code-block::
-
-     □: omit
-     ■: non-null value
-     $: variable
-
-- Check for schema modifications when starting. Do it in the
-  background and notify the user if it was modified.
-
-  New schema fetched from the server. Use it? y/n
+     │ ▼ item
+     │   ■ config:
+     │     ■ unit: metric
+     │     □ width:
+     │   □ length
+     │   □ weight
 
 - List argument example:
 
@@ -153,17 +132,10 @@ Ideas
      │         □ c:
      │     [2]
 
-- Input example:
+- Check for schema modifications when starting. Do it in the
+  background and notify the user if it was modified.
 
-  .. code-block::
-
-     ╭─ Query
-     │ ▼ item
-     │   ■ config:
-     │     ■ unit: metric
-     │     □ width:
-     │   □ length
-     │   □ weight
+  New schema fetched from the server. Use it? y/n
 
 - Variables example:
 
