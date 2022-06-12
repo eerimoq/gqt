@@ -55,7 +55,7 @@ def fields_query(fields):
         if isinstance(field, Leaf):
             if field.is_selected:
                 items.append(field.query())
-        elif isinstance(field, Argument):
+        elif isinstance(field, LeafArgument):
             value = field.query()
 
             if value is not None:
@@ -251,7 +251,7 @@ class Leaf(Node):
         return f'{self.name}{arguments}'
 
 
-class Argument(Node):
+class LeafArgument(Node):
 
     def __init__(self, name, field_type, description, state, types):
         super().__init__()
@@ -360,6 +360,7 @@ class Argument(Node):
         else:
             return 'null'
 
+
 class State:
 
     def __init__(self):
@@ -420,12 +421,12 @@ def build_field(field, types, state):
         return Leaf(name, field_type_string, description, fields)
 
 
-def build_argument(args, types, state):
-    return Argument(argument['name'],
-                    argument['type'],
-                    argument['description'],
-                    state,
-                    types)
+def build_argument(argument, types, state):
+    return LeafArgument(argument['name'],
+                        argument['type'],
+                        argument['description'],
+                        state,
+                        types)
 
 
 class ObjectFieldsIterator:
