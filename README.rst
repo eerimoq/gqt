@@ -95,7 +95,7 @@ Known issues
 
 - Arguments does not work for scalar and input types.
 
-- Unions are not implemented.
+- Unions and interfaces are not implemented.
 
 - And much more.
 

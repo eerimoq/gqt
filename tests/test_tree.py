@@ -167,6 +167,36 @@ class TreeTest(unittest.TestCase):
         tree.select()
         self.assertEqual(tree.query(), 'query Query {a(b:"ABC") {d}}')
 
+    def test_argument_to_scalar_field(self):
+        schema = ('type Query {'
+                  '  a(b: String!, c: Int): String'
+                  '  b: Foo'
+                  '}'
+                  'type Foo {'
+                  '  f: String'
+                  '}')
+        tree = load_tree(schema)
+        self.assertEqual(tree.cursor_type(), 'String')
+        tree.key_down()
+        self.assertEqual(tree.cursor_type(), 'Foo')
+        tree.key_up()
+        tree.select()
+        self.assertEqual(tree.query(), 'query Query {a(b:"")}')
+        tree.key_down()
+        tree.key_down()
+        self.assertEqual(tree.cursor_type(), 'Int')
+        tree.select()
+        tree.key('\t')
+        tree.key('9')
+        self.assertEqual(tree.query(), 'query Query {a(b:"",c:9)}')
+        tree.key('\t')
+        tree.select()
+        tree.key_down()
+        tree.key_right()
+        tree.key_down()
+        tree.select()
+        self.assertEqual(tree.query(), 'query Query {a(b:"") b {f}}')
+
     def test_move_down_at_expanded_object_at_bottom(self):
         schema = ('type Query {'
                   '  a: Foo'

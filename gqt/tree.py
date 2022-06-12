@@ -54,7 +54,7 @@ def fields_query(fields):
     for field in fields:
         if isinstance(field, Leaf):
             if field.is_selected:
-                items.append(field.name)
+                items.append(field.query())
         elif isinstance(field, Argument):
             value = field.query()
 
@@ -189,14 +189,43 @@ class Object(Node):
 
 class Leaf(Node):
 
-    def __init__(self, name, field_type, description):
+    def __init__(self, name, field_type, description, fields):
         super().__init__()
         self.is_selected = False
         self.name = name
         self.type = field_type
         self.description = description
+        self.fields = fields
+
+        if self.fields is not None:
+            self.fields.parent = self
 
     def draw(self, stdscr, y, x, cursor):
+        if self.fields is None:
+            return self.draw_without_arguments(stdscr, y, x, cursor)
+        else:
+            return self.draw_with_arguments(stdscr, y, x, cursor)
+
+    def draw_with_arguments(self, stdscr, y, x, cursor):
+        if cursor.node is self:
+            cursor.y = y
+            cursor.x = x
+
+        addstr(stdscr, y, x + 2, self.name)
+
+        if self.is_selected:
+            addstr(stdscr, y, x, '■', curses.color_pair(1))
+            y += 1
+
+            for field in self.fields:
+                y = field.draw(stdscr, y, x + 2, cursor)
+        else:
+            addstr(stdscr, y, x, '□', curses.color_pair(1))
+            y += 1
+
+        return y
+
+    def draw_without_arguments(self, stdscr, y, x, cursor):
         if cursor.node is self:
             cursor.y = y
             cursor.x = x
@@ -212,6 +241,14 @@ class Leaf(Node):
 
     def select(self):
         self.is_selected = not self.is_selected
+
+    def query(self):
+        if self.fields is None:
+            arguments = ''
+        else:
+            arguments = fields_query(self.fields)[1]
+
+        return f'{self.name}{arguments}'
 
 
 class Argument(Node):
@@ -375,7 +412,12 @@ def build_field(types, field, state):
                       ObjectFields(field['args'], fields, types, state),
                       len(fields))
     else:
-        return Leaf(name, field_type_string, description)
+        if field['args']:
+            fields = ObjectFields(field['args'], [], types, state)
+        else:
+            fields = None
+
+        return Leaf(name, field_type_string, description, fields)
 
 
 class ObjectFieldsIterator:
@@ -470,6 +512,10 @@ class Tree:
             if self._cursor.is_expanded:
                 self._cursor = self._cursor.fields[0]
                 return
+        elif isinstance(self._cursor, Leaf):
+            if self._cursor.fields is not None and self._cursor.is_selected:
+                self._cursor = self._cursor.fields[0]
+                return
 
         if self._cursor.next is not None:
             self._cursor = self._cursor.next
@@ -529,10 +575,11 @@ class Tree:
         if isinstance(node, Object):
             if node.is_expanded:
                 return self._find_last(node.fields[-1])
-            else:
-                return node
-        else:
-            return node
+        elif isinstance(node, Leaf):
+            if node.fields is not None and node.is_selected:
+                return self._find_last(node.fields[-1])
+
+        return node
 
 
 def load_tree_from_schema(schema):
