@@ -216,14 +216,21 @@ class Leaf(Node):
 
 class Argument(Node):
 
-    def __init__(self, name, field_type, description, state):
+    def __init__(self, name, field_type, description, state, types):
         super().__init__()
         self.name = name
         self._type = get_type(field_type)['name']
         self.type = get_type_string(field_type)
         self.description = description
         self.is_optional = (field_type['kind'] != 'NON_NULL')
+
+        if self.is_optional:
+            self.is_scalar = (field_type['kind'] == 'SCALAR')
+        else:
+            self.is_scalar = (field_type['ofType']['kind'] == 'SCALAR')
+
         self.state = state
+        self.types = types
         self.value = ''
         self.pos = 0
 
@@ -233,7 +240,7 @@ class Argument(Node):
             self.symbol = '■'
 
     def is_string(self):
-        return self._type in ['String', 'ID']
+        return self.is_scalar and self._type in ['String', 'ID']
 
     def draw(self, stdscr, y, x, cursor):
         if cursor.node is self:
@@ -399,7 +406,11 @@ class ObjectFields:
     def fields(self):
         if self._fields is None:
             self._fields = [
-                Argument(arg['name'], arg['type'], arg['description'], self._state)
+                Argument(arg['name'],
+                         arg['type'],
+                         arg['description'],
+                         self._state,
+                         self._types)
                 for arg in self._arguments_info
             ] + [
                 build_field(self._types, field, self._state)

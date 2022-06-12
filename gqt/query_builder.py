@@ -3,6 +3,8 @@ import os
 import sys
 from contextlib import contextmanager
 
+from graphql.language import parse
+
 from .cache import read_tree_from_cache
 from .cache import write_tree_to_cache
 from .endpoint import fetch_schema
@@ -130,7 +132,7 @@ class QueryBuilder:
         else:
             if self.update_key(key):
                 try:
-                    self.tree.query()
+                    parse(self.tree.query())
 
                     return True
                 except Exception as error:
