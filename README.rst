@@ -132,40 +132,6 @@ Ideas
      │         □ c:
      │     [2]
 
-- Check for schema modifications when starting. Do it in the
-  background and notify the user if it was modified.
-
-  New schema fetched from the server. Use it? y/n
-
-- Variables example:
-
-  .. code-block::
-
-     ╭─ Query
-     │ ▼ standardLibrary
-     │   ▼ package
-     │     $ name: name
-     │     ■ id: 5
-     │     $ kind: kind
-     │     □ name
-     │   □ numberOfDownloads
-     │ ▶ statistics
-
-     ╭─ Variables
-     │ name: time
-     │ kind:
-     │   [0] ■ a: bar
-     │       ■ b: ne
-     │       □ c:
-     │   [1]
-
-- Print variables:
-
-  .. code-block:: shell
-
-     $ gqt -v
-     {"name": "foo", "kind": [{"a": "bar", "b": "ne"}]}
-
 - Unions:
 
   Always query ``__typename``.
@@ -219,6 +185,40 @@ Ideas
      │   ▼ mediumPicture: picture
      │     ■ width: 800
      │     ■ height: 600
+
+- Check for schema modifications when starting. Do it in the
+  background and notify the user if it was modified.
+
+  New schema fetched from the server. Use it? y/n
+
+- Variables example:
+
+  .. code-block::
+
+     ╭─ Query
+     │ ▼ standardLibrary
+     │   ▼ package
+     │     $ name: name
+     │     ■ id: 5
+     │     $ kind: kind
+     │     □ name
+     │   □ numberOfDownloads
+     │ ▶ statistics
+
+     ╭─ Variables
+     │ name: time
+     │ kind:
+     │   [0] ■ a: bar
+     │       ■ b: ne
+     │       □ c:
+     │   [1]
+
+- Print variables:
+
+  .. code-block:: shell
+
+     $ gqt -v
+     {"name": "foo", "kind": [{"a": "bar", "b": "ne"}]}
 
 - Subscriptions. Probably out of scope.
 
