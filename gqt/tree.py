@@ -289,16 +289,9 @@ class Argument(Node):
 
             return True
         elif self.state.cursor_at_input_field:
-            if self.value == '' and self.symbol == '□':
-                self.symbol = '■'
-
             self.value, self.pos = edit(self.value,
                                         self.pos,
                                         KEY_BINDINGS.get(key, key))
-
-            if self.is_optional:
-                if self.value == '' and self.symbol == '■':
-                    self.symbol = '□'
 
             return True
 
