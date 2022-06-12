@@ -114,24 +114,6 @@ Ideas
      │   □ length
      │   □ weight
 
-- List argument example:
-
-  .. code-block::
-
-     ╭─ Query
-     │ ▼ item
-     │   ■ kinds:
-     │     [0] ■ a: foo
-     │         ■ b: eq
-     │         ■ c:
-     │           [0] ■ a: x
-     │               ■ b: y
-     │           [1]
-     │     [1] ■ a: bar
-     │         ■ b: ne
-     │         □ c:
-     │     [2]
-
 - Unions:
 
   Always query ``__typename``.
