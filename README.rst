@@ -93,7 +93,7 @@ Print the schema:
 Known issues
 ------------
 
-- Arguments does not work for scalar and input types.
+- Arguments does not work for input types.
 
 - Unions and interfaces are not implemented.
 
