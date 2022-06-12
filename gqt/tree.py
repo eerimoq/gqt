@@ -392,7 +392,7 @@ def get_type_string(type_info):
         return type_info['name']
 
 
-def build_field(types, field, state):
+def build_field(field, types, state):
     try:
         name = field['name']
     except Exception:
@@ -418,6 +418,14 @@ def build_field(types, field, state):
             fields = None
 
         return Leaf(name, field_type_string, description, fields)
+
+
+def build_argument(args, types, state):
+    return Argument(argument['name'],
+                    argument['type'],
+                    argument['description'],
+                    state,
+                    types)
 
 
 class ObjectFieldsIterator:
@@ -448,14 +456,10 @@ class ObjectFields:
     def fields(self):
         if self._fields is None:
             self._fields = [
-                Argument(arg['name'],
-                         arg['type'],
-                         arg['description'],
-                         self._state,
-                         self._types)
-                for arg in self._arguments_info
+                build_argument(argument, self._types, self._state)
+                for argument in self._arguments_info
             ] + [
-                build_field(self._types, field, self._state)
+                build_field(field, self._types, self._state)
                 for field in self._fields_info
             ]
 
