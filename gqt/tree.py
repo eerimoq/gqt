@@ -382,7 +382,12 @@ class InputArgument(Node):
         self.is_optional = (field_type['kind'] != 'NON_NULL')
         self.state = state
         self.types = types
-        fields = find_type(types, field_type['name'])['inputFields']
+
+        if self.is_optional:
+            fields = find_type(types, field_type['name'])['inputFields']
+        else:
+            fields = find_type(types, field_type['ofType']['name'])['inputFields']
+
         self.fields = ObjectFields(fields, [], types, state)
         self.fields.parent = self
 
@@ -507,11 +512,12 @@ class ListArgument(Node):
         else:
             item_type = self.field_type['ofType']['ofType']
 
-        item = ListItem(ScalarArgument('value',
-                                       item_type,
-                                       '',
-                                       self.state,
-                                       self.types),
+        arg_type = {
+            'name': 'value',
+            'description': '',
+            'type': item_type
+        }
+        item = ListItem(build_argument(arg_type, self.types, self.state),
                         item_type)
 
         if len(self.items) > 0:
@@ -642,10 +648,7 @@ def build_argument(argument, types, state):
     if kind == 'LIST':
         return ListArgument(name, arg_type, description, state, types)
     elif kind == 'INPUT_OBJECT':
-        try:
-            return InputArgument(name, arg_type, description, state, types)
-        except Exception:
-            return ScalarArgument(name, arg_type, description, state, types)
+        return InputArgument(name, arg_type, description, state, types)
     else:
         return ScalarArgument(name, arg_type, description, state, types)
 

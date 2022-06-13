@@ -288,3 +288,26 @@ class TreeTest(unittest.TestCase):
         tree.key_up()
         tree.key_left()
         self.assertEqual(tree.query(), 'query Query {a(b:["g"]) b}')
+
+    def test_input_argument(self):
+        schema = ('type Query {'
+                  '  a(x: Foo): String'
+                  '}'
+                  'input Foo {'
+                  '  y: Bar!'
+                  '}'
+                  'input Bar {'
+                  '  z: String'
+                  '}')
+        tree = load_tree(schema)
+        tree.select()
+        tree.key_down()
+        self.assertEqual(tree.query(), 'query Query {a}')
+        tree.select()
+        self.assertEqual(tree.query(), 'query Query {a(x:{y:{}})}')
+        tree.key_down()
+        tree.key_down()
+        tree.select()
+        tree.key('\t')
+        tree.key('B')
+        self.assertEqual(tree.query(), 'query Query {a(x:{y:{z:"B"}})}')
