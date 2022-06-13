@@ -642,7 +642,10 @@ def build_argument(argument, types, state):
     if kind == 'LIST':
         return ListArgument(name, arg_type, description, state, types)
     elif kind == 'INPUT_OBJECT':
-        return InputArgument(name, arg_type, description, state, types)
+        try:
+            return InputArgument(name, arg_type, description, state, types)
+        except Exception:
+            return ScalarArgument(name, arg_type, description, state, types)
     else:
         return ScalarArgument(name, arg_type, description, state, types)
 
