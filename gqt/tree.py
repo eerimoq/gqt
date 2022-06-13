@@ -55,7 +55,7 @@ def fields_query(fields):
         if isinstance(field, Leaf):
             if field.is_selected:
                 items.append(field.query())
-        elif isinstance(field, (ScalarArgument, ListArgument)):
+        elif isinstance(field, (ScalarArgument, InputArgument, ListArgument)):
             value = field.query()
 
             if value is not None:
@@ -366,8 +366,76 @@ class ScalarArgument(Node):
             return 'null'
 
 
-class InputArgument(ScalarArgument):
-    pass
+class InputArgument(Node):
+
+    def __init__(self,
+                 name,
+                 field_type,
+                 description,
+                 state,
+                 types):
+        super().__init__()
+        self.name = name
+        self._type = get_type(field_type)['name']
+        self.type = get_type_string(field_type)
+        self.description = description
+        self.is_optional = (field_type['kind'] != 'NON_NULL')
+        self.state = state
+        self.types = types
+        fields = find_type(types, field_type['name'])['inputFields']
+        self.fields = ObjectFields(fields, [], types, state)
+        self.fields.parent = self
+
+        if self.is_optional:
+            self.symbol = '□'
+        else:
+            self.symbol = '■'
+
+    def draw(self, stdscr, y, x, cursor):
+        if cursor.node is self:
+            cursor.y = y
+            cursor.x = x
+
+        addstr(stdscr, y, x, f'{self.symbol}', curses.color_pair(3))
+        x += 2
+        addstr(stdscr, y, x, f'{self.name}:')
+        y += 1
+
+        if self.symbol == '■':
+            for field in self.fields:
+                y = field.draw(stdscr, y, x, cursor)
+
+        return y
+
+    def next_symbol(self):
+        if self.is_optional:
+            table = {
+                '□': '■',
+                '■': '□'
+            }
+        else:
+            table = {
+                '■': '■'
+            }
+
+        self.symbol = table[self.symbol]
+
+    def select(self):
+        self.next_symbol()
+
+    def query(self):
+        if self.symbol == '■':
+            items = []
+
+            for field in self.fields:
+                value = field.query()
+
+                if value:
+                    items.append(f'{field.name}:{value}')
+
+            return '{' + ','.join(items) + '}'
+        else:
+            return None
 
 
 class ListItem(Node):
@@ -679,6 +747,10 @@ class Tree:
             if self._cursor.symbol == '■':
                 self._cursor = self._cursor.items[0]
                 return
+        elif isinstance(self._cursor, InputArgument):
+            if self._cursor.symbol == '■':
+                self._cursor = self._cursor.fields[0]
+                return
 
         if self._cursor.next is not None:
             self._cursor = self._cursor.next
@@ -757,6 +829,9 @@ class Tree:
         elif isinstance(node, ListArgument):
             if node.symbol == '■':
                 return self._find_last(node.items[-1])
+        elif isinstance(node, InputArgument):
+            if node.symbol == '■':
+                return self._find_last(node.fields[-1])
 
         return node
 
