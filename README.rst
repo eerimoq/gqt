@@ -93,26 +93,12 @@ Print the schema:
 Known issues
 ------------
 
-- Arguments does not work for input types.
-
 - Unions and interfaces are not implemented.
 
 - And much more.
 
 Ideas
 -----
-
-- Input example:
-
-  .. code-block::
-
-     ╭─ Query
-     │ ▼ item
-     │   ■ config:
-     │     ■ unit: metric
-     │     □ width:
-     │   □ length
-     │   □ weight
 
 - Unions:
 
