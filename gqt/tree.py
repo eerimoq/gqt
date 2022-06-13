@@ -375,30 +375,29 @@ class ListItem(Node):
     def __init__(self, item, item_type):
         super().__init__()
         self.type = get_type_string(item_type)
-        self.is_selected = False
+        self.is_expanded = False
         self.item = item
         self.item.parent = self
 
     def draw_item(self, stdscr, y, x, i, cursor):
         if cursor.node is self:
             cursor.y = y
-            cursor.x = x + 1
+            cursor.x = x
 
-        index = f'[{i}]'
-        addstr(stdscr, y, x, index)
-        x += len(index) + 1
+        if self.is_expanded:
+            symbol = '▼'
+        else:
+            symbol = '▶'
+
+        addstr(stdscr, y, x, symbol, curses.color_pair(3))
+        x += 2
+        addstr(stdscr, y, x, f'[{i}]')
         y += 1
 
-        if self.is_selected:
+        if self.is_expanded:
             y = self.item.draw(stdscr, y, x, cursor)
 
         return y
-
-    def select(self):
-        if not self.is_selected:
-            self.parent.item_selected(self)
-
-        self.is_selected = not self.is_selected
 
     def query(self):
         value = self.item.query()
@@ -495,7 +494,7 @@ class ListArgument(Node):
             items = []
 
             for item in self.items:
-                if item.is_selected:
+                if item.is_expanded:
                     items.append(item.query())
 
             return f'[{", ".join(items)}]'
@@ -673,7 +672,7 @@ class Tree:
                 self._cursor = self._cursor.fields[0]
                 return
         elif isinstance(self._cursor, ListItem):
-            if self._cursor.is_selected:
+            if self._cursor.is_expanded:
                 self._cursor = self._cursor.item
                 return
         elif isinstance(self._cursor, ListArgument):
@@ -697,6 +696,10 @@ class Tree:
             if self._cursor.is_expanded:
                 self._cursor.is_expanded = False
                 return
+        elif isinstance(self._cursor, ListItem):
+            if self._cursor.is_expanded:
+                self._cursor.is_expanded = False
+                return
 
         if self._cursor.parent is not None:
             self._cursor = self._cursor.parent
@@ -711,8 +714,11 @@ class Tree:
             else:
                 self._cursor.is_expanded = True
         elif isinstance(self._cursor, ListItem):
-            if self._cursor.is_selected:
+            if self._cursor.is_expanded:
                 self._cursor = self._cursor.item
+            else:
+                self._cursor.is_expanded = True
+                self._cursor.parent.item_selected(self._cursor)
 
     def select(self):
         self._cursor.select()
@@ -746,7 +752,7 @@ class Tree:
             if node.fields is not None and node.is_selected:
                 return self._find_last(node.fields[-1])
         elif isinstance(node, ListItem):
-            if node.is_selected:
+            if node.is_expanded:
                 return self._find_last(node.item)
         elif isinstance(node, ListArgument):
             if node.symbol == '■':
