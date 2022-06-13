@@ -366,6 +366,124 @@ class ScalarArgument(Node):
             return 'null'
 
 
+class EnumArgument(Node):
+
+    def __init__(self,
+                 name,
+                 field_type,
+                 description,
+                 state,
+                 types):
+        super().__init__()
+        self.name = name
+        self.type = get_type_string(field_type)
+        self.description = description
+        self.is_optional = (field_type['kind'] != 'NON_NULL')
+
+        if not self.is_optional:
+            field_type = field_type['ofType']
+
+        self.members = [
+            value['name']
+            for value in find_type(types, field_type['name'])['enumValues']
+        ]
+        self.state = state
+        self.value = ''
+        self.pos = 0
+
+        if self.is_optional:
+            self.symbol = '□'
+        else:
+            self.symbol = '■'
+
+    def draw(self, stdscr, y, x, cursor):
+        if cursor.node is self:
+            cursor.y = y
+
+            if self.state.cursor_at_input_field:
+                cursor.x = x + len(self.name) + 4 + self.pos
+            else:
+                cursor.x = x
+
+        addstr(stdscr, y, x, self.symbol, curses.color_pair(3))
+        addstr(stdscr, y, x + 2, f'{self.name}:')
+        addstr(stdscr,
+               y,
+               x + 2 + len(self.name) + 2,
+               self.value,
+               curses.color_pair(2))
+
+        x += (2 + len(self.name + self.value) + 3)
+
+        if self.value not in self.members:
+            _, x_max = stdscr.getmaxyx()
+            members = [
+                member
+                for member in self.members
+                if member.startswith(self.value)
+            ]
+            members = '(' + ', '.join(members) + ')'
+            members = members[:max(x_max - x, 0)]
+            addstr(stdscr, y, x, members)
+
+        return y + 1
+
+    def next_symbol(self):
+        if self.is_optional:
+            table = {
+                '□': '■',
+                '■': '□'
+            }
+        else:
+            table = {
+                '■': '■'
+            }
+
+        self.symbol = table[self.symbol]
+
+    def key_left(self):
+        if self.state.cursor_at_input_field:
+            self.key('KEY_LEFT')
+
+            return True
+        else:
+            return False
+
+    def key_right(self):
+        if self.state.cursor_at_input_field:
+            self.key('KEY_RIGHT')
+
+            return True
+        else:
+            return False
+
+    def key(self, key):
+        if key == '\t':
+            self.state.cursor_at_input_field = not self.state.cursor_at_input_field
+
+            return True
+        elif self.state.cursor_at_input_field:
+            self.value, self.pos = edit(self.value,
+                                        self.pos,
+                                        KEY_BINDINGS.get(key, key))
+
+            return True
+
+        return False
+
+    def select(self):
+        if self.state.cursor_at_input_field:
+            self.key(' ')
+        else:
+            self.next_symbol()
+
+    def query(self):
+        if self.symbol == '■':
+            return str(self.value)
+        else:
+            return None
+
+
 class InputArgument(Node):
 
     def __init__(self,
@@ -649,6 +767,8 @@ def build_argument(argument, types, state):
         return ListArgument(name, arg_type, description, state, types)
     elif kind == 'INPUT_OBJECT':
         return InputArgument(name, arg_type, description, state, types)
+    elif kind == 'ENUM':
+        return EnumArgument(name, arg_type, description, state, types)
     else:
         return ScalarArgument(name, arg_type, description, state, types)
 
