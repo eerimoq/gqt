@@ -279,7 +279,7 @@ class ScalarArgument(Node):
         if self.is_optional:
             self.symbol = '□'
         else:
-            self.symbol = '■'
+            self.symbol = '●'
 
     def is_string(self):
         return self.is_scalar and self._type in ['String', 'ID']
@@ -305,16 +305,10 @@ class ScalarArgument(Node):
 
     def next_symbol(self):
         if self.is_optional:
-            table = {
+            self.symbol = {
                 '□': '■',
                 '■': '□'
-            }
-        else:
-            table = {
-                '■': '■'
-            }
-
-        self.symbol = table[self.symbol]
+            }[self.symbol]
 
     def key_left(self):
         if self.state.cursor_at_input_field:
@@ -353,17 +347,13 @@ class ScalarArgument(Node):
             self.next_symbol()
 
     def query(self):
-        if self.symbol == '■':
+        if self.symbol in '■●':
             if self.is_string():
                 return f'"{self.value}"'
             else:
                 return str(self.value)
-        elif self.symbol == '□':
-            return None
-        elif self.symbol == '$':
-            return f'${self.value}'
         else:
-            return 'null'
+            return None
 
 
 class EnumArgument(Node):
@@ -394,7 +384,7 @@ class EnumArgument(Node):
         if self.is_optional:
             self.symbol = '□'
         else:
-            self.symbol = '■'
+            self.symbol = '●'
 
     def draw(self, stdscr, y, x, cursor):
         if cursor.node is self:
@@ -430,16 +420,10 @@ class EnumArgument(Node):
 
     def next_symbol(self):
         if self.is_optional:
-            table = {
+            self.symbol = {
                 '□': '■',
                 '■': '□'
-            }
-        else:
-            table = {
-                '■': '■'
-            }
-
-        self.symbol = table[self.symbol]
+            }[self.symbol]
 
     def key_left(self):
         if self.state.cursor_at_input_field:
@@ -478,7 +462,7 @@ class EnumArgument(Node):
             self.next_symbol()
 
     def query(self):
-        if self.symbol == '■':
+        if self.symbol in '■●':
             return str(self.value)
         else:
             return None
@@ -512,7 +496,7 @@ class InputArgument(Node):
         if self.is_optional:
             self.symbol = '□'
         else:
-            self.symbol = '■'
+            self.symbol = '●'
 
     def draw(self, stdscr, y, x, cursor):
         if cursor.node is self:
@@ -524,7 +508,7 @@ class InputArgument(Node):
         addstr(stdscr, y, x, f'{self.name}:')
         y += 1
 
-        if self.symbol == '■':
+        if self.symbol in '■●':
             for field in self.fields:
                 y = field.draw(stdscr, y, x, cursor)
 
@@ -532,22 +516,16 @@ class InputArgument(Node):
 
     def next_symbol(self):
         if self.is_optional:
-            table = {
+            self.symbol = {
                 '□': '■',
                 '■': '□'
-            }
-        else:
-            table = {
-                '■': '■'
-            }
-
-        self.symbol = table[self.symbol]
+            }[self.symbol]
 
     def select(self):
         self.next_symbol()
 
     def query(self):
-        if self.symbol == '■':
+        if self.symbol in '■●':
             items = []
 
             for field in self.fields:
@@ -619,7 +597,7 @@ class ListArgument(Node):
         if self.is_optional:
             self.symbol = '□'
         else:
-            self.symbol = '■'
+            self.symbol = '●'
 
         self.items = []
         self.append_item()
@@ -655,7 +633,7 @@ class ListArgument(Node):
         addstr(stdscr, y, x + 2, f'{self.name}:')
         y += 1
 
-        if self.symbol == '■':
+        if self.symbol in '■●':
             for i, item in enumerate(self.items):
                 y = item.draw_item(stdscr, y, x + 2, i, cursor)
 
@@ -663,16 +641,10 @@ class ListArgument(Node):
 
     def next_symbol(self):
         if self.is_optional:
-            table = {
+            self.symbol = {
                 '□': '■',
                 '■': '□'
-            }
-        else:
-            table = {
-                '■': '■'
-            }
-
-        self.symbol = table[self.symbol]
+            }[self.symbol]
 
     def item_selected(self, item):
         if item is self.items[-1]:
@@ -682,7 +654,7 @@ class ListArgument(Node):
         self.next_symbol()
 
     def query(self):
-        if self.symbol == '■':
+        if self.symbol in '■●':
             items = []
 
             for item in self.items:
@@ -870,11 +842,11 @@ class Tree:
                 self._cursor = self._cursor.item
                 return
         elif isinstance(self._cursor, ListArgument):
-            if self._cursor.symbol == '■':
+            if self._cursor.symbol in '■●':
                 self._cursor = self._cursor.items[0]
                 return
         elif isinstance(self._cursor, InputArgument):
-            if self._cursor.symbol == '■':
+            if self._cursor.symbol in '■●':
                 self._cursor = self._cursor.fields[0]
                 return
 
@@ -953,10 +925,10 @@ class Tree:
             if node.is_expanded:
                 return self._find_last(node.item)
         elif isinstance(node, ListArgument):
-            if node.symbol == '■':
+            if node.symbol in '■●':
                 return self._find_last(node.items[-1])
         elif isinstance(node, InputArgument):
-            if node.symbol == '■':
+            if node.symbol in '■●':
                 return self._find_last(node.fields[-1])
 
         return node
