@@ -57,7 +57,8 @@ def fields_query(fields):
         if value is None:
             continue
 
-        if isinstance(field, (ScalarArgument, InputArgument, ListArgument)):
+        if isinstance(field,
+                      (ScalarArgument, InputArgument, ListArgument, EnumArgument)):
             arguments.append(f'{field.name}:{value}')
         else:
             items.append(value)
@@ -458,8 +459,14 @@ class EnumArgument(Node):
             }[self.symbol]
 
     def query(self):
-        if self.symbol in '■●' and self.value:
-            return str(self.value)
+        if self.symbol in '■●':
+            if self.value:
+                if self.value in self.members:
+                    return str(self.value)
+                else:
+                    raise Exception(f"Invalid enum value '{self.value}'.")
+            else:
+                raise Exception('Missing enum value.')
         else:
             return None
 

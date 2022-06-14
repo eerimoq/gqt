@@ -311,3 +311,36 @@ class TreeTest(unittest.TestCase):
         tree.key('\t')
         tree.key('B')
         self.assertEqual(tree.query(), 'query Query {a(x:{y:{z:"B"}})}')
+
+    def test_enum_argument(self):
+        schema = ('type Query {'
+                  '  a(x: Foo): String'
+                  '}'
+                  'enum Foo {'
+                  '  A'
+                  '  B'
+                  '  C'
+                  '}')
+        tree = load_tree(schema)
+        tree.select()
+        tree.key_down()
+        self.assertEqual(tree.cursor_type(), 'Foo')
+        tree.select()
+
+        with self.assertRaises(Exception) as cm:
+            tree.query()
+
+        self.assertEqual(str(cm.exception), "Missing enum value.")
+        tree.key('\t')
+        tree.key('D')
+
+        with self.assertRaises(Exception) as cm:
+            tree.query()
+
+        self.assertEqual(str(cm.exception), "Invalid enum value 'D'.")
+        tree.key('\x08')
+        tree.key('C')
+        self.assertEqual(tree.query(), 'query Query {a(x:C)}')
+        tree.key('\t')
+        tree.select()
+        self.assertEqual(tree.query(), 'query Query {a}')
