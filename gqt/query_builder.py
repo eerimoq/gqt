@@ -13,17 +13,18 @@ from .screen import move
 from .tree import load_tree_from_schema
 
 HELP_TEXT = '''\
-Move:         <Left>, <Right>, <Up> and <Down>
-              <Page-Up> and <Page-Down>
-              <Meta-<> and <Meta->>
-              <Tab>
-Select:       <Space>
-Execute:      <Enter>
-Help:         h or ?
-Quit:         <Ctrl-C>\
+Move:              <Left>, <Right>, <Up> and <Down>
+                   <Page-Up> and <Page-Down>
+                   <Meta-<> and <Meta->>
+                   <Tab>
+Select:            <Space>
+Delete list item:  <Backspace>
+Execute:           <Enter>
+Help:              h or ?
+Quit:              <Ctrl-C>\
 '''
 
-HELP_NCOLS = 50
+HELP_NCOLS = 55
 
 
 def format_title(kind, tree, description, x_max):
