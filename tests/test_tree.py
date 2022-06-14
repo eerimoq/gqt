@@ -288,6 +288,17 @@ class TreeTest(unittest.TestCase):
         tree.key_up()
         tree.key_left()
         self.assertEqual(tree.query(), 'query Query {a(b:["g"]) b}')
+        tree.key_up()
+        tree.key_up()
+        tree.key('\x7f')
+        tree.key_right()
+        self.assertEqual(tree.query(), 'query Query {a(b:[null]) b}')
+        tree.key('\x7f')
+        self.assertEqual(tree.query(), 'query Query {a(b:[]) b}')
+        tree.key('\x7f')
+        self.assertEqual(tree.query(), 'query Query {a(b:[]) b}')
+        tree.key_right()
+        self.assertEqual(tree.query(), 'query Query {a(b:[null]) b}')
 
     def test_input_argument(self):
         schema = ('type Query {'

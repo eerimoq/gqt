@@ -547,8 +547,9 @@ class ListItem(Node):
         self.is_expanded = False
         self.item = item
         self.item.parent = self
+        self.removed = False
 
-    def draw_item(self, stdscr, y, x, i, cursor):
+    def draw_item(self, stdscr, y, x, i, number_of_items, cursor):
         if cursor.node is self:
             cursor.y = y
             cursor.x = x
@@ -560,13 +561,27 @@ class ListItem(Node):
 
         addstr(stdscr, y, x, symbol, curses.color_pair(3))
         x += 2
-        addstr(stdscr, y, x, f'[{i}]')
-        y += 1
 
-        if self.is_expanded:
-            y = self.item.draw(stdscr, y, x, cursor)
+        if i < (number_of_items - 1):
+            addstr(stdscr, y, x, f'[{i}]')
+            y += 1
+
+            if self.is_expanded:
+                y = self.item.draw(stdscr, y, x, cursor)
+        else:
+            addstr(stdscr, y, x, '...')
+            y += 1
 
         return y
+
+    def key(self, key):
+        if key == '\x7f' and self is not self.parent.items[-1]:
+            self.removed = True
+            self.parent.item_removed(self)
+
+            return True
+
+        return False
 
     def query(self):
         if not self.is_expanded:
@@ -638,13 +653,22 @@ class ListArgument(Node):
 
         if self.symbol in '■●':
             for i, item in enumerate(self.items):
-                y = item.draw_item(stdscr, y, x + 2, i, cursor)
+                y = item.draw_item(stdscr, y, x + 2, i, len(self.items), cursor)
 
         return y
 
     def item_selected(self, item):
         if item is self.items[-1]:
             self.append_item()
+
+    def item_removed(self, item):
+        self.items.remove(item)
+
+        if item.prev is not None:
+            item.prev.next = item.next
+
+        if item.next is not None:
+            item.next.prev = item.prev
 
     def select(self):
         if self.is_optional:
@@ -896,7 +920,13 @@ class Tree:
         self._cursor.select()
 
     def key(self, key):
-        return self._cursor.key(key)
+        done = self._cursor.key(key)
+
+        if isinstance(self._cursor, ListItem):
+            if self._cursor.removed:
+                self._cursor = self._cursor.next
+
+        return done
 
     def query(self):
         return self._root.query_root(self._cursor)
