@@ -47,12 +47,12 @@ def find_root_field(cursor):
         return find_root_field(cursor.parent)
 
 
-def fields_query(fields):
+def fields_query(fields, variables):
     items = []
     arguments = []
 
     for field in fields:
-        value = field.query()
+        value = field.query(variables)
 
         if value is None:
             continue
@@ -104,7 +104,7 @@ class Node:
     def key(self, _key):
         return False
 
-    def query(self):
+    def query(self, variables):
         raise NotImplementedError()
 
 
@@ -156,11 +156,11 @@ class Object(Node):
 
         return y
 
-    def query(self):
+    def query(self, variables):
         if not self.is_expanded:
             return None
 
-        items, arguments = fields_query(self.fields)
+        items, arguments = fields_query(self.fields, variables)
 
         if items:
             return f'{self.name}{arguments} {{{items}}}'
@@ -176,15 +176,24 @@ class Object(Node):
         else:
             fields = self.fields[self.number_of_query_fields:]
 
-        items, _ = fields_query(fields)
+        variables = []
+        items, _ = fields_query(fields, variables)
 
         if items:
+            if variables:
+                variables = '(' + ','.join([
+                    f'{name}: {value}'
+                    for name, value in variables
+                ]) + ')'
+            else:
+                variables = ''
+
             if is_query:
                 kind = 'query Query'
             else:
                 kind = 'mutation Mutation'
 
-            return f"{kind} {{{items}}}"
+            return f"{kind}{variables} {{{items}}}"
         else:
             raise Exception("No fields selected.")
 
@@ -244,14 +253,14 @@ class Leaf(Node):
     def select(self):
         self.is_selected = not self.is_selected
 
-    def query(self):
+    def query(self, variables):
         if not self.is_selected:
             return None
 
         if self.fields is None:
             arguments = ''
         else:
-            arguments = fields_query(self.fields)[1]
+            arguments = fields_query(self.fields, variables)[1]
 
         return f'{self.name}{arguments}'
 
@@ -347,11 +356,14 @@ class ScalarArgument(Node):
                 '■': '□'
             }[self.symbol]
 
-    def query(self):
+    def query(self, variables):
         if self.symbol in '■●':
             if self.is_string():
                 return f'"{self.value}"'
             elif self.value:
+                if self.value.startswith('$'):
+                    variables.append((self.value, self.type))
+
                 return self.value
             else:
                 raise Exception('Missing scalar value.')
@@ -460,7 +472,7 @@ class EnumArgument(Node):
                 '■': '□'
             }[self.symbol]
 
-    def query(self):
+    def query(self, variables):
         if self.symbol in '■●':
             if self.value:
                 if self.value in self.members:
@@ -526,12 +538,12 @@ class InputArgument(Node):
                 '■': '□'
             }[self.symbol]
 
-    def query(self):
+    def query(self, variables):
         if self.symbol in '■●':
             items = []
 
             for field in self.fields:
-                value = field.query()
+                value = field.query(variables)
 
                 if value is not None:
                     items.append(f'{field.name}:{value}')
@@ -585,11 +597,11 @@ class ListItem(Node):
 
         return False
 
-    def query(self):
+    def query(self, variables):
         if not self.is_expanded:
             return None
 
-        value = self.item.query()
+        value = self.item.query(variables)
 
         if value is None:
             value = 'null'
@@ -679,12 +691,12 @@ class ListArgument(Node):
                 '■': '□'
             }[self.symbol]
 
-    def query(self):
+    def query(self, variables):
         if self.symbol in '■●':
             items = []
 
             for item in self.items:
-                value = item.query()
+                value = item.query(variables)
 
                 if value is not None:
                     items.append(value)

@@ -29,5 +29,10 @@ def post(endpoint, query, headers, verify):
     return response
 
 
-def create_query(query):
-    return {"query": query}
+def create_query(query, variables):
+    query = {"query": query}
+
+    if variables:
+        query['variables'] = variables
+
+    return query

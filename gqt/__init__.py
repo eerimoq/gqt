@@ -103,6 +103,21 @@ def make_curl_headers(headers_list):
     ]) + '\n'
 
 
+def create_variables(variables):
+    result = {}
+
+    for variable in variables:
+        name, split, value = variable.partition('=')
+
+        if not name or split != '=' or not value:
+            sys.exit(f"Invalid variable '{variable}'.")
+
+        value = json.loads(value)
+        result[name] = value
+
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Set GQT_NO_BAT to disable using bat for styling.')
@@ -117,6 +132,10 @@ def main():
               'GQT_ENDPOINT to override default value.'))
     parser.add_argument('-n', '--query-name',
                         help='Query name.')
+    parser.add_argument(
+        '-v', '--variable',
+        action='append',
+        help='A variable given as <name>=<value>. May be given multiple times.')
     parser.add_argument('-r', '--repeat',
                         action='store_true',
                         help='Repeat last query.')
@@ -173,17 +192,18 @@ def main():
                                       verify)
 
             query = query.query()
+            variables = create_variables(args.variable)
 
             if args.print_query:
                 show(print_ast(parse(str(query))), 'graphql')
             elif args.print_curl:
-                query = json.dumps(create_query(query))
+                query = json.dumps(create_query(query, variables))
                 print(CURL_COMMAND.format(endpoint=args.endpoint,
                                           query=query,
                                           headers=make_curl_headers(args.header)))
             else:
                 response = execute_query(args.endpoint,
-                                         create_query(query),
+                                         create_query(query, variables),
                                          headers,
                                          verify)
                 response = style_response(response, args.yaml)
