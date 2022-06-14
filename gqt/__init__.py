@@ -115,6 +115,8 @@ def main():
         default=default_endpoint(),
         help=('GraphQL endpoint (default: %(default)s). Set environment variable '
               'GQT_ENDPOINT to override default value.'))
+    parser.add_argument('-n', '--query-name',
+                        help='Query name.')
     parser.add_argument('-r', '--repeat',
                         action='store_true',
                         help='Repeat last query.')
@@ -139,8 +141,6 @@ def main():
     parser.add_argument('-H', '--header',
                         action='append',
                         help='Extra HTTP header. May be given multiple times.')
-    parser.add_argument('-n', '--query-name',
-                        help='Query name.')
     args = parser.parse_args()
 
     try:
