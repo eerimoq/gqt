@@ -351,8 +351,10 @@ class ScalarArgument(Node):
         if self.symbol in '■●':
             if self.is_string():
                 return f'"{self.value}"'
+            elif self.value:
+                return self.value
             else:
-                return str(self.value)
+                raise Exception('Missing scalar value.')
         else:
             return None
 
