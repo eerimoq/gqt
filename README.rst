@@ -139,6 +139,16 @@ Ideas
        package:
          latestRelease:
            version: 0.20.0
+     $ gqt -r -q
+     query Query($name: String!) {
+       standardLibrary {
+         package(name: $name) {
+           latestRelease {
+             version
+           }
+         }
+       }
+     }
 
 - Unions:
 
