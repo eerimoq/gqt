@@ -52,17 +52,15 @@ def fields_query(fields):
     arguments = []
 
     for field in fields:
-        if isinstance(field, Leaf):
-            if field.is_selected:
-                items.append(field.query())
-        elif isinstance(field, (ScalarArgument, InputArgument, ListArgument)):
-            value = field.query()
+        value = field.query()
 
-            if value is not None:
-                arguments.append(f'{field.name}:{value}')
-        elif isinstance(field, Object):
-            if field.is_expanded:
-                items.append(field.query())
+        if value is None:
+            continue
+
+        if isinstance(field, (ScalarArgument, InputArgument, ListArgument)):
+            arguments.append(f'{field.name}:{value}')
+        else:
+            items.append(value)
 
     if arguments:
         arguments = '(' + ','.join(arguments) + ')'
@@ -158,6 +156,9 @@ class Object(Node):
         return y
 
     def query(self):
+        if not self.is_expanded:
+            return None
+
         items, arguments = fields_query(self.fields)
 
         if items:
@@ -243,6 +244,9 @@ class Leaf(Node):
         self.is_selected = not self.is_selected
 
     def query(self):
+        if not self.is_selected:
+            return None
+
         if self.fields is None:
             arguments = ''
         else:
@@ -303,13 +307,6 @@ class ScalarArgument(Node):
 
         return y + 1
 
-    def next_symbol(self):
-        if self.is_optional:
-            self.symbol = {
-                '□': '■',
-                '■': '□'
-            }[self.symbol]
-
     def key_left(self):
         if self.state.cursor_at_input_field:
             self.key('KEY_LEFT')
@@ -343,8 +340,11 @@ class ScalarArgument(Node):
     def select(self):
         if self.state.cursor_at_input_field:
             self.key(' ')
-        else:
-            self.next_symbol()
+        elif self.is_optional:
+            self.symbol = {
+                '□': '■',
+                '■': '□'
+            }[self.symbol]
 
     def query(self):
         if self.symbol in '■●':
@@ -418,13 +418,6 @@ class EnumArgument(Node):
 
         return y + 1
 
-    def next_symbol(self):
-        if self.is_optional:
-            self.symbol = {
-                '□': '■',
-                '■': '□'
-            }[self.symbol]
-
     def key_left(self):
         if self.state.cursor_at_input_field:
             self.key('KEY_LEFT')
@@ -458,11 +451,14 @@ class EnumArgument(Node):
     def select(self):
         if self.state.cursor_at_input_field:
             self.key(' ')
-        else:
-            self.next_symbol()
+        elif self.is_optional:
+            self.symbol = {
+                '□': '■',
+                '■': '□'
+            }[self.symbol]
 
     def query(self):
-        if self.symbol in '■●':
+        if self.symbol in '■●' and self.value:
             return str(self.value)
         else:
             return None
@@ -514,15 +510,12 @@ class InputArgument(Node):
 
         return y
 
-    def next_symbol(self):
+    def select(self):
         if self.is_optional:
             self.symbol = {
                 '□': '■',
                 '■': '□'
             }[self.symbol]
-
-    def select(self):
-        self.next_symbol()
 
     def query(self):
         if self.symbol in '■●':
@@ -531,7 +524,7 @@ class InputArgument(Node):
             for field in self.fields:
                 value = field.query()
 
-                if value:
+                if value is not None:
                     items.append(f'{field.name}:{value}')
 
             return '{' + ','.join(items) + '}'
@@ -569,6 +562,9 @@ class ListItem(Node):
         return y
 
     def query(self):
+        if not self.is_expanded:
+            return None
+
         value = self.item.query()
 
         if value is None:
@@ -639,27 +635,26 @@ class ListArgument(Node):
 
         return y
 
-    def next_symbol(self):
+    def item_selected(self, item):
+        if item is self.items[-1]:
+            self.append_item()
+
+    def select(self):
         if self.is_optional:
             self.symbol = {
                 '□': '■',
                 '■': '□'
             }[self.symbol]
 
-    def item_selected(self, item):
-        if item is self.items[-1]:
-            self.append_item()
-
-    def select(self):
-        self.next_symbol()
-
     def query(self):
         if self.symbol in '■●':
             items = []
 
             for item in self.items:
-                if item.is_expanded:
-                    items.append(item.query())
+                value = item.query()
+
+                if value is not None:
+                    items.append(value)
 
             return f'[{", ".join(items)}]'
         else:
