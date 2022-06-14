@@ -237,9 +237,9 @@ class QueryBuilder:
         return int(self.stdscr.getmaxyx()[0] * 0.5)
 
 
-def load_tree(endpoint, headers, verify):
+def load_tree(endpoint, query_name, headers, verify):
     try:
-        return read_tree_from_cache(endpoint)
+        return read_tree_from_cache(endpoint, query_name)
     except Exception:
         return load_tree_from_schema(fetch_schema(endpoint, headers, verify))
 
@@ -260,13 +260,13 @@ def redirect_stdout_to_stderr():
         os.close(original_stdout)
 
 
-def query_builder(endpoint, headers, verify):
-    tree = load_tree(endpoint, headers, verify)
+def query_builder(endpoint, query_name, headers, verify):
+    tree = load_tree(endpoint, query_name, headers, verify)
 
     try:
         with redirect_stdout_to_stderr():
             curses.wrapper(selector, endpoint, tree)
     finally:
-        write_tree_to_cache(tree, endpoint)
+        write_tree_to_cache(tree, endpoint, query_name)
 
     return tree

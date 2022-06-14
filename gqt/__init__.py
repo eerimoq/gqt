@@ -25,11 +25,17 @@ def default_endpoint():
     return os.environ.get('GQT_ENDPOINT', 'https://mys-lang.org/graphql')
 
 
-def last_query(endpoint):
+def last_query(endpoint, query_name):
     try:
-        return read_tree_from_cache(endpoint)
+        return read_tree_from_cache(endpoint, query_name)
     except Exception:
-        sys.exit('No cached query found.')
+        if query_name is None:
+            message = f"No cached query found for endpoint '{endpoint}'."
+        else:
+            message = (f"No cached query '{query_name}' found for endpoint"
+                       f" '{endpoint}'.")
+
+        sys.exit(message)
 
 
 def execute_query(endpoint, query, headers, verify):
@@ -133,6 +139,8 @@ def main():
     parser.add_argument('-H', '--header',
                         action='append',
                         help='Extra HTTP header. May be given multiple times.')
+    parser.add_argument('-n', '--query-name',
+                        help='Query name.')
     args = parser.parse_args()
 
     try:
@@ -157,9 +165,12 @@ def main():
             show(schema, 'graphql')
         else:
             if args.repeat:
-                query = last_query(args.endpoint)
+                query = last_query(args.endpoint, args.query_name)
             else:
-                query = query_builder(args.endpoint, headers, verify)
+                query = query_builder(args.endpoint,
+                                      args.query_name,
+                                      headers,
+                                      verify)
 
             query = query.query()
 

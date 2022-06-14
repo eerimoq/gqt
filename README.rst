@@ -71,6 +71,27 @@ YAML output:
    statistics:
      numberOfGraphqlRequests: 8
 
+Name queries:
+
+.. code-block:: shell
+
+   $ gqt -n stats -y
+   statistics:
+     numberOfGraphqlRequests: 8
+   $ gqt -n time -y
+   standardLibrary:
+     package:
+       latestRelease:
+         version: 0.20.0
+   $ gqt -n stats -y -r
+   statistics:
+     numberOfGraphqlRequests: 9
+   $ gqt -n time -y -r
+   standardLibrary:
+     package:
+       latestRelease:
+         version: 0.20.0
+
 Print the schema:
 
 .. code-block:: shell

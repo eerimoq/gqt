@@ -12,17 +12,21 @@ def make_endpoint_cache_name(endpoint):
     return b64encode(endpoint.encode('utf-8')).decode('utf-8')
 
 
-def make_query_pickle_path(endpoint):
+def make_query_pickle_path(endpoint, query_name):
     name = make_endpoint_cache_name(endpoint)
+    endpoint_path = CACHE_PATH / __version__ / name
 
-    return CACHE_PATH / __version__ / name / 'query.pickle'
+    if query_name is None:
+        return endpoint_path / 'query.pickle'
+    else:
+        return endpoint_path / 'query_names' / query_name / 'query.pickle'
 
 
-def read_tree_from_cache(endpoint):
-    return pickle.loads(make_query_pickle_path(endpoint).read_bytes())
+def read_tree_from_cache(endpoint, query_name):
+    return pickle.loads(make_query_pickle_path(endpoint, query_name).read_bytes())
 
 
-def write_tree_to_cache(root, endpoint):
-    path = make_query_pickle_path(endpoint)
+def write_tree_to_cache(root, endpoint, query_name):
+    path = make_query_pickle_path(endpoint, query_name)
     path.parent.mkdir(exist_ok=True, parents=True)
     path.write_bytes(pickle.dumps(root))
