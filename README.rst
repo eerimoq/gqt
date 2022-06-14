@@ -121,6 +121,25 @@ Known issues
 Ideas
 -----
 
+- Variables example:
+
+  .. code-block::
+
+     ╭─ Query ─ String
+     │ ▼ standardLibrary
+     │   ▼ package
+     │     $ name: name
+     │     ▼ latestRelease
+     │       ■ version
+
+  .. code-block:: shell
+
+     $ gqt -v 'name="time"' -y
+     standardLibrary:
+       package:
+         latestRelease:
+           version: 0.20.0
+
 - Unions:
 
   Always query ``__typename``.
@@ -180,36 +199,6 @@ Ideas
 
   New schema fetched from the server. Use it? y/n
 
-- Variables example:
-
-  .. code-block::
-
-     ╭─ Query
-     │ ▼ standardLibrary
-     │   ▼ package
-     │     $ name: name
-     │     ■ id: 5
-     │     $ kind: kind
-     │     □ name
-     │   □ numberOfDownloads
-     │ ▶ statistics
-
-     ╭─ Variables
-     │ name: time
-     │ kind:
-     │   [0] ■ a: bar
-     │       ■ b: ne
-     │       □ c:
-     │   [1]
-
-- Print variables:
-
-  .. code-block:: shell
-
-     $ gqt -v
-     {"name": "foo", "kind": [{"a": "bar", "b": "ne"}]}
-
 - Subscriptions. Probably out of scope.
 
-.. _jq: https://github.com/stedolan/jq
 .. _bat: https://github.com/sharkdp/bat
