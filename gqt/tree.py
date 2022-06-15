@@ -686,13 +686,19 @@ class ListItem(Node):
         return y
 
     def key(self, key):
-        if key == '\x7f' and self is not self.parent.items[-1]:
+        if KEY_BINDINGS.get(key) == 'backspace' and self is not self.parent.items[-1]:
             self.removed = True
             self.parent.item_removed(self)
 
             return True
 
         return False
+
+    def select(self):
+        self.is_expanded = not self.is_expanded
+
+        if self.is_expanded:
+            self.parent.item_selected(self)
 
     def query(self, variables):
         if not self.is_expanded:
