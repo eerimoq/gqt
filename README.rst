@@ -92,6 +92,27 @@ Name queries:
        latestRelease:
          version: 0.20.0
 
+Make arguments variables by pressing ``v`` or ``$`` and give them as
+``-v <name>=<value>`` on the command line:
+
+  .. code-block:: shell
+
+     $ gqt -v 'name="time"' -y
+     standardLibrary:
+       package:
+         latestRelease:
+           version: 0.20.0
+     $ gqt -r -q
+     query Query($name: String!) {
+       standardLibrary {
+         package(name: $name) {
+           latestRelease {
+             version
+           }
+         }
+       }
+     }
+
 Print the schema:
 
 .. code-block:: shell
@@ -120,35 +141,6 @@ Known issues
 
 Ideas
 -----
-
-- Variables example:
-
-  .. code-block::
-
-     ╭─ Query ─ String
-     │ ▼ standardLibrary
-     │   ▼ package
-     │     $ name: name
-     │     ▼ latestRelease
-     │       ■ version
-
-  .. code-block:: shell
-
-     $ gqt -v 'name="time"' -y
-     standardLibrary:
-       package:
-         latestRelease:
-           version: 0.20.0
-     $ gqt -r -q
-     query Query($name: String!) {
-       standardLibrary {
-         package(name: $name) {
-           latestRelease {
-             version
-           }
-         }
-       }
-     }
 
 - Unions:
 
