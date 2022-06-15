@@ -22,9 +22,7 @@ def post(endpoint, query, headers, verify):
                              json=query,
                              headers=headers,
                              verify=verify)
-
-    if response.status_code != 200:
-        response.raise_for_status()
+    response.raise_for_status()
 
     return response
 

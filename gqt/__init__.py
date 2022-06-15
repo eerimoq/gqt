@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 
+import requests
 import yaml
 from graphql import build_client_schema
 from graphql import print_schema
@@ -72,10 +73,17 @@ curl -X POST \\
 '''
 
 
-def show(data, language):
+def show(data, language, to_stderr=False):
     if 'GQT_NO_BAT' not in os.environ and shutil.which('bat'):
         data += '\n'
-        subprocess.run(['bat', '-p', '-l', language], input=data, text=True)
+        command = f'bat -p -l {language}'
+
+        if to_stderr:
+            command += ' 1>&2'
+
+        subprocess.run(command, input=data, shell=True, text=True)
+    elif to_stderr:
+        print(data, file=sys.stderr)
     else:
         print(data)
 
@@ -224,5 +232,16 @@ def main():
         sys.exit(1)
     except SystemExit:
         raise
+    except requests.exceptions.HTTPError as error:
+        try:
+            data = json.dumps(error.response.json(),
+                              ensure_ascii=False,
+                              indent=4)
+        except Exception:
+            sys.stderr.buffer.write(error.response.content.strip() + b'\n')
+        else:
+            show(data, 'json', True)
+
+        sys.exit(f'error: {error}')
     except BaseException as error:
         sys.exit(f'error: {error}')
