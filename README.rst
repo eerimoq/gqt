@@ -97,7 +97,7 @@ Make arguments variables by pressing ``v`` or ``$`` and give them as
 
 .. code-block::
 
-   $ gqt -v 'name="time"' -y
+   $ gqt -v name=time -y
    standardLibrary:
      package:
        latestRelease:

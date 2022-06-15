@@ -596,7 +596,8 @@ class InputArgument(Node):
     def key(self, key):
         if self.is_variable:
             if key == '\t':
-                self.state.cursor_at_input_field = not self.state.cursor_at_input_field
+                self.state.cursor_at_input_field = (
+                    not self.state.cursor_at_input_field)
 
                 return True
             elif self.state.cursor_at_input_field:
@@ -815,7 +816,8 @@ class ListArgument(Node):
     def key(self, key):
         if self.is_variable:
             if key == '\t':
-                self.state.cursor_at_input_field = not self.state.cursor_at_input_field
+                self.state.cursor_at_input_field = (
+                    not self.state.cursor_at_input_field)
 
                 return True
             elif self.state.cursor_at_input_field:

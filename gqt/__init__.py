@@ -112,7 +112,14 @@ def create_variables(variables):
         if not name or split != '=' or not value:
             sys.exit(f"Invalid variable '{variable}'.")
 
-        value = json.loads(value)
+        try:
+            value = json.loads(value)
+        except Exception:
+            try:
+                value = json.loads(f'"{value}"')
+            except Exception:
+                sys.exit(f"Invalid variable '{variable}'.")
+
         result[name] = value
 
     return result
