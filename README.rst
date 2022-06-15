@@ -26,13 +26,13 @@ Examples
 
 Set default GraphQL endpoint:
 
-.. code-block:: shell
+.. code-block::
 
    $ export GQT_ENDPOINT=https://mys-lang.org/graphql
 
 Interactively create a query and execute it:
 
-.. code-block:: shell
+.. code-block::
 
    $ gqt
    {
@@ -43,7 +43,7 @@ Interactively create a query and execute it:
 
 Repeat last query:
 
-.. code-block:: shell
+.. code-block::
 
    $ gqt -r
    {
@@ -54,7 +54,7 @@ Repeat last query:
 
 Print the query instead of executing it:
 
-.. code-block:: shell
+.. code-block::
 
    $ gqt -q
    query Query {
@@ -65,7 +65,7 @@ Print the query instead of executing it:
 
 YAML output:
 
-.. code-block:: shell
+.. code-block::
 
    $ gqt -y
    statistics:
@@ -73,7 +73,7 @@ YAML output:
 
 Name queries:
 
-.. code-block:: shell
+.. code-block::
 
    $ gqt -n stats -y
    statistics:
@@ -95,7 +95,7 @@ Name queries:
 Make arguments variables by pressing ``v`` or ``$`` and give them as
 ``-v <name>=<value>`` on the command line:
 
-  .. code-block:: shell
+  .. code-block::
 
      $ gqt -v 'name="time"' -y
      standardLibrary:
@@ -115,7 +115,7 @@ Make arguments variables by pressing ``v`` or ``$`` and give them as
 
 Print the schema:
 
-.. code-block:: shell
+.. code-block::
 
    $ gqt --print-schema
    type Query {
