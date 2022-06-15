@@ -51,7 +51,7 @@ Repeat last query:
    gqt -r
 
 .. code-block:: json
-                
+
    {
        "statistics": {
            "numberOfGraphqlRequests": 4
@@ -65,7 +65,7 @@ Print the query instead of executing it:
    gqt -q
 
 .. code-block:: graphql
-                
+
    query Query {
      statistics {
        numberOfGraphqlRequests
@@ -79,7 +79,7 @@ YAML output:
    gqt -y
 
 .. code-block:: yaml
-                
+
    statistics:
      numberOfGraphqlRequests: 8
 
@@ -90,36 +90,36 @@ Name queries:
    gqt -n stats -y
 
 .. code-block:: yaml
-                
+
    statistics:
      numberOfGraphqlRequests: 8
 
 .. code-block::
-                
+
    gqt -n time -y
 
 .. code-block:: yaml
-                
+
    standardLibrary:
      package:
        latestRelease:
          version: 0.20.0
 
 .. code-block::
-                
+
    gqt -n stats -y -r
 
 .. code-block:: yaml
-                
+
    statistics:
      numberOfGraphqlRequests: 9
 
 .. code-block::
-                
+
    gqt -n time -y -r
 
 .. code-block:: yaml
-                
+
    standardLibrary:
      package:
        latestRelease:
@@ -133,18 +133,18 @@ Make arguments variables by pressing ``v`` or ``$`` and give them as
    gqt -v name=time -y
 
 .. code-block:: yaml
-                
+
    standardLibrary:
      package:
        latestRelease:
          version: 0.20.0
 
 .. code-block::
-                
+
    gqt -r -q
 
 .. code-block:: graphql
-                
+
    query Query($name: String!) {
      standardLibrary {
        package(name: $name) {
@@ -162,7 +162,7 @@ Print the schema:
    gqt --print-schema
 
 .. code-block:: graphql
-                
+
    type Query {
      standardLibrary: StandardLibrary!
      statistics: Statistics!
@@ -183,6 +183,9 @@ Known issues
 - Unions and interfaces are not implemented.
 
 - And much more.
+
+- There is one query cache per ``gqt`` version. Would be nice to keep
+  the cache after upgrading ``gqt``.
 
 Ideas
 -----
