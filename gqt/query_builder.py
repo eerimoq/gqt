@@ -18,6 +18,7 @@ Move:              <Left>, <Right>, <Up> and <Down>
                    <Meta-<> and <Meta->>
                    <Tab>
 Select:            <Space>
+Variable:          v or $
 Delete list item:  <Backspace>
 Execute:           <Enter>
 Help:              h or ?

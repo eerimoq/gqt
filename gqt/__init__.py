@@ -135,6 +135,7 @@ def main():
     parser.add_argument(
         '-v', '--variable',
         action='append',
+        default=[],
         help='A variable given as <name>=<value>. May be given multiple times.')
     parser.add_argument('-r', '--repeat',
                         action='store_true',

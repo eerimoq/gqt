@@ -182,7 +182,7 @@ class Object(Node):
         if items:
             if variables:
                 variables = '(' + ','.join([
-                    f'{name}: {value}'
+                    f'{name}:{value}'
                     for name, value in variables
                 ]) + ')'
             else:
@@ -279,6 +279,7 @@ class ScalarArgument(Node):
         self.type = get_type_string(field_type)
         self.description = description
         self.is_optional = (field_type['kind'] != 'NON_NULL')
+        self.is_variable = False
 
         if self.is_optional:
             self.is_scalar = (field_type['kind'] == 'SCALAR')
@@ -307,7 +308,12 @@ class ScalarArgument(Node):
             else:
                 cursor.x = x
 
-        addstr(stdscr, y, x, self.symbol, curses.color_pair(3))
+        if self.is_variable:
+            symbol = '$'
+        else:
+            symbol = self.symbol
+
+        addstr(stdscr, y, x, symbol, curses.color_pair(3))
         addstr(stdscr, y, x + 2, f'{self.name}:')
         addstr(stdscr,
                y,
@@ -344,26 +350,35 @@ class ScalarArgument(Node):
                                         KEY_BINDINGS.get(key, key))
 
             return True
+        elif key in 'v$':
+            self.is_variable = not self.is_variable
+
+            return True
 
         return False
 
     def select(self):
         if self.state.cursor_at_input_field:
             self.key(' ')
-        elif self.is_optional:
+        elif self.is_optional and not self.is_variable:
             self.symbol = {
                 '□': '■',
                 '■': '□'
             }[self.symbol]
 
     def query(self, variables):
-        if self.symbol in '■●':
+        if self.is_variable:
+            if self.value:
+                value = f'${self.value}'
+                variables.append((value, self.type))
+
+                return value
+            else:
+                raise Exception('Missing variable name.')
+        elif self.symbol in '■●':
             if self.is_string():
                 return f'"{self.value}"'
             elif self.value:
-                if self.value.startswith('$'):
-                    variables.append((self.value, self.type))
-
                 return self.value
             else:
                 raise Exception('Missing scalar value.')
@@ -384,6 +399,7 @@ class EnumArgument(Node):
         self.type = get_type_string(field_type)
         self.description = description
         self.is_optional = (field_type['kind'] != 'NON_NULL')
+        self.is_variable = False
 
         if not self.is_optional:
             field_type = field_type['ofType']
@@ -410,7 +426,12 @@ class EnumArgument(Node):
             else:
                 cursor.x = x
 
-        addstr(stdscr, y, x, self.symbol, curses.color_pair(3))
+        if self.is_variable:
+            symbol = '$'
+        else:
+            symbol = self.symbol
+
+        addstr(stdscr, y, x, symbol, curses.color_pair(3))
         addstr(stdscr, y, x + 2, f'{self.name}:')
         addstr(stdscr,
                y,
@@ -418,18 +439,19 @@ class EnumArgument(Node):
                self.value,
                curses.color_pair(2))
 
-        x += (2 + len(self.name + self.value) + 3)
+        if not self.is_variable:
+            x += (2 + len(self.name + self.value) + 3)
 
-        if self.value not in self.members:
-            _, x_max = stdscr.getmaxyx()
-            members = [
-                member
-                for member in self.members
-                if member.startswith(self.value)
-            ]
-            members = '(' + ', '.join(members) + ')'
-            members = members[:max(x_max - x, 0)]
-            addstr(stdscr, y, x, members)
+            if self.value not in self.members:
+                _, x_max = stdscr.getmaxyx()
+                members = [
+                    member
+                    for member in self.members
+                    if member.startswith(self.value)
+                ]
+                members = '(' + ', '.join(members) + ')'
+                members = members[:max(x_max - x, 0)]
+                addstr(stdscr, y, x, members)
 
         return y + 1
 
@@ -460,20 +482,32 @@ class EnumArgument(Node):
                                         KEY_BINDINGS.get(key, key))
 
             return True
+        elif key in 'v$':
+            self.is_variable = not self.is_variable
+
+            return True
 
         return False
 
     def select(self):
         if self.state.cursor_at_input_field:
             self.key(' ')
-        elif self.is_optional:
+        elif self.is_optional and not self.is_variable:
             self.symbol = {
                 '□': '■',
                 '■': '□'
             }[self.symbol]
 
     def query(self, variables):
-        if self.symbol in '■●':
+        if self.is_variable:
+            if self.value:
+                value = f'${self.value}'
+                variables.append((value, self.type))
+
+                return value
+            else:
+                raise Exception('Missing variable name.')
+        elif self.symbol in '■●':
             if self.value:
                 if self.value in self.members:
                     return str(self.value)
@@ -499,8 +533,11 @@ class InputArgument(Node):
         self.type = get_type_string(field_type)
         self.description = description
         self.is_optional = (field_type['kind'] != 'NON_NULL')
+        self.is_variable = False
         self.state = state
         self.types = types
+        self.value = ''
+        self.pos = 0
 
         if self.is_optional:
             fields = find_type(types, field_type['name'])['inputFields']
@@ -515,12 +552,31 @@ class InputArgument(Node):
         else:
             self.symbol = '●'
 
-    def draw(self, stdscr, y, x, cursor):
+    def draw_variable(self, stdscr, y, x, cursor):
+        if cursor.node is self:
+            cursor.y = y
+
+            if self.state.cursor_at_input_field:
+                cursor.x = x + len(self.name) + 4 + self.pos
+            else:
+                cursor.x = x
+
+        addstr(stdscr, y, x, '$', curses.color_pair(3))
+        addstr(stdscr, y, x + 2, f'{self.name}:')
+        addstr(stdscr,
+               y,
+               x + 2 + len(self.name) + 2,
+               self.value,
+               curses.color_pair(2))
+
+        return y + 1
+
+    def draw_members(self, stdscr, y, x, cursor):
         if cursor.node is self:
             cursor.y = y
             cursor.x = x
 
-        addstr(stdscr, y, x, f'{self.symbol}', curses.color_pair(3))
+        addstr(stdscr, y, x, self.symbol, curses.color_pair(3))
         x += 2
         addstr(stdscr, y, x, f'{self.name}:')
         y += 1
@@ -531,15 +587,52 @@ class InputArgument(Node):
 
         return y
 
+    def draw(self, stdscr, y, x, cursor):
+        if self.is_variable:
+            return self.draw_variable(stdscr, y, x, cursor)
+        else:
+            return self.draw_members(stdscr, y, x, cursor)
+
+    def key(self, key):
+        if self.is_variable:
+            if key == '\t':
+                self.state.cursor_at_input_field = not self.state.cursor_at_input_field
+
+                return True
+            elif self.state.cursor_at_input_field:
+                self.value, self.pos = edit(self.value,
+                                            self.pos,
+                                            KEY_BINDINGS.get(key, key))
+
+                return True
+            elif key in 'v$':
+                self.is_variable = not self.is_variable
+
+                return True
+        elif key in 'v$':
+            self.is_variable = not self.is_variable
+
+            return True
+
+        return False
+
     def select(self):
-        if self.is_optional:
+        if self.is_optional and not self.is_variable:
             self.symbol = {
                 '□': '■',
                 '■': '□'
             }[self.symbol]
 
     def query(self, variables):
-        if self.symbol in '■●':
+        if self.is_variable:
+            if self.value:
+                value = f'${self.value}'
+                variables.append((value, self.type))
+
+                return value
+            else:
+                raise Exception('Missing variable name.')
+        elif self.symbol in '■●':
             items = []
 
             for field in self.fields:
@@ -622,9 +715,12 @@ class ListArgument(Node):
         self.type = get_type_string(field_type)
         self.description = description
         self.is_optional = (field_type['kind'] != 'NON_NULL')
+        self.is_variable = False
         self.state = state
         self.field_type = field_type
         self.types = types
+        self.value = ''
+        self.pos = 0
 
         if self.is_optional:
             self.symbol = '□'
@@ -656,7 +752,26 @@ class ListArgument(Node):
 
         self.items.append(item)
 
-    def draw(self, stdscr, y, x, cursor):
+    def draw_variable(self, stdscr, y, x, cursor):
+        if cursor.node is self:
+            cursor.y = y
+
+            if self.state.cursor_at_input_field:
+                cursor.x = x + len(self.name) + 4 + self.pos
+            else:
+                cursor.x = x
+
+        addstr(stdscr, y, x, '$', curses.color_pair(3))
+        addstr(stdscr, y, x + 2, f'{self.name}:')
+        addstr(stdscr,
+               y,
+               x + 2 + len(self.name) + 2,
+               self.value,
+               curses.color_pair(2))
+
+        return y + 1
+
+    def draw_items(self, stdscr, y, x, cursor):
         if cursor.node is self:
             cursor.y = y
             cursor.x = x
@@ -670,6 +785,12 @@ class ListArgument(Node):
                 y = item.draw_item(stdscr, y, x + 2, i, len(self.items), cursor)
 
         return y
+
+    def draw(self, stdscr, y, x, cursor):
+        if self.is_variable:
+            return self.draw_variable(stdscr, y, x, cursor)
+        else:
+            return self.draw_items(stdscr, y, x, cursor)
 
     def item_selected(self, item):
         if item is self.items[-1]:
@@ -685,14 +806,43 @@ class ListArgument(Node):
             item.next.prev = item.prev
 
     def select(self):
-        if self.is_optional:
+        if self.is_optional and not self.is_variable:
             self.symbol = {
                 '□': '■',
                 '■': '□'
             }[self.symbol]
 
+    def key(self, key):
+        if self.is_variable:
+            if key == '\t':
+                self.state.cursor_at_input_field = not self.state.cursor_at_input_field
+
+                return True
+            elif self.state.cursor_at_input_field:
+                self.value, self.pos = edit(self.value,
+                                            self.pos,
+                                            KEY_BINDINGS.get(key, key))
+
+                return True
+            elif key in 'v$':
+                self.is_variable = not self.is_variable
+
+                return True
+        elif key in 'v$':
+            self.is_variable = not self.is_variable
+
+            return True
+
     def query(self, variables):
-        if self.symbol in '■●':
+        if self.is_variable:
+            if self.value:
+                value = f'${self.value}'
+                variables.append((value, self.type))
+
+                return value
+            else:
+                raise Exception('Missing variable name.')
+        elif self.symbol in '■●':
             items = []
 
             for item in self.items:
@@ -882,11 +1032,11 @@ class Tree:
                 self._cursor = self._cursor.item
                 return
         elif isinstance(self._cursor, ListArgument):
-            if self._cursor.symbol in '■●':
+            if self._cursor.symbol in '■●' and not self._cursor.is_variable:
                 self._cursor = self._cursor.items[0]
                 return
         elif isinstance(self._cursor, InputArgument):
-            if self._cursor.symbol in '■●':
+            if self._cursor.symbol in '■●' and not self._cursor.is_variable:
                 self._cursor = self._cursor.fields[0]
                 return
 
@@ -971,10 +1121,10 @@ class Tree:
             if node.is_expanded:
                 return self._find_last(node.item)
         elif isinstance(node, ListArgument):
-            if node.symbol in '■●':
+            if node.symbol in '■●' and not node.is_variable:
                 return self._find_last(node.items[-1])
         elif isinstance(node, InputArgument):
-            if node.symbol in '■●':
+            if node.symbol in '■●' and not node.is_variable:
                 return self._find_last(node.fields[-1])
 
         return node

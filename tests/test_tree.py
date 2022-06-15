@@ -166,6 +166,19 @@ class TreeTest(unittest.TestCase):
         tree.key('\t')
         tree.select()
         self.assertEqual(tree.query(), 'query Query {a(b:"ABC") {d}}')
+        tree.key('v')
+        tree.key('\t')
+        tree.key('\x7f')
+
+        with self.assertRaises(Exception) as cm:
+            tree.query()
+
+        self.assertEqual(str(cm.exception), 'Missing variable name.')
+        tree.key('f')
+        tree.key('o')
+        tree.key('o')
+        self.assertEqual(tree.query(),
+                         'query Query($foo:Int) {a(b:"ABC",d:$foo) {d}}')
 
     def test_argument_to_scalar_field(self):
         schema = ('type Query {'
@@ -196,6 +209,19 @@ class TreeTest(unittest.TestCase):
         tree.key_down()
         tree.select()
         self.assertEqual(tree.query(), 'query Query {a(b:"") b {f}}')
+        tree.key_up()
+        tree.key_left()
+        tree.key_up()
+        tree.key_up()
+        tree.key('v')
+
+        with self.assertRaises(Exception) as cm:
+            tree.query()
+
+        self.assertEqual(str(cm.exception), 'Missing variable name.')
+        tree.key('\t')
+        tree.key('v')
+        self.assertEqual(tree.query(), 'query Query($v:String!) {a(b:$v)}')
 
     def test_move_down_at_expanded_object_at_bottom(self):
         schema = ('type Query {'
