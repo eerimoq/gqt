@@ -382,6 +382,22 @@ class ScalarArgument(Node):
             if self.is_string():
                 return f'"{self.value}"'
             elif self.value:
+                if self._type == 'Int':
+                    try:
+                        int(self.value, 10)
+                    except Exception:
+                        raise Exception(f"'{self.value}' is not an integer.")
+                elif self._type == 'Float':
+                    try:
+                        float(self.value)
+                    except Exception:
+                        raise Exception(f"'{self.value}' is not a float.")
+                elif self._type == 'Boolean':
+                    if self.value not in ['true', 'false']:
+                        raise Exception(
+                            f"Boolean must be 'true' or 'false', "
+                            f"not '{self.value}'.")
+
                 return self.value
             else:
                 raise Exception('Missing scalar value.')
