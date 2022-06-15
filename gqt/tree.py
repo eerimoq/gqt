@@ -197,6 +197,9 @@ class Object(Node):
         else:
             raise Exception("No fields selected.")
 
+    def select(self):
+        self.is_expanded = not self.is_expanded
+
 
 class Leaf(Node):
 
