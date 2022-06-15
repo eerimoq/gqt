@@ -26,15 +26,18 @@ Examples
 
 Set default GraphQL endpoint:
 
-.. code-block::
+.. code-block:: shell
 
-   $ export GQT_ENDPOINT=https://mys-lang.org/graphql
+   export GQT_ENDPOINT=https://mys-lang.org/graphql
 
 Interactively create a query and execute it:
 
-.. code-block::
+.. code-block:: shell
 
-   $ gqt
+   gqt
+
+.. code-block:: json
+
    {
        "statistics": {
            "numberOfGraphqlRequests": 3
