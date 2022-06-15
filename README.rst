@@ -46,9 +46,12 @@ Interactively create a query and execute it:
 
 Repeat last query:
 
-.. code-block::
+.. code-block:: shell
 
-   $ gqt -r
+   gqt -r
+
+.. code-block:: json
+                
    {
        "statistics": {
            "numberOfGraphqlRequests": 4
@@ -57,9 +60,12 @@ Repeat last query:
 
 Print the query instead of executing it:
 
-.. code-block::
+.. code-block:: shell
 
-   $ gqt -q
+   gqt -q
+
+.. code-block:: graphql
+                
    query Query {
      statistics {
        numberOfGraphqlRequests
@@ -68,28 +74,52 @@ Print the query instead of executing it:
 
 YAML output:
 
-.. code-block::
+.. code-block:: shell
 
-   $ gqt -y
+   gqt -y
+
+.. code-block:: yaml
+                
    statistics:
      numberOfGraphqlRequests: 8
 
 Name queries:
 
-.. code-block::
+.. code-block:: shell
 
-   $ gqt -n stats -y
+   gqt -n stats -y
+
+.. code-block:: yaml
+                
    statistics:
      numberOfGraphqlRequests: 8
-   $ gqt -n time -y
+
+.. code-block:: shell
+                
+   gqt -n time -y
+
+.. code-block:: yaml
+                
    standardLibrary:
      package:
        latestRelease:
          version: 0.20.0
-   $ gqt -n stats -y -r
+
+.. code-block:: shell
+                
+   gqt -n stats -y -r
+
+.. code-block:: yaml
+                
    statistics:
      numberOfGraphqlRequests: 9
-   $ gqt -n time -y -r
+
+.. code-block:: shell
+                
+   gqt -n time -y -r
+
+.. code-block:: yaml
+                
    standardLibrary:
      package:
        latestRelease:
@@ -98,14 +128,23 @@ Name queries:
 Make arguments variables by pressing ``v`` or ``$`` and give them as
 ``-v <name>=<value>`` on the command line:
 
-.. code-block::
+.. code-block:: shell
 
-   $ gqt -v name=time -y
+   gqt -v name=time -y
+
+.. code-block:: yaml
+                
    standardLibrary:
      package:
        latestRelease:
          version: 0.20.0
-   $ gqt -r -q
+
+.. code-block:: shell
+                
+   gqt -r -q
+
+.. code-block:: graphql
+                
    query Query($name: String!) {
      standardLibrary {
        package(name: $name) {
@@ -118,9 +157,12 @@ Make arguments variables by pressing ``v`` or ``$`` and give them as
 
 Print the schema:
 
-.. code-block::
+.. code-block:: shell
 
-   $ gqt --print-schema
+   gqt --print-schema
+
+.. code-block:: graphql
+                
    type Query {
      standardLibrary: StandardLibrary!
      statistics: Statistics!
