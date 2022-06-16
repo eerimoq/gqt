@@ -259,15 +259,17 @@ Ideas
 
   - Save cursor and possibly other state.
 
-  -- ~/.cache/gqt/cache/generic/
-     +-- <endpoint 1>
-         +-- schema.json
-         +-- query.graphql
-         +-- state.json
-         +-- query_names/
-             +-- stats/
-                 +-- schema.json
-                 +-- query.graphql
-                 +-- state.json
+  .. code-block::
+
+     -- ~/.cache/gqt/cache/generic/
+        +-- <endpoint 1>
+            +-- schema.json
+            +-- query.graphql
+            +-- state.json
+            +-- query_names/
+                +-- stats/
+                    +-- schema.json
+                    +-- query.graphql
+                    +-- state.json
 
 .. _bat: https://github.com/sharkdp/bat
