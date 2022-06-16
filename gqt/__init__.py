@@ -13,8 +13,8 @@ from graphql import print_schema
 from graphql.language import parse
 from graphql.language import print_ast
 
-from .cache import CACHE_PATH
 from .cache import read_tree_from_cache
+from .cache import clear_cache
 from .endpoint import create_query
 from .endpoint import fetch_schema
 from .endpoint import post
@@ -183,10 +183,8 @@ def main():
     except Exception:
         sys.exit('Bad header given.')
 
-    CACHE_PATH.mkdir(exist_ok=True, parents=True)
-
     if args.clear_cache:
-        shutil.rmtree(CACHE_PATH)
+        clear_cache()
         return
 
     logging.captureWarnings(True)

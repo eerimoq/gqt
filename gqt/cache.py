@@ -30,3 +30,7 @@ def write_tree_to_cache(root, endpoint, query_name):
     path = make_query_pickle_path(endpoint, query_name)
     path.parent.mkdir(exist_ok=True, parents=True)
     path.write_bytes(pickle.dumps(root))
+
+
+def clear_cache():
+    shutil.rmtree(CACHE_PATH)
