@@ -21,6 +21,7 @@ Select:            <Space>
 Variable:          v or $
 Delete list item:  <Backspace>
 Execute:           <Enter>
+Reload schema:     r
 Help:              h or ?
 Quit:              <Ctrl-C>\
 '''
@@ -44,14 +45,23 @@ def format_title(kind, tree, description, x_max):
 
 class QueryBuilder:
 
-    def __init__(self, stdscr, endpoint, tree):
+    def __init__(self, stdscr, endpoint, query_name, headers, verify):
         self.stdscr = stdscr
         self.endpoint = endpoint
-        self.tree = tree
+        self.query_name = query_name
+        self.headers = headers
+        self.verify = verify
         self.show_help = False
         self.y_offset = 1
         self.error = None
         self.meta = False
+
+        try:
+            self.tree = read_tree_from_cache(endpoint, query_name)
+            self.show_fetching_schema = False
+        except Exception:
+            self.tree = None
+            self.show_fetching_schema = True
 
     def draw(self, cursor, y_max, x_max, y):
         for i in range(y):
@@ -121,6 +131,8 @@ class QueryBuilder:
             if not self.tree.key(key):
                 if key in ['h', '?']:
                     self.show_help = not self.show_help
+                elif key == 'r':
+                    self.show_fetching_schema = True
 
         return False
 
@@ -140,12 +152,36 @@ class QueryBuilder:
                 except Exception as error:
                     self.error = str(error)
 
+        if self.show_fetching_schema:
+            self.draw_fetching_schema()
+            self.show_fetching_schema = False
+
         if self.show_help:
             self.draw_help()
         else:
             self.draw_selector()
 
         return False
+
+    def draw_fetching_schema(self):
+        curses.curs_set(False)
+        self.stdscr.erase()
+        message = f"Fetching schema from '{self.endpoint}'..."
+        y_max, x_max = self.stdscr.getmaxyx()
+        col = max((x_max - len(message) - 4) // 2, 0)
+        row = min((y_max - 6) // 2, y_max // 3)
+        horizontal_line = '─' * len(message)
+        horizontal_space = ' ' * len(message)
+
+        self.addstr_frame(row + 0, col, f'┌─{horizontal_line}─┐')
+        self.addstr_frame(row + 1, col, f'│ {horizontal_space} │')
+        self.addstr_frame(row + 2, col, f'│ {horizontal_space} │')
+        self.addstr(row + 2, col + 2, message)
+        self.addstr_frame(row + 3, col, f'│ {horizontal_space} │')
+        self.addstr_frame(row + 4, col, f'└─{horizontal_line}─┘')
+        self.stdscr.refresh()
+        self.tree = load_tree_from_schema(
+            fetch_schema(self.endpoint, self.headers, self.verify))
 
     def draw_help(self):
         curses.curs_set(False)
@@ -198,16 +234,22 @@ class QueryBuilder:
         curses.init_pair(3, curses.COLOR_CYAN, -1)
         curses.init_pair(4, curses.COLOR_RED, -1)
 
-        self.update(None)
-        done = False
+        try:
+            self.update(None)
+            done = False
 
-        while not done:
-            try:
-                key = self.stdscr.getkey()
-            except curses.error:
-                continue
+            while not done:
+                try:
+                    key = self.stdscr.getkey()
+                except curses.error:
+                    continue
 
-            done = self.update(key)
+                done = self.update(key)
+        finally:
+            if self.tree is not None:
+                write_tree_to_cache(self.tree, self.endpoint, self.query_name)
+
+        return self.tree
 
     def addstr(self, y, x, text):
         addstr(self.stdscr, y, x, text)
@@ -239,15 +281,8 @@ class QueryBuilder:
         return int(self.stdscr.getmaxyx()[0] * 0.5)
 
 
-def load_tree(endpoint, query_name, headers, verify):
-    try:
-        return read_tree_from_cache(endpoint, query_name)
-    except Exception:
-        return load_tree_from_schema(fetch_schema(endpoint, headers, verify))
-
-
-def selector(stdscr, endpoint, tree):
-    return QueryBuilder(stdscr, endpoint, tree).run()
+def selector(stdscr, endpoint, query_name, headers, verify):
+    return QueryBuilder(stdscr, endpoint, query_name, headers, verify).run()
 
 
 @contextmanager
@@ -263,12 +298,5 @@ def redirect_stdout_to_stderr():
 
 
 def query_builder(endpoint, query_name, headers, verify):
-    tree = load_tree(endpoint, query_name, headers, verify)
-
-    try:
-        with redirect_stdout_to_stderr():
-            curses.wrapper(selector, endpoint, tree)
-    finally:
-        write_tree_to_cache(tree, endpoint, query_name)
-
-    return tree
+    with redirect_stdout_to_stderr():
+        return curses.wrapper(selector, endpoint, query_name, headers, verify)

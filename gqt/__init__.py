@@ -176,9 +176,6 @@ def main():
     parser.add_argument('-H', '--header',
                         action='append',
                         help='Extra HTTP header. May be given multiple times.')
-    parser.add_argument('--verbose',
-                        action='store_true',
-                        help='Enable logging and verbose exceptions.')
     args = parser.parse_args()
 
     try:
@@ -189,10 +186,6 @@ def main():
     if args.clear_cache:
         clear_cache()
         return
-
-    if args.verbose:
-        logging.basicConfig(level=logging.DEBUG,
-                            format='%(asctime)s %(levelname)s %(message)s')
 
     logging.captureWarnings(True)
     verify = not args.no_verify
@@ -249,7 +242,4 @@ def main():
 
         sys.exit(f'error: {error}')
     except BaseException as error:
-        if args.verbose:
-            raise
-
         sys.exit(f'error: {error}')

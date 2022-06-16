@@ -34,4 +34,4 @@ def write_tree_to_cache(root, endpoint, query_name):
 
 
 def clear_cache():
-    shutil.rmtree(CACHE_PATH)
+    shutil.rmtree(CACHE_PATH, ignore_errors=True)

@@ -244,12 +244,7 @@ Ideas
      │     ■ width: 800
      │     ■ height: 600
 
-- Check for schema modifications when starting. Do it in the
-  background and notify the user if it was modified.
-
-  New schema fetched from the server. Use it? y/n
-
-- Subscriptions. Probably out of scope.
+- Keep valid parts of any existing query when reloading the schema.
 
 - Cache across updates.
 
@@ -271,5 +266,8 @@ Ideas
                     +-- schema.json
                     +-- query.graphql
                     +-- state.json
+
+- Optionally give schema path on command line. For endpoints that does
+  not support schema introspection.
 
 .. _bat: https://github.com/sharkdp/bat
