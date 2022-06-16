@@ -13,8 +13,8 @@ from graphql import print_schema
 from graphql.language import parse
 from graphql.language import print_ast
 
-from .cache import read_tree_from_cache
 from .cache import clear_cache
+from .cache import read_tree_from_cache
 from .endpoint import create_query
 from .endpoint import fetch_schema
 from .endpoint import post

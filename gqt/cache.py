@@ -1,4 +1,5 @@
 import pickle
+import shutil
 from base64 import b64encode
 
 from xdg import XDG_CACHE_HOME
