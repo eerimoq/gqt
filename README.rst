@@ -125,6 +125,20 @@ Name queries:
        latestRelease:
          version: 0.20.0
 
+List cached queries:
+
+.. code-block::
+
+   gqt -l
+
+.. code-block::
+
+   Endpoint                      Query name
+   ----------------------------  ------------
+   https://mys-lang.org/graphql  <default>
+   https://mys-lang.org/graphql  time
+   https://mys-lang.org/graphql  stats
+
 Make arguments variables by pressing ``v`` or ``$`` and give them as
 ``-v <name>=<value>`` on the command line:
 
