@@ -185,6 +185,8 @@ Known issues
 - There is one query cache per ``gqt`` version. Would be nice to keep
   the cache after upgrading ``gqt``.
 
+- The query is cleared when reloading the schema.
+
 Ideas
 -----
 
