@@ -381,3 +381,17 @@ class TreeTest(unittest.TestCase):
         tree.key('\t')
         tree.select()
         self.assertEqual(tree.query(), 'query Query {a}')
+
+    def test_interface(self):
+        schema = ('type Query {'
+                  '  a: Foo'
+                  '}'
+                  'interface Foo {'
+                  '  b: String'
+                  '}')
+        tree = load_tree(schema)
+        tree.key_right()
+        tree.key_down()
+        self.assertEqual(tree.cursor_type(), 'String')
+        tree.select()
+        self.assertEqual(tree.query(), 'query Query {a {b}}')

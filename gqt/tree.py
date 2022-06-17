@@ -926,7 +926,7 @@ def build_field(field, types, state):
     field_type_string = get_type_string(field['type'])
     description = field['description']
 
-    if item['kind'] == 'OBJECT':
+    if item['kind'] in ['OBJECT', 'INTERFACE']:
         fields = find_type(types, field_type)['fields']
 
         return Object(name,

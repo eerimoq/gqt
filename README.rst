@@ -180,9 +180,7 @@ Print the schema:
 Known issues
 ------------
 
-- Unions and interfaces are not implemented.
-
-- And much more.
+- Unions are not implemented.
 
 - There is one query cache per ``gqt`` version. Would be nice to keep
   the cache after upgrading ``gqt``.
