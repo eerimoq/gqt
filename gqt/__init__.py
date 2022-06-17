@@ -12,8 +12,10 @@ from graphql import build_client_schema
 from graphql import print_schema
 from graphql.language import parse
 from graphql.language import print_ast
+from tabulate import tabulate
 
 from .cache import clear_cache
+from .cache import get_cached_queries
 from .cache import read_tree_from_cache
 from .endpoint import create_query
 from .endpoint import fetch_schema
@@ -133,6 +135,10 @@ def create_variables(variables):
     return result
 
 
+def list_cached_queries():
+    print(tabulate(get_cached_queries(), ('Endpoint', 'Query name')))
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Set GQT_NO_BAT to disable using bat for styling.')
@@ -167,6 +173,9 @@ def main():
     parser.add_argument('-p', '--print-schema',
                         action='store_true',
                         help='Print the schema.')
+    parser.add_argument('-l', '--list-cached-queries',
+                        action='store_true',
+                        help='List all cached queries and exit.')
     parser.add_argument('-C', '--clear-cache',
                         action='store_true',
                         help='Clear the cache and exit.')
@@ -185,6 +194,10 @@ def main():
 
     if args.clear_cache:
         clear_cache()
+        return
+
+    if args.list_cached_queries:
+        list_cached_queries()
         return
 
     logging.captureWarnings(True)

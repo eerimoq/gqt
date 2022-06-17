@@ -1,5 +1,6 @@
 import pickle
 import shutil
+from base64 import b64decode
 from base64 import b64encode
 
 from xdg import XDG_CACHE_HOME
@@ -35,3 +36,20 @@ def write_tree_to_cache(root, endpoint, query_name):
 
 def clear_cache():
     shutil.rmtree(CACHE_PATH, ignore_errors=True)
+
+
+def get_cached_queries():
+    cache_path = CACHE_PATH / __version__
+    items = []
+
+    for path in cache_path.glob('*'):
+        endpoint = b64decode(path.name).decode()
+
+        if (path / 'query.pickle').exists():
+            items.append((endpoint, '<default>'))
+
+        for query_name_path in path.glob('query_names/*'):
+            query_name = query_name_path.name
+            items.append((endpoint, query_name))
+
+    return items

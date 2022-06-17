@@ -24,7 +24,8 @@ setuptools.setup(
         'xdg',
         'pyyaml',
         'readlike',
-        'graphql-core'
+        'graphql-core',
+        'tabulate'
     ],
     packages=find_packages(exclude=['tests']),
     test_suite="tests",
