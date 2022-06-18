@@ -194,8 +194,6 @@ Print the schema:
 Known issues
 ------------
 
-- Unions are not implemented.
-
 - There is one query cache per ``gqt`` version. Would be nice to keep
   the cache after upgrading ``gqt``.
 
@@ -224,40 +222,6 @@ Ideas
      │ ▶ films
 
      /fil                                                1 of 2 matches
-
-- Unions:
-
-  Always query ``__typename``.
-
-  .. code-block::
-
-     union SearchResult = Book | Author
-
-     type Book {
-       title: String!
-     }
-
-     type Author {
-       name: String!
-     }
-
-     type Query {
-       search(contains: String): [SearchResult!]
-     }
-
-     Unselected:
-
-     ╭─ Query
-     │ ▶ search
-
-     Selected:
-
-     ╭─ Query
-     │ ▼ search
-     │   ▶ Book
-     │     ■ title
-     │   ▶ Author
-     │     ■ name
 
 - Alias?
 
