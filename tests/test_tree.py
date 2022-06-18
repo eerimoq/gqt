@@ -395,3 +395,43 @@ class TreeTest(unittest.TestCase):
         self.assertEqual(tree.cursor_type(), 'String')
         tree.select()
         self.assertEqual(tree.query(), 'query Query {a {b}}')
+
+    def test_union(self):
+        schema = ('union SearchResult = Book | Author '
+                  'type Book {'
+                  '  title: String!'
+                  '}'
+                  'type Author {'
+                  '  name: String!'
+                  '}'
+                  'type Query {'
+                  '  search(contains: String): [SearchResult!]'
+                  '}')
+        tree = load_tree(schema)
+        tree.key_right()
+        tree.key_down()
+        tree.key_down()
+        self.assertEqual(tree.cursor_type(), 'Book')
+        tree.key_right()
+        tree.key_down()
+        tree.select()
+        self.assertEqual(tree.query(),
+                         'query Query {search {__typename ... on Book {title}}}')
+        tree.key_down()
+        tree.key_right()
+        tree.key_down()
+        tree.select()
+        self.assertEqual(tree.query(),
+                         'query Query {search {__typename ... on Book {title} '
+                         '... on Author {name}}}')
+        tree.key_up()
+        tree.key_up()
+        tree.key_up()
+        tree.key_up()
+        tree.select()
+        tree.key('\t')
+        tree.key_right()
+        tree.key('k')
+        self.assertEqual(tree.query(),
+                         'query Query {search(contains:"k") '
+                         '{__typename ... on Book {title} ... on Author {name}}}')
