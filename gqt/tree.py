@@ -32,8 +32,8 @@ KEY_BINDINGS = {
     # '': 'meta delete',
     # '': 'meta f',
     # '': 'meta l',
-    '\x1bb': 'meta left',
-    '\x1bf': 'meta right',
+    541: 'meta left',
+    556: 'meta right',
     # '': 'meta t',
     # '': 'meta u',
     curses.KEY_RIGHT: 'right'
@@ -358,9 +358,12 @@ class ScalarArgument(Node):
 
             return True
         elif self.state.cursor_at_input_field:
-            self.value, self.pos = edit(self.value,
-                                        self.pos,
-                                        KEY_BINDINGS.get(key, key))
+            try:
+                self.value, self.pos = edit(self.value,
+                                            self.pos,
+                                            KEY_BINDINGS.get(key, key))
+            except Exception:
+                raise Exception(key)
 
             return True
         elif key in 'v$':
