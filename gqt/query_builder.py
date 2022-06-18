@@ -129,6 +129,9 @@ class QueryBuilder:
         elif key == '\x1b':
             self.meta = True
         elif key is not None:
+            if isinstance(key, int):
+                key = curses.keyname(key).decode()
+
             if not self.tree.key(key):
                 if key in ['h', '?']:
                     self.show_help = not self.show_help

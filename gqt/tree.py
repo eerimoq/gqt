@@ -338,7 +338,7 @@ class ScalarArgument(Node):
 
     def key_left(self):
         if self.state.cursor_at_input_field:
-            self.key(curses.KEY_LEFT)
+            self.key('KEY_LEFT')
 
             return True
         else:
@@ -346,7 +346,7 @@ class ScalarArgument(Node):
 
     def key_right(self):
         if self.state.cursor_at_input_field:
-            self.key(curses.KEY_RIGHT)
+            self.key('KEY_RIGHT')
 
             return True
         else:
@@ -358,9 +358,6 @@ class ScalarArgument(Node):
 
             return True
         elif self.state.cursor_at_input_field:
-            if isinstance(key, int):
-                key = curses.keyname(key).decode()
-
             self.value, self.pos = edit(self.value,
                                         self.pos,
                                         KEY_BINDINGS.get(key, key))
@@ -489,7 +486,7 @@ class EnumArgument(Node):
 
     def key_left(self):
         if self.state.cursor_at_input_field:
-            self.key(curses.KEY_LEFT)
+            self.key('KEY_LEFT')
 
             return True
         else:
@@ -497,7 +494,7 @@ class EnumArgument(Node):
 
     def key_right(self):
         if self.state.cursor_at_input_field:
-            self.key(curses.KEY_RIGHT)
+            self.key('KEY_RIGHT')
 
             return True
         else:
