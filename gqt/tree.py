@@ -894,6 +894,7 @@ class State:
 
     def __init__(self):
         self.cursor_at_input_field = False
+        self.compact = False
 
 
 def find_type(types, name):
@@ -1047,8 +1048,9 @@ class ObjectFields:
 
 class Tree:
 
-    def __init__(self, root):
+    def __init__(self, root, state):
         self._root = root
+        self._state = state
         self._cursor = root.fields[0]
 
     def cursor_type(self):
@@ -1146,6 +1148,9 @@ class Tree:
     def query(self):
         return self._root.query_root(self._cursor)
 
+    def toggle_compact(self):
+        self._state.compact = not self._state.compact
+
     def go_to_begin(self):
         self._cursor = self._root.fields[0]
 
@@ -1206,4 +1211,4 @@ def load_tree_from_schema(schema):
                   True)
     tree.fields[0].cursor = True
 
-    return Tree(tree)
+    return Tree(tree, state)

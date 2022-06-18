@@ -19,6 +19,7 @@ Move:              <Left>, <Right>, <Up> and <Down>
                    <Tab>
 Select:            <Space>
 Variable:          v or $
+Compact:           c
 Delete list item:  <Backspace>
 Execute:           <Enter>
 Reload schema:     r
@@ -134,6 +135,8 @@ class QueryBuilder:
                     self.show_help = not self.show_help
                 elif key == 'r':
                     self.show_fetching_schema = True
+                elif key == 'c':
+                    self.tree.toggle_compact()
 
         return False
 
