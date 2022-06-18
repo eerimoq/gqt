@@ -97,28 +97,29 @@ class QueryBuilder:
             self.error = None
 
     def update_key(self, key):
-        if key == 'KEY_UP':
+        if key == curses.KEY_UP:
             self.tree.key_up()
-        elif key == 'KEY_DOWN':
+        elif key == curses.KEY_DOWN:
             self.tree.key_down()
-        elif key == 'KEY_LEFT':
+        elif key == curses.KEY_LEFT:
             self.tree.key_left()
-        elif key == 'KEY_RIGHT':
+        elif key == curses.KEY_RIGHT:
             self.tree.key_right()
-        elif key == 'KEY_PPAGE':
+        elif key == curses.KEY_PPAGE:
             for _ in range(self.page_up_down_lines()):
                 self.tree.key_up()
-        elif key == 'KEY_NPAGE':
+        elif key == curses.KEY_NPAGE:
             for _ in range(self.page_up_down_lines()):
                 self.tree.key_down()
         elif key == ' ':
             self.tree.select()
         elif key == '\n':
             return True
-        elif key == 'KEY_RESIZE':
+        elif key == curses.KEY_RESIZE:
             pass
         elif self.meta:
             self.meta = False
+
             if key == '<':
                 self.tree.go_to_begin()
             elif key == '>':
@@ -240,7 +241,7 @@ class QueryBuilder:
 
             while not done:
                 try:
-                    key = self.stdscr.getkey()
+                    key = self.stdscr.get_wch()
                 except curses.error:
                     continue
 
@@ -278,7 +279,7 @@ class QueryBuilder:
             self.addstr(y, x, ' '.join(parts[3:]))
 
     def page_up_down_lines(self):
-        return int(self.stdscr.getmaxyx()[0] * 0.5)
+        return 10
 
 
 def selector(stdscr, endpoint, query_name, headers, verify):
