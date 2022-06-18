@@ -5,9 +5,9 @@ from readlike import edit
 from .screen import addstr
 
 KEY_BINDINGS = {
-    curses.KEY_BACKSPACE: 'backspace',
+    'KEY_BACKSPACE': 'backspace',
     '\b': 'backspace',
-    curses.KEY_DC: 'backspace',
+    'KEY_DC': 'backspace',
     '\x7f': 'backspace',
     '\x01': 'ctrl a',
     # '': 'ctrl b',
@@ -23,7 +23,7 @@ KEY_BINDINGS = {
     # '': 'delete',
     # '': 'end',
     # '': 'home',
-    curses.KEY_LEFT: 'left',
+    'KEY_LEFT': 'left',
     # '': 'meta \\',
     # '': 'meta b',
     '\x1b\x7f': 'meta backspace',
@@ -32,11 +32,11 @@ KEY_BINDINGS = {
     # '': 'meta delete',
     # '': 'meta f',
     # '': 'meta l',
-    541: 'meta left',
-    556: 'meta right',
+    'kLFT5': 'meta left',
+    'kRIT5': 'meta right',
     # '': 'meta t',
     # '': 'meta u',
-    curses.KEY_RIGHT: 'right'
+    'KEY_RIGHT': 'right'
 }
 
 
@@ -358,12 +358,12 @@ class ScalarArgument(Node):
 
             return True
         elif self.state.cursor_at_input_field:
-            try:
-                self.value, self.pos = edit(self.value,
-                                            self.pos,
-                                            KEY_BINDINGS.get(key, key))
-            except Exception:
-                raise Exception(key)
+            if isinstance(key, int):
+                key = curses.keyname(key).decode()
+
+            self.value, self.pos = edit(self.value,
+                                        self.pos,
+                                        KEY_BINDINGS.get(key, key))
 
             return True
         elif key in 'v$':
