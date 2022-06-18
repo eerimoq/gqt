@@ -19,7 +19,6 @@ Move:              <Left>, <Right>, <Up> and <Down>
                    <Tab>
 Select:            <Space>
 Variable:          v or $
-Compact:           c
 Delete list item:  <Backspace>
 Execute:           <Enter>
 Reload schema:     r

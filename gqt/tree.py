@@ -117,6 +117,7 @@ class Object(Node):
                  field_type,
                  description,
                  fields,
+                 state,
                  number_of_query_fields,
                  is_root=False,
                  is_union=False):
@@ -125,6 +126,7 @@ class Object(Node):
         self.type = field_type
         self.description = description
         self.fields = fields
+        self.state = state
 
         if not is_root:
             self.fields.parent = self
@@ -210,13 +212,14 @@ class Object(Node):
 
 class Leaf(Node):
 
-    def __init__(self, name, field_type, description, fields):
+    def __init__(self, name, field_type, description, fields, state):
         super().__init__()
         self.is_selected = False
         self.name = name
         self.type = field_type
         self.description = description
         self.fields = fields
+        self.state = state
 
         if self.fields is not None:
             self.fields.parent = self
@@ -941,6 +944,7 @@ def build_field(field, types, state):
                       field_type_string,
                       description,
                       ObjectFields(field['args'], fields, types, state),
+                      state,
                       len(fields))
     elif item['kind'] == 'UNION':
         fields = [
@@ -957,6 +961,7 @@ def build_field(field, types, state):
                       field_type_string,
                       description,
                       ObjectFields(field['args'], fields, types, state),
+                      state,
                       len(fields),
                       is_union=True)
     else:
@@ -965,7 +970,7 @@ def build_field(field, types, state):
         else:
             fields = None
 
-        return Leaf(name, field_type_string, description, fields)
+        return Leaf(name, field_type_string, description, fields, state)
 
 
 def build_argument(argument, types, state):
@@ -1207,6 +1212,7 @@ def load_tree_from_schema(schema):
                   '',
                   None,
                   ObjectFields([], query_fields + mutation_fields, types, state),
+                  state,
                   len(query_fields),
                   True)
     tree.fields[0].cursor = True

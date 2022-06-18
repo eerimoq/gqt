@@ -202,7 +202,7 @@ Known issues
 Ideas
 -----
 
-- Press ``c`` for compact view, hiding fileds that are not selected.
+- Press ``c`` for compact view, hiding fields that are not selected.
 
 - Search:
 
