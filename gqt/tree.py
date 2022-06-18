@@ -47,7 +47,7 @@ def find_root_field(cursor):
         return find_root_field(cursor.parent)
 
 
-def fields_query(fields, variables):
+def fields_query(fields, variables, is_union=False):
     items = []
     arguments = []
 
@@ -60,6 +60,8 @@ def fields_query(fields, variables):
         if isinstance(field,
                       (ScalarArgument, InputArgument, ListArgument, EnumArgument)):
             arguments.append(f'{field.name}:{value}')
+        elif is_union:
+            items.append(f'... on {value}')
         else:
             items.append(value)
 
@@ -116,7 +118,8 @@ class Object(Node):
                  description,
                  fields,
                  number_of_query_fields,
-                 is_root=False):
+                 is_root=False,
+                 is_union=False):
         super().__init__()
         self.name = name
         self.type = field_type
@@ -127,6 +130,7 @@ class Object(Node):
             self.fields.parent = self
 
         self.is_root = is_root
+        self.is_union = is_union
         self.number_of_query_fields = number_of_query_fields
         self.is_expanded = is_root
 
@@ -160,10 +164,13 @@ class Object(Node):
         if not self.is_expanded:
             return None
 
-        items, arguments = fields_query(self.fields, variables)
+        items, arguments = fields_query(self.fields, variables, self.is_union)
 
         if items:
-            return f'{self.name}{arguments} {{{items}}}'
+            if self.is_union:
+                return f'{self.name}{arguments} {{__typename {items}}}'
+            else:
+                return f'{self.name}{arguments} {{{items}}}'
         else:
             raise Exception(f"No fields selected in '{self.name}'.")
 
@@ -934,6 +941,23 @@ def build_field(field, types, state):
                       description,
                       ObjectFields(field['args'], fields, types, state),
                       len(fields))
+    elif item['kind'] == 'UNION':
+        fields = [
+            {
+                'name': field['name'],
+                'description': '',
+                'args': [],
+                'type': find_type(types, field['name'])
+            }
+            for field in find_type(types, field_type)['possibleTypes']
+        ]
+
+        return Object(name,
+                      field_type_string,
+                      description,
+                      ObjectFields(field['args'], fields, types, state),
+                      len(fields),
+                      is_union=True)
     else:
         if field['args']:
             fields = ObjectFields(field['args'], [], types, state)
