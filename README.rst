@@ -204,6 +204,27 @@ Known issues
 Ideas
 -----
 
+- Search:
+
+  Press ``/`` to search for visible fields. Press ``<Up>`` and
+  ``<Down>`` to move to the previous and next search hit. Highlight
+  all hits. Press ``<Enter>`` to end the search and move the cursor to
+  the current hit. Press ``<Esc>`` to abort the search and restore the
+  cursor to its pre-search position. Show number of hits.
+
+  .. code-block::
+
+     ╭─ Query
+     │ ▼ search
+     │   ▶ Book
+     │     ■ title
+     │   ▶ Author
+     │     ■ name
+     │ ▶ film
+     │ ▶ films
+
+     /fil                                                1 of 2 matches
+
 - Unions:
 
   Always query ``__typename``.
