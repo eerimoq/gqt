@@ -5,9 +5,9 @@ from readlike import edit
 from .screen import addstr
 
 KEY_BINDINGS = {
-    'KEY_BACKSPACE': 'backspace',
+    curses.KEY_BACKSPACE: 'backspace',
     '\b': 'backspace',
-    'KEY_DC': 'backspace',
+    curses.KEY_DC: 'backspace',
     '\x7f': 'backspace',
     '\x01': 'ctrl a',
     # '': 'ctrl b',
@@ -23,7 +23,7 @@ KEY_BINDINGS = {
     # '': 'delete',
     # '': 'end',
     # '': 'home',
-    'KEY_LEFT': 'left',
+    curses.KEY_LEFT: 'left',
     # '': 'meta \\',
     # '': 'meta b',
     '\x1b\x7f': 'meta backspace',
@@ -36,7 +36,7 @@ KEY_BINDINGS = {
     '\x1bf': 'meta right',
     # '': 'meta t',
     # '': 'meta u',
-    'KEY_RIGHT': 'right'
+    curses.KEY_RIGHT: 'right'
 }
 
 
@@ -328,7 +328,7 @@ class ScalarArgument(Node):
 
     def key_left(self):
         if self.state.cursor_at_input_field:
-            self.key('KEY_LEFT')
+            self.key(curses.KEY_LEFT)
 
             return True
         else:
@@ -336,7 +336,7 @@ class ScalarArgument(Node):
 
     def key_right(self):
         if self.state.cursor_at_input_field:
-            self.key('KEY_RIGHT')
+            self.key(curses.KEY_RIGHT)
 
             return True
         else:
@@ -476,7 +476,7 @@ class EnumArgument(Node):
 
     def key_left(self):
         if self.state.cursor_at_input_field:
-            self.key('KEY_LEFT')
+            self.key(curses.KEY_LEFT)
 
             return True
         else:
@@ -484,7 +484,7 @@ class EnumArgument(Node):
 
     def key_right(self):
         if self.state.cursor_at_input_field:
-            self.key('KEY_RIGHT')
+            self.key(curses.KEY_RIGHT)
 
             return True
         else:
