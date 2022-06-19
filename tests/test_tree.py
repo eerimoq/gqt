@@ -451,6 +451,25 @@ class TreeTest(unittest.TestCase):
                         '    ▶ ...\n'
                         'X b')
         self.assertEqual(tree.query(), 'query Query {a(b:[]) b}')
+        tree.key_up()
+        tree.select()
+        tree.key_down()
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  ■ b:\n'
+                        '    ▼ [0]\n'
+                        '      X value:\n'
+                        '    ▶ ...\n'
+                        '■ b')
+        tree.key_up()
+        tree.select()
+        tree.key_down()
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  ■ b:\n'
+                        '    ▶ [0]\n'
+                        '    X ...\n'
+                        '■ b')
 
     def test_input_argument(self):
         schema = ('type Query {'

@@ -785,7 +785,10 @@ class ListItem(Node):
         self.is_expanded = not self.is_expanded
 
         if self.is_expanded:
+            self.child = self.item
             self.parent.item_selected(self)
+        else:
+            self.child = None
 
     def query(self, variables):
         if not self.is_expanded:
