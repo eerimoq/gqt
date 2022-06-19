@@ -241,6 +241,37 @@ class TreeTest(unittest.TestCase):
         tree.key('o')
         self.assertEqual(tree.query(),
                          'query Query($foo:Int) {a(b:"ABC",d:$foo) {d}}')
+        self.assertDraw(tree,
+                        '▼ a\n'
+                        '  ● b: ABC\n'
+                        '  □ c:\n'
+                        '  $ d: fooX\n'
+                        '  ■ d')
+        tree.key_down()
+        self.assertDraw(tree,
+                        '▼ a\n'
+                        '  ● b: ABC\n'
+                        '  □ c:\n'
+                        '  $ d: foo\n'
+                        '  X d')
+        tree.key_up()
+        tree.key_up()
+        self.assertDraw(tree,
+                        '▼ a\n'
+                        '  ● b: ABC\n'
+                        '  □ c: X\n'
+                        '  $ d: foo\n'
+                        '  ■ d')
+        tree.key_down()
+        tree.key('\t')
+        tree.key('v')
+        tree.key_down()
+        self.assertDraw(tree,
+                        '▼ a\n'
+                        '  ● b: ABC\n'
+                        '  □ c:\n'
+                        '  □ d: foo\n'
+                        '  X d')
 
     def test_argument_to_scalar_field(self):
         schema = ('type Query {'
@@ -387,6 +418,39 @@ class TreeTest(unittest.TestCase):
         self.assertEqual(tree.query(), 'query Query {a(b:[]) b}')
         tree.key_right()
         self.assertEqual(tree.query(), 'query Query {a(b:[null]) b}')
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  ■ b:\n'
+                        '    X [0]\n'
+                        '      □ value:\n'
+                        '    ▶ ...\n'
+                        '■ b')
+        tree.key_up()
+        tree.key('$')
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  $ b: X\n'
+                        '■ b')
+        tree.key_up()
+        tree.key_down()
+        tree.key_down()
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  $ b:\n'
+                        'X b')
+        tree.key_up()
+        tree.key('\t')
+        tree.key('v')
+        tree.key_down()
+        tree.key('\x7f')
+        tree.key_down()
+        tree.key_down()
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  ■ b:\n'
+                        '    ▶ ...\n'
+                        'X b')
+        self.assertEqual(tree.query(), 'query Query {a(b:[]) b}')
 
     def test_input_argument(self):
         schema = ('type Query {'
