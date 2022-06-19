@@ -667,15 +667,21 @@ class InputArgument(Node):
 
                 return True
             elif key in 'v$':
-                self.is_variable = not self.is_variable
-
-                return True
+                return self.key_variable()
         elif key in 'v$':
-            self.is_variable = not self.is_variable
-
-            return True
+            return self.key_variable()
 
         return False
+
+    def key_variable(self):
+        self.is_variable = not self.is_variable
+
+        if self.is_variable:
+            self.child = None
+        elif self.symbol != '□':
+            self.child = self.fields[0]
+
+        return True
 
     def select(self):
         if self.is_optional and not self.is_variable:
