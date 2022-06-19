@@ -574,3 +574,107 @@ class TreeTest(unittest.TestCase):
                         '    ■ title\n'
                         '  ▼ Author\n'
                         '    ■ name')
+
+    def test_select_object(self):
+        schema = ('type Query {'
+                  '  a: A'
+                  '  b: A'
+                  '  c: A'
+                  '}'
+                  'type A {'
+                  '  x: Int'
+                  '}')
+        tree = load_tree(schema)
+        self.assertDraw(tree,
+                        'X a\n'
+                        '▶ b\n'
+                        '▶ c')
+        tree.key_down()
+        tree.select()
+        self.assertDraw(tree,
+                        '▶ a\n'
+                        'X b\n'
+                        '  □ x\n'
+                        '▶ c')
+        tree.key_down()
+        tree.key_down()
+        self.assertDraw(tree,
+                        '▶ a\n'
+                        '▼ b\n'
+                        '  □ x\n'
+                        'X c')
+        tree.key_up()
+        tree.key_up()
+        tree.key_up()
+        self.assertDraw(tree,
+                        'X a\n'
+                        '▼ b\n'
+                        '  □ x\n'
+                        '▶ c')
+        tree.key_down()
+        tree.select()
+        self.assertDraw(tree,
+                        '▶ a\n'
+                        'X b\n'
+                        '▶ c')
+
+    def test_scalar_argument_value(self):
+        schema = ('type Query {'
+                  '  a(x: Int, y: Float, z: Boolean): String'
+                  '}')
+        tree = load_tree(schema)
+        tree.select()
+        self.assertDraw(tree,
+                        'X a\n'
+                        '  □ x:\n'
+                        '  □ y:\n'
+                        '  □ z:')
+        tree.key_down()
+        tree.select()
+
+        with self.assertRaises(Exception) as cm:
+            tree.query()
+
+        self.assertEqual(str(cm.exception), "Missing scalar value.")
+        tree.key('\t')
+        tree.key('l')
+
+        with self.assertRaises(Exception) as cm:
+            tree.query()
+
+        self.assertEqual(str(cm.exception), "'l' is not an integer.")
+        tree.key('\x7f')
+        tree.key('1')
+        self.assertEqual(tree.query(), 'query Query {a(x:1)}')
+        tree.key('\t')
+        tree.select()
+        tree.key_down()
+        tree.select()
+        tree.key('\t')
+        tree.key('h')
+
+        with self.assertRaises(Exception) as cm:
+            tree.query()
+
+        self.assertEqual(str(cm.exception), "'h' is not a float.")
+        tree.key('\x7f')
+        tree.key('1')
+        self.assertEqual(tree.query(), 'query Query {a(y:1)}')
+        tree.key('\t')
+        tree.select()
+        tree.key_down()
+        tree.select()
+        tree.key('\t')
+        tree.key('m')
+
+        with self.assertRaises(Exception) as cm:
+            tree.query()
+
+        self.assertEqual(str(cm.exception),
+                         "Boolean must be 'true' or 'false', not 'm'.")
+        tree.key('\x7f')
+        tree.key('t')
+        tree.key('r')
+        tree.key('u')
+        tree.key('e')
+        self.assertEqual(tree.query(), 'query Query {a(z:true)}')
