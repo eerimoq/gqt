@@ -1215,23 +1215,15 @@ class Tree:
             return None
 
     def _find_last(self, node):
-        if isinstance(node, Object):
-            if node.is_expanded:
-                return self._find_last(node.fields[-1])
-        elif isinstance(node, Leaf):
-            if node.fields is not None and node.is_selected:
-                return self._find_last(node.fields[-1])
-        elif isinstance(node, ListItem):
-            if node.is_expanded:
-                return self._find_last(node.item)
-        elif isinstance(node, ListArgument):
-            if node.symbol in '■●' and not node.is_variable:
-                return self._find_last(node.items[-1])
-        elif isinstance(node, InputArgument):
-            if node.symbol in '■●' and not node.is_variable:
-                return self._find_last(node.fields[-1])
+        if node.child is not None:
+            node = node.child
 
-        return node
+            while node.next is not None:
+                node = node.next
+
+            return self._find_last(node)
+        else:
+            return node
 
 
 def load_tree_from_schema(schema):
