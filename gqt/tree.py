@@ -228,6 +228,11 @@ class Object(Node):
     def select(self):
         self.is_expanded = not self.is_expanded
 
+        if self.is_expanded:
+            self.child = self.fields[0]
+        else:
+            self.child = None
+
 
 class Leaf(Node):
 
@@ -605,6 +610,7 @@ class InputArgument(Node):
             self.symbol = '□'
         else:
             self.symbol = '●'
+            self.child = self.fields[0]
 
     def draw_variable(self, stdscr, y, x, cursor):
         if cursor.node is self:
@@ -677,6 +683,11 @@ class InputArgument(Node):
                 '□': '■',
                 '■': '□'
             }[self.symbol]
+
+            if self.symbol == '■':
+                self.child = self.fields[0]
+            else:
+                self.child = None
 
     def query(self, variables):
         if self.is_variable:
@@ -810,6 +821,9 @@ class ListArgument(Node):
         self.items = []
         self.append_item()
 
+        if self.symbol == '●':
+            self.child = self.items[0]
+
     def append_item(self):
         if self.is_optional:
             item_type = self.field_type['ofType']
@@ -881,6 +895,8 @@ class ListArgument(Node):
 
         if item.prev is not None:
             item.prev.next = item.next
+        else:
+            self.child = item.next
 
         if item.next is not None:
             item.next.prev = item.prev
@@ -891,6 +907,11 @@ class ListArgument(Node):
                 '□': '■',
                 '■': '□'
             }[self.symbol]
+
+            if self.symbol == '■':
+                self.child = self.items[0]
+            else:
+                self.child = None
 
     def key(self, key):
         if self.is_variable:
@@ -906,13 +927,19 @@ class ListArgument(Node):
 
                 return True
             elif key in 'v$':
-                self.is_variable = not self.is_variable
-
-                return True
+                return self.key_variable()
         elif key in 'v$':
-            self.is_variable = not self.is_variable
+            return self.key_variable()
 
-            return True
+    def key_variable(self):
+        self.is_variable = not self.is_variable
+
+        if self.is_variable:
+            self.child = None
+        elif self.symbol != '□':
+            self.child = self.items[0]
+
+        return True
 
     def query(self, variables):
         if self.is_variable:
@@ -1121,15 +1148,6 @@ class Tree:
             self._cursor = self._cursor.parent
 
     def key_down(self):
-        if isinstance(self._cursor, ListArgument):
-            if self._cursor.symbol in '■●' and not self._cursor.is_variable:
-                self._cursor = self._cursor.items[0]
-                return
-        elif isinstance(self._cursor, InputArgument):
-            if self._cursor.symbol in '■●' and not self._cursor.is_variable:
-                self._cursor = self._cursor.fields[0]
-                return
-
         if self._cursor.child is not None:
             self._cursor = self._cursor.child
         elif self._cursor.next is not None:
