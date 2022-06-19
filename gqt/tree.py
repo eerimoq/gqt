@@ -86,6 +86,7 @@ class Node:
 
     def __init__(self):
         self.parent = None
+        self.child = None
         self.next = None
         self.prev = None
         self.type = None
@@ -176,6 +177,24 @@ class Object(Node):
         else:
             raise Exception(f"No fields selected in '{self.name}'.")
 
+    def key_left(self):
+        if not self.is_expanded:
+            return False
+
+        self.is_expanded = False
+        self.child = None
+
+        return True
+
+    def key_right(self):
+        if self.is_expanded:
+            return False
+        else:
+            self.is_expanded = True
+            self.child = self.fields[0]
+
+            return True
+
     def query_root(self, cursor):
         cursor_root_index = self.fields.index(find_root_field(cursor))
         is_query = (cursor_root_index < self.number_of_query_fields)
@@ -265,6 +284,12 @@ class Leaf(Node):
 
     def select(self):
         self.is_selected = not self.is_selected
+
+        if self.fields is not None:
+            if self.is_selected:
+                self.child = self.fields[0]
+            else:
+                self.child = None
 
     def query(self, variables):
         if not self.is_selected:
@@ -720,6 +745,25 @@ class ListItem(Node):
 
         return False
 
+    def key_left(self):
+        if not self.is_expanded:
+            return False
+
+        self.is_expanded = False
+        self.child = None
+
+        return True
+
+    def key_right(self):
+        if self.is_expanded:
+            return False
+        else:
+            self.is_expanded = True
+            self.child = self.item
+            self.parent.item_selected(self)
+
+            return True
+
     def select(self):
         self.is_expanded = not self.is_expanded
 
@@ -1077,19 +1121,7 @@ class Tree:
             self._cursor = self._cursor.parent
 
     def key_down(self):
-        if isinstance(self._cursor, Object):
-            if self._cursor.is_expanded:
-                self._cursor = self._cursor.fields[0]
-                return
-        elif isinstance(self._cursor, Leaf):
-            if self._cursor.fields is not None and self._cursor.is_selected:
-                self._cursor = self._cursor.fields[0]
-                return
-        elif isinstance(self._cursor, ListItem):
-            if self._cursor.is_expanded:
-                self._cursor = self._cursor.item
-                return
-        elif isinstance(self._cursor, ListArgument):
+        if isinstance(self._cursor, ListArgument):
             if self._cursor.symbol in '■●' and not self._cursor.is_variable:
                 self._cursor = self._cursor.items[0]
                 return
@@ -1098,7 +1130,9 @@ class Tree:
                 self._cursor = self._cursor.fields[0]
                 return
 
-        if self._cursor.next is not None:
+        if self._cursor.child is not None:
+            self._cursor = self._cursor.child
+        elif self._cursor.next is not None:
             self._cursor = self._cursor.next
         elif self._cursor.parent is not None:
             cursor = self._find_first_below(self._cursor)
@@ -1110,15 +1144,6 @@ class Tree:
         if self._cursor.key_left():
             return
 
-        if isinstance(self._cursor, Object):
-            if self._cursor.is_expanded:
-                self._cursor.is_expanded = False
-                return
-        elif isinstance(self._cursor, ListItem):
-            if self._cursor.is_expanded:
-                self._cursor.is_expanded = False
-                return
-
         if self._cursor.parent is not None:
             self._cursor = self._cursor.parent
 
@@ -1126,17 +1151,8 @@ class Tree:
         if self._cursor.key_right():
             return
 
-        if isinstance(self._cursor, Object):
-            if self._cursor.is_expanded:
-                self._cursor = self._cursor.fields[0]
-            else:
-                self._cursor.is_expanded = True
-        elif isinstance(self._cursor, ListItem):
-            if self._cursor.is_expanded:
-                self._cursor = self._cursor.item
-            else:
-                self._cursor.is_expanded = True
-                self._cursor.parent.item_selected(self._cursor)
+        if self._cursor.child is not None:
+            self._cursor = self._cursor.child
 
     def select(self):
         self._cursor.select()
