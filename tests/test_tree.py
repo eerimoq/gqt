@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from graphql import build_schema
 from graphql import introspection_from_schema
@@ -10,7 +11,43 @@ def load_tree(schema):
     return load_tree_from_schema(introspection_from_schema(build_schema(schema)))
 
 
+class Stdscr:
+
+    def __init__(self, y_max, x_max):
+        self.y_max = y_max
+        self.x_max = x_max
+        self.screen = [
+            [' ' for _ in range(x_max)]
+            for _ in range(y_max)
+        ]
+
+    def addstr(self, y, x, text, _attrs=None):
+        if not 0 <= y < self.y_max:
+            return
+
+        if x > self.x_max:
+            return
+
+        text = text[:self.x_max - x]
+        self.screen[y][x:x + len(text)] = list(ch for ch in text)
+
+    def getmaxyx(self):
+        return self.y_max, self.x_max
+
+    def render(self):
+        return '\n'.join(''.join(line).rstrip() for line in self.screen).rstrip()
+
+
 class TreeTest(unittest.TestCase):
+
+    def assertDraw(self, tree, expected):
+        stdscr = Stdscr(40, 20)
+
+        with patch('curses.color_pair'):
+            _, cursor = tree.draw(stdscr, 0, 0)
+
+        stdscr.addstr(cursor.y, cursor.x, 'X')
+        self.assertEqual(stdscr.render(), expected)
 
     def test_basic(self):
         schema = ('type Query {'
@@ -23,10 +60,16 @@ class TreeTest(unittest.TestCase):
                   '}')
         tree = load_tree(schema)
         self.assertEqual(tree.cursor_type(), 'Activity')
+        self.assertDraw(tree, 'X activity')
         tree.key_up()
         tree.key_down()
         tree.key_right()
         self.assertEqual(tree.cursor_type(), 'Activity')
+        self.assertDraw(tree,
+                        'X activity\n'
+                        '  □ date\n'
+                        '  □ kind\n'
+                        '  □ message')
         tree.key_down()
         self.assertEqual(tree.cursor_type(), 'String!')
         # Select date.
@@ -40,6 +83,11 @@ class TreeTest(unittest.TestCase):
         tree.select()
         self.assertEqual(tree.query(), 'query Query {activity {date message}}')
         self.assertEqual(tree.cursor_type(), 'String!')
+        self.assertDraw(tree,
+                        '▼ activity\n'
+                        '  ■ date\n'
+                        '  □ kind\n'
+                        '  X message')
 
     def test_move_up_into_expanded_object(self):
         schema = ('type Query {'
@@ -71,6 +119,13 @@ class TreeTest(unittest.TestCase):
         tree.select()
         self.assertEqual(tree.query(), 'query Query {foo {bar {c} fie}}')
         self.assertEqual(tree.cursor_type(), 'String')
+        self.assertDraw(tree,
+                        '▼ foo\n'
+                        '  ▼ bar\n'
+                        '    □ a\n'
+                        '    □ b\n'
+                        '    X c\n'
+                        '  ■ fie')
 
     def test_move_up_through_expanded_objects(self):
         schema = ('type Query {'
@@ -99,6 +154,13 @@ class TreeTest(unittest.TestCase):
         tree.select()
         self.assertEqual(tree.query(), 'query Query {a b {c {d}}}')
         self.assertEqual(tree.cursor_type(), 'String')
+        self.assertDraw(tree,
+                        'X a\n'
+                        '▼ b\n'
+                        '  ▼ c\n'
+                        '    ▶ c\n'
+                        '    ■ d\n'
+                        '  □ d')
 
     def test_move_left_collapse_objects(self):
         schema = ('type Query {'
@@ -363,6 +425,9 @@ class TreeTest(unittest.TestCase):
         tree.key_down()
         self.assertEqual(tree.cursor_type(), 'Foo')
         tree.select()
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  X x:  (A, B, C)')
 
         with self.assertRaises(Exception) as cm:
             tree.query()
@@ -381,6 +446,9 @@ class TreeTest(unittest.TestCase):
         tree.key('\t')
         tree.select()
         self.assertEqual(tree.query(), 'query Query {a}')
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  X x: C')
 
     def test_interface(self):
         schema = ('type Query {'
@@ -435,3 +503,10 @@ class TreeTest(unittest.TestCase):
         self.assertEqual(tree.query(),
                          'query Query {search(contains:"k") '
                          '{__typename ... on Book {title} ... on Author {name}}}')
+        self.assertDraw(tree,
+                        '▼ search\n'
+                        '  ■ contains: kX\n'
+                        '  ▼ Book\n'
+                        '    ■ title\n'
+                        '  ▼ Author\n'
+                        '    ■ name')
