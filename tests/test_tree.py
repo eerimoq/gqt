@@ -697,3 +697,21 @@ class TreeTest(unittest.TestCase):
         tree.key('u')
         tree.key('e')
         self.assertEqual(tree.query(), 'query Query {a(z:true)}')
+
+    def test_begin_end(self):
+        schema = ('type Query {'
+                  '  a: String'
+                  '  b: String'
+                  '  c: String'
+                  '}')
+        tree = load_tree(schema)
+        tree.go_to_end()
+        self.assertDraw(tree,
+                        '□ a\n'
+                        '□ b\n'
+                        'X c')
+        tree.go_to_begin()
+        self.assertDraw(tree,
+                        'X a\n'
+                        '□ b\n'
+                        '□ c')
