@@ -117,9 +117,6 @@ class Node:
     def is_selected(self):
         return False
 
-    def is_selected_leaf(self):
-        return False
-
 
 class Object(Node):
 
@@ -344,9 +341,6 @@ class Leaf(Node):
         return f'{self.name}{arguments}'
 
     def is_selected(self):
-        return self._is_selected
-
-    def is_selected_leaf(self):
         return self._is_selected
 
 
@@ -1322,7 +1316,7 @@ class Tree:
         if node is self._cursor:
             state.is_cursor_seen = True
 
-        if node.is_selected_leaf():
+        if node.is_selected():
             state.new_cursor = node
 
         if state.new_cursor is not None and state.is_cursor_seen:
