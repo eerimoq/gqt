@@ -525,6 +525,12 @@ class TreeTest(unittest.TestCase):
                         '  ■ x:\n'
                         '    X y: va')
         self.assertEqual(tree.query(), 'query Query($va:Bar!) {a(x:{y:$va})}')
+        tree.key('v')
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  ■ x:\n'
+                        '    X y:\n'
+                        '      ■ z: B')
 
     def test_enum_argument(self):
         schema = ('type Query {'
