@@ -138,7 +138,8 @@ class QueryBuilder:
                 elif key == 'r':
                     self.show_fetching_schema = True
                 elif key == 'c':
-                    self.tree.toggle_compact()
+                    pass
+                    # self.tree.toggle_compact()
 
         return False
 

@@ -108,6 +108,15 @@ class Node:
     def query(self, variables):
         raise NotImplementedError()
 
+    def make_compact(self):
+        pass
+
+    def make_not_compact(self):
+        pass
+
+    def is_selected(self):
+        return False
+
 
 class Object(Node):
 
@@ -236,7 +245,7 @@ class Leaf(Node):
 
     def __init__(self, name, field_type, description, fields, state):
         super().__init__()
-        self.is_selected = False
+        self._is_selected = False
         self.name = name
         self.type = field_type
         self.description = description
@@ -259,7 +268,7 @@ class Leaf(Node):
 
         addstr(stdscr, y, x + 2, self.name)
 
-        if self.is_selected:
+        if self._is_selected:
             addstr(stdscr, y, x, '■', curses.color_pair(1))
             y += 1
 
@@ -276,7 +285,7 @@ class Leaf(Node):
             cursor.y = y
             cursor.x = x
 
-        if self.is_selected:
+        if self._is_selected:
             addstr(stdscr, y, x, '■', curses.color_pair(1))
         else:
             addstr(stdscr, y, x, '□', curses.color_pair(1))
@@ -286,16 +295,16 @@ class Leaf(Node):
         return y + 1
 
     def select(self):
-        self.is_selected = not self.is_selected
+        self._is_selected = not self._is_selected
 
         if self.fields is not None:
-            if self.is_selected:
+            if self._is_selected:
                 self.child = self.fields[0]
             else:
                 self.child = None
 
     def query(self, variables):
-        if not self.is_selected:
+        if not self._is_selected:
             return None
 
         if self.fields is None:
@@ -304,6 +313,9 @@ class Leaf(Node):
             arguments = fields_query(self.fields, variables)[1]
 
         return f'{self.name}{arguments}'
+
+    def is_selected(self):
+        return self._is_selected
 
 
 class ScalarArgument(Node):
@@ -1179,11 +1191,35 @@ class Tree:
     def toggle_compact(self):
         self._state.compact = not self._state.compact
 
+        if self._state.compact:
+            self._move_cursor_to_selected_node_or_none()
+            self._root.make_compact()
+        else:
+            self._root.make_not_compact()
+
     def go_to_begin(self):
         self._cursor = self._root.fields[0]
 
     def go_to_end(self):
         self._cursor = self._find_last(self._root.fields[-1])
+
+    def _move_cursor_to_selected_node_or_none(self):
+        if self._cursor.is_selected():
+            return
+
+        if self._try_move_cursor_up_to_selected(self._cursor):
+            return
+
+        if self._try_move_cursor_down_to_selected(self._cursor):
+            return
+
+        self._cursor = None
+
+    def _try_move_cursor_up_to_selected(self, _node):
+        return False
+
+    def _try_move_cursor_down_to_selected(self, _node):
+        return False
 
     def _find_first_below(self, node):
         if node.parent is not None:
