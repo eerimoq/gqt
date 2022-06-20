@@ -776,23 +776,27 @@ class TreeTest(unittest.TestCase):
         tree.select()
         tree.key_down()
         tree.key_down()
+        tree.key_right()
         self.assertDraw(tree,
                         '▼ a\n'
                         '  □ x\n'
                         '  ■ y\n'
                         '  □ z\n'
-                        'X b')
+                        'X b\n'
+                        '  □ x\n'
+                        '  □ y\n'
+                        '  □ z')
         tree.toggle_compact()
-
-        # ToDo: ...
-        with self.assertRaises(AssertionError):
-            self.assertDraw(tree,
-                            '▼ a\n'
-                            '  X y')
-            tree.toggle_compact()
-            self.assertDraw(tree,
-                            '▼ a\n'
-                            '  □ x\n'
-                            '  X y\n'
-                            '  □ z\n'
-                            '> b')
+        self.assertDraw(tree,
+                        '▼ a\n'
+                        '  X y')
+        tree.toggle_compact()
+        self.assertDraw(tree,
+                        '▼ a\n'
+                        '  □ x\n'
+                        '  X y\n'
+                        '  □ z\n'
+                        '▼ b\n'
+                        '  □ x\n'
+                        '  □ y\n'
+                        '  □ z')

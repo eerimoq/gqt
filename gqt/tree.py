@@ -117,6 +117,9 @@ class Node:
     def is_selected(self):
         return False
 
+    def is_selected_leaf(self):
+        return False
+
 
 class Object(Node):
 
@@ -240,6 +243,32 @@ class Object(Node):
         else:
             self.child = None
 
+    def is_selected(self):
+        if not self.is_expanded:
+            return False
+
+        for field in self.fields:
+            if field.is_selected():
+                return True
+
+        return False
+
+    def make_compact(self):
+        self.fields.make_compact()
+
+        if self.is_expanded and len(self.fields) > 0:
+            self.child = self.fields[0]
+        else:
+            self.child = None
+
+    def make_not_compact(self):
+        self.fields.make_not_compact()
+
+        if self.is_expanded and len(self.fields) > 0:
+            self.child = self.fields[0]
+        else:
+            self.child = None
+
 
 class Leaf(Node):
 
@@ -315,6 +344,9 @@ class Leaf(Node):
         return f'{self.name}{arguments}'
 
     def is_selected(self):
+        return self._is_selected
+
+    def is_selected_leaf(self):
         return self._is_selected
 
 
@@ -1088,10 +1120,47 @@ class ObjectFields:
         self._state = state
         self._fields = None
         self.parent = None
+        self._all_fields = None
+
+    def make_compact(self):
+        if self._all_fields is None:
+            return
+
+        self._fields = [
+            field
+            for field in self._all_fields
+            if field.is_selected()
+        ]
+
+        for field in self._fields:
+            field.make_compact()
+
+        self.set_next_and_prev()
+
+    def make_not_compact(self):
+        if self._all_fields is None:
+            return
+
+        self._fields = self._all_fields
+
+        for field in self._fields:
+            field.make_not_compact()
+
+        self.set_next_and_prev()
+
+    def set_next_and_prev(self):
+        if len(self._fields) > 1:
+            for i in range(1, len(self._fields)):
+                self._fields[i - 1].next = self._fields[i]
+                self._fields[i].prev = self._fields[i - 1]
+
+        if len(self._fields) > 0:
+            self._fields[0].prev = None
+            self._fields[-1].next = None
 
     def fields(self):
-        if self._fields is None:
-            self._fields = [
+        if self._all_fields is None:
+            self._all_fields = [
                 build_argument(argument, self._types, self._state)
                 for argument in self._arguments_info
             ] + [
@@ -1099,14 +1168,11 @@ class ObjectFields:
                 for field in self._fields_info
             ]
 
-        for field in self._fields:
-            field.parent = self.parent
+            for field in self._all_fields:
+                field.parent = self.parent
 
-        if len(self._fields) > 1:
-            for i in range(len(self._fields)):
-                if i > 0:
-                    self._fields[i - 1].next = self._fields[i]
-                    self._fields[i].prev = self._fields[i - 1]
+            self._fields = self._all_fields
+            self.set_next_and_prev()
 
         return self._fields
 
@@ -1123,6 +1189,13 @@ class ObjectFields:
         return self.fields()[key]
 
 
+class MoveSelectedState:
+
+    def __init__(self):
+        self.new_cursor = None
+        self.is_cursor_seen = False
+
+
 class Tree:
 
     def __init__(self, root, state):
@@ -1131,9 +1204,15 @@ class Tree:
         self._cursor = root.fields[0]
 
     def cursor_type(self):
+        if self._cursor is None:
+            return ''
+
         return self._cursor.type
 
     def cursor_description(self):
+        if self._cursor is None:
+            return None
+
         return self._cursor.description
 
     def draw(self, stdscr, y, x):
@@ -1143,12 +1222,18 @@ class Tree:
         return self._root.draw(stdscr, y, x, cursor), cursor
 
     def key_up(self):
+        if self._cursor is None:
+            return
+
         if self._cursor.prev is not None:
             self._cursor = self._find_last(self._cursor.prev)
         elif self._cursor.parent is not None:
             self._cursor = self._cursor.parent
 
     def key_down(self):
+        if self._cursor is None:
+            return
+
         if self._cursor.child is not None:
             self._cursor = self._cursor.child
         elif self._cursor.next is not None:
@@ -1160,6 +1245,9 @@ class Tree:
                 self._cursor = cursor
 
     def key_left(self):
+        if self._cursor is None:
+            return
+
         if self._cursor.key_left():
             return
 
@@ -1167,6 +1255,9 @@ class Tree:
             self._cursor = self._cursor.parent
 
     def key_right(self):
+        if self._cursor is None:
+            return
+
         if self._cursor.key_right():
             return
 
@@ -1174,9 +1265,15 @@ class Tree:
             self._cursor = self._cursor.child
 
     def select(self):
+        if self._cursor is None:
+            return
+
         self._cursor.select()
 
     def key(self, key):
+        if self._cursor is None:
+            return False
+
         done = self._cursor.key(key)
 
         if isinstance(self._cursor, ListItem):
@@ -1197,28 +1294,50 @@ class Tree:
         else:
             self._root.make_not_compact()
 
+            if self._cursor is None:
+                self._cursor = self._root.fields[0]
+
     def go_to_begin(self):
+        if self._cursor is None:
+            return
+
         self._cursor = self._root.fields[0]
 
     def go_to_end(self):
+        if self._cursor is None:
+            return
+
         self._cursor = self._find_last(self._root.fields[-1])
 
     def _move_cursor_to_selected_node_or_none(self):
-        if self._cursor.is_selected():
-            return
+        state = MoveSelectedState()
 
-        if self._try_move_cursor_up_to_selected(self._cursor):
-            return
+        if self._move_cursor_to_selected_node_or_none_level(self._root.fields[0],
+                                                            state):
+            self._cursor = state.new_cursor
+        else:
+            self._cursor = None
 
-        if self._try_move_cursor_down_to_selected(self._cursor):
-            return
+    def _move_cursor_to_selected_node_or_none_level(self, node, state):
+        if node is self._cursor:
+            state.is_cursor_seen = True
 
-        self._cursor = None
+        if node.is_selected_leaf():
+            state.new_cursor = node
 
-    def _try_move_cursor_up_to_selected(self, _node):
-        return False
+        if state.new_cursor is not None and state.is_cursor_seen:
+            return True
 
-    def _try_move_cursor_down_to_selected(self, _node):
+        if node.child is not None:
+            if self._move_cursor_to_selected_node_or_none_level(node.child, state):
+                return True
+
+        while node.next is not None:
+            if self._move_cursor_to_selected_node_or_none_level(node.next, state):
+                return True
+
+            node = node.next
+
         return False
 
     def _find_first_below(self, node):

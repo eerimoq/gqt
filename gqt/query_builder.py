@@ -19,6 +19,7 @@ Move:              <Left>, <Right>, <Up> and <Down>
                    <Tab>
 Select:            <Space>
 Variable:          v or $
+Compact:           c
 Delete list item:  <Backspace>
 Execute:           <Enter>
 Reload schema:     r
@@ -138,8 +139,7 @@ class QueryBuilder:
                 elif key == 'r':
                     self.show_fetching_schema = True
                 elif key == 'c':
-                    pass
-                    # self.tree.toggle_compact()
+                    self.tree.toggle_compact()
 
         return False
 
@@ -221,6 +221,10 @@ class QueryBuilder:
             y_max, x_max = self.stdscr.getmaxyx()
             y, cursor = self.tree.draw(self.stdscr, self.y_offset, 2)
 
+            if y == self.y_offset:
+                self.draw(cursor, y_max, x_max, y)
+                break
+
             if cursor.y < 1:
                 self.y_offset += 1
             elif cursor.y >= y_max:
@@ -229,7 +233,12 @@ class QueryBuilder:
                 self.draw(cursor, y_max, x_max, y)
                 break
 
-        move(self.stdscr, cursor.y, cursor.x)
+        if cursor.y == 0:
+            curses.curs_set(False)
+        else:
+            curses.curs_set(True)
+            move(self.stdscr, cursor.y, cursor.x)
+
         self.stdscr.refresh()
 
     def run(self):
