@@ -10,34 +10,32 @@ KEY_BINDINGS = {
     'KEY_DC': 'backspace',
     '\x7f': 'backspace',
     '\x01': 'ctrl a',
-    # '': 'ctrl b',
     '\x04': 'ctrl d',
     '\x05': 'ctrl e',
-    # '': 'ctrl f',
-    # '': 'ctrl h',
     '\x0b': 'ctrl k',
-    # '': 'ctrl meta h',
     '\x14': 'ctrl t',
-    # '': 'ctrl u',
-    # '': 'ctrl w',
-    # '': 'delete',
-    # '': 'end',
-    # '': 'home',
     'KEY_LEFT': 'left',
-    # '': 'meta \\',
-    # '': 'meta b',
     '\x1b\x7f': 'meta backspace',
-    # '': 'meta c',
     '\x1bd': 'meta d',
-    # '': 'meta delete',
-    # '': 'meta f',
-    # '': 'meta l',
     'kLFT5': 'meta left',
     'kRIT5': 'meta right',
-    # '': 'meta t',
-    # '': 'meta u',
     'KEY_RIGHT': 'right'
 }
+
+OPTIONAL_SYMBOLS = {
+    '□': '■',
+    '■': '□'
+}
+
+
+def query_variable(value, value_type, variables):
+    if value:
+        value = f'${value}'
+        variables.append((value, value_type))
+
+        return value
+    else:
+        raise Exception('Missing variable name.')
 
 
 def find_root_field(cursor):
@@ -367,16 +365,14 @@ class ScalarArgument(Node):
         return y + 1
 
     def key_left(self):
-        if self.state.cursor_at_input_field:
-            self.key('KEY_LEFT')
-
-            return True
-        else:
-            return False
+        return self.key_left_right('KEY_LEFT')
 
     def key_right(self):
+        return self.key_left_right('KEY_RIGHT')
+
+    def key_left_right(self, key):
         if self.state.cursor_at_input_field:
-            self.key('KEY_RIGHT')
+            self.key(key)
 
             return True
         else:
@@ -404,20 +400,11 @@ class ScalarArgument(Node):
         if self.state.cursor_at_input_field:
             self.key(' ')
         elif self.is_optional and not self.is_variable:
-            self.symbol = {
-                '□': '■',
-                '■': '□'
-            }[self.symbol]
+            self.symbol = OPTIONAL_SYMBOLS[self.symbol]
 
     def query(self, variables):
         if self.is_variable:
-            if self.value:
-                value = f'${self.value}'
-                variables.append((value, self.type))
-
-                return value
-            else:
-                raise Exception('Missing variable name.')
+            return query_variable(self.value, self.type, variables)
         elif self.symbol in '■●':
             if self.is_string():
                 return f'"{self.value}"'
@@ -515,16 +502,14 @@ class EnumArgument(Node):
         return y + 1
 
     def key_left(self):
-        if self.state.cursor_at_input_field:
-            self.key('KEY_LEFT')
-
-            return True
-        else:
-            return False
+        return self.key_left_right('KEY_LEFT')
 
     def key_right(self):
+        return self.key_left_right('KEY_RIGHT')
+
+    def key_left_right(self, key):
         if self.state.cursor_at_input_field:
-            self.key('KEY_RIGHT')
+            self.key(key)
 
             return True
         else:
@@ -552,20 +537,11 @@ class EnumArgument(Node):
         if self.state.cursor_at_input_field:
             self.key(' ')
         elif self.is_optional and not self.is_variable:
-            self.symbol = {
-                '□': '■',
-                '■': '□'
-            }[self.symbol]
+            self.symbol = OPTIONAL_SYMBOLS[self.symbol]
 
     def query(self, variables):
         if self.is_variable:
-            if self.value:
-                value = f'${self.value}'
-                variables.append((value, self.type))
-
-                return value
-            else:
-                raise Exception('Missing variable name.')
+            return query_variable(self.value, self.type, variables)
         elif self.symbol in '■●':
             if self.value:
                 if self.value in self.members:
@@ -685,10 +661,7 @@ class InputArgument(Node):
 
     def select(self):
         if self.is_optional and not self.is_variable:
-            self.symbol = {
-                '□': '■',
-                '■': '□'
-            }[self.symbol]
+            self.symbol = OPTIONAL_SYMBOLS[self.symbol]
 
             if self.symbol == '■':
                 self.child = self.fields[0]
@@ -697,13 +670,7 @@ class InputArgument(Node):
 
     def query(self, variables):
         if self.is_variable:
-            if self.value:
-                value = f'${self.value}'
-                variables.append((value, self.type))
-
-                return value
-            else:
-                raise Exception('Missing variable name.')
+            return query_variable(self.value, self.type, variables)
         elif self.symbol in '■●':
             items = []
 
@@ -912,10 +879,7 @@ class ListArgument(Node):
 
     def select(self):
         if self.is_optional and not self.is_variable:
-            self.symbol = {
-                '□': '■',
-                '■': '□'
-            }[self.symbol]
+            self.symbol = OPTIONAL_SYMBOLS[self.symbol]
 
             if self.symbol == '■':
                 self.child = self.items[0]
@@ -939,6 +903,8 @@ class ListArgument(Node):
                 return self.key_variable()
         elif key in 'v$':
             return self.key_variable()
+
+        return False
 
     def key_variable(self):
         self.is_variable = not self.is_variable

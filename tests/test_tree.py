@@ -525,6 +525,11 @@ class TreeTest(unittest.TestCase):
         self.assertEqual(str(cm.exception), "Invalid enum value 'D'.")
         tree.key('\x08')
         tree.key('C')
+        tree.key_left()
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  ■ x: X')
+        tree.key_right()
         self.assertEqual(tree.query(), 'query Query {a(x:C)}')
         tree.key('\t')
         tree.select()
