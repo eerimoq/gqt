@@ -629,6 +629,20 @@ class InputArgument(Node):
         else:
             return self.draw_members(stdscr, y, x, cursor)
 
+    def key_left(self):
+        return self.key_left_right('KEY_LEFT')
+
+    def key_right(self):
+        return self.key_left_right('KEY_RIGHT')
+
+    def key_left_right(self, key):
+        if self.state.cursor_at_input_field:
+            self.key(key)
+
+            return True
+        else:
+            return False
+
     def key(self, key):
         if self.is_variable:
             if key == '\t':
