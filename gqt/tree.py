@@ -469,6 +469,9 @@ class ScalarArgument(Node):
         else:
             return None
 
+    def is_selected(self):
+        return self.is_variable or self.symbol in '■●'
+
 
 class EnumArgument(Node):
 
@@ -590,6 +593,9 @@ class EnumArgument(Node):
                 raise Exception('Missing enum value.')
         else:
             return None
+
+    def is_selected(self):
+        return self.is_variable or self.symbol in '■●'
 
 
 class InputArgument(Node):
@@ -735,6 +741,39 @@ class InputArgument(Node):
             return '{' + ','.join(items) + '}'
         else:
             return None
+#
+#     def is_selected(self):
+#         if self.is_variable:
+#             return True
+#
+#         if self.symbol not in '■●':
+#             return False
+#
+#         for field in self.fields:
+#             if field.is_selected():
+#                 return True
+#
+#         return False
+#
+#     def make_compact(self):
+#         self.fields.make_compact()
+#
+#         if self.is_variable:
+#             self.child = None
+#         elif self.symbol != '□' and len(self.fields) > 0:
+#             self.child = self.fields[0]
+#         else:
+#             self.child = None
+#
+#     def make_not_compact(self):
+#         self.fields.make_not_compact()
+#
+#         if self.is_variable:
+#             self.child = None
+#         elif self.symbol != '□' and len(self.fields) > 0:
+#             self.child = self.fields[0]
+#         else:
+#             self.child = None
 
 
 class ListItem(Node):
