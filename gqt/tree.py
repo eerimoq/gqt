@@ -1229,12 +1229,56 @@ class MoveSelectedState:
         self.is_cursor_seen = False
 
 
+class Search:
+
+    def __init__(self):
+        self.value = ''
+        self.pos = 0
+        self.match_index = 1
+        self.matches = []
+
+    def show(self):
+        self._match()
+
+    def hide(self):
+        self.match_index = 1
+        self.matches = []
+
+    def key(self, key):
+        self.value, self.pos = edit(self.value,
+                                    self.pos,
+                                    KEY_BINDINGS.get(key, key))
+        self._match()
+
+    def key_up(self):
+        if len(self.matches) > 0:
+            self.match_index -= 1
+
+            if self.match_index < 1:
+                self.match_index = len(self.matches)
+
+    def key_down(self):
+        if len(self.matches) > 0:
+            self.match_index += 1
+
+            if self.match_index > len(self.matches):
+                self.match_index = 1
+
+    def _match(self):
+        if self.value:
+            # Search for all matching fields.
+            pass
+        else:
+            self.matches = []
+
+
 class Tree:
 
     def __init__(self, root, state):
         self._root = root
         self._state = state
         self._cursor = root.fields[0]
+        self._search = Search()
 
     def cursor_type(self):
         if self._cursor is None:
@@ -1253,6 +1297,27 @@ class Tree:
         cursor.node = self._cursor
 
         return self._root.draw(stdscr, y, x, cursor), cursor
+
+    def search_show(self):
+        self._search.show()
+
+    def search_hide(self):
+        self._search.hide()
+
+    def search_key(self, key):
+        self._search.key(key)
+
+    def search_key_up(self):
+        self._search.key_up()
+
+    def search_key_down(self):
+        self._search.key_down()
+
+    def search_info(self):
+        return (self._search.value,
+                self._search.pos,
+                self._search.match_index,
+                len(self._search.matches))
 
     def key_up(self):
         if self._cursor is None:

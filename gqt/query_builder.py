@@ -4,7 +4,6 @@ import sys
 from contextlib import contextmanager
 
 from graphql.language import parse
-from readlike import edit
 
 from .cache import read_tree_from_cache
 from .cache import write_tree_to_cache
@@ -58,32 +57,6 @@ def format_title(kind, tree, description, x_max):
     return line
 
 
-class Search:
-
-    def __init__(self):
-        self.value = ''
-        self.pos = 0
-        self.current_match_index = 1
-        self.number_of_matches = 5
-
-    def key_up(self):
-        if self.number_of_matches > 0:
-            self.current_match_index -= 1
-
-            if self.current_match_index < 1:
-                self.current_match_index = self.number_of_matches
-
-    def key_down(self):
-        if self.number_of_matches > 0:
-            self.current_match_index += 1
-
-            if self.current_match_index > self.number_of_matches:
-                self.current_match_index = 1
-
-    def key(self, key):
-        self.value, self.pos = edit(self.value, self.pos, key)
-
-
 class QueryBuilder:
 
     def __init__(self, stdscr, endpoint, query_name, headers, verify):
@@ -105,7 +78,6 @@ class QueryBuilder:
             self.show_fetching_schema = True
 
         self.show_search = False
-        self.search = Search()
 
     def draw(self, cursor, y_max, x_max, y):
         for i in range(y):
@@ -142,13 +114,22 @@ class QueryBuilder:
 
     def update_key_search(self, key):
         if key == curses.KEY_UP:
-            self.search.key_up()
+            self.tree.search_key_up()
         elif key == curses.KEY_DOWN:
-            self.search.key_down()
+            self.tree.search_key_down()
+        elif self.meta:
+            self.meta = False
+            self.tree.search_key('\x1b' + key)
+        elif key == '\x1b':
+            self.meta = True
         elif key == '\n':
             self.show_search = False
+            self.tree.search_hide()
         else:
-            self.search.key(key)
+            if isinstance(key, int):
+                key = curses.keyname(key).decode()
+
+            self.tree.search_key(key)
 
     def update_key(self, key):
         if key == curses.KEY_UP:
@@ -197,6 +178,7 @@ class QueryBuilder:
                 elif key == '/':
                     if is_experimental():
                         self.show_search = True
+                        self.tree.search_show()
 
         return False
 
@@ -294,12 +276,16 @@ class QueryBuilder:
 
         if self.show_search:
             curses.curs_set(True)
-            self.addstr(y_max - 1, 0, f'/{self.search.value}')
-            text = (
-                f'{self.search.current_match_index} of '
-                f'{self.search.number_of_matches} matches')
+            value, pos, index, count = self.tree.search_info()
+            self.addstr(y_max - 1, 0, f'/{value}')
+
+            if count > 0:
+                text = f'{index} of {count} matches'
+            else:
+                text = 'no matches'
+
             self.addstr(y_max - 1, x_max - len(text), text)
-            move(self.stdscr, y_max - 1, 1 + len(self.search.value))
+            move(self.stdscr, y_max - 1, 1 + pos)
         else:
             if cursor.y == 0:
                 curses.curs_set(False)
