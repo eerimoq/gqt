@@ -8,6 +8,7 @@ from graphql.language import parse
 from .cache import read_tree_from_cache
 from .cache import write_tree_to_cache
 from .endpoint import fetch_schema
+from .experimental import is_experimental
 from .screen import addstr
 from .screen import move
 from .tree import load_tree_from_schema
@@ -19,6 +20,7 @@ Move:              <Left>, <Right>, <Up> and <Down>
                    <Tab>
 Select:            <Space>
 Variable:          v or $
+{compact}\
 Delete list item:  <Backspace>
 Execute:           <Enter>
 Reload schema:     r
@@ -27,6 +29,15 @@ Quit:              <Ctrl-C>\
 '''
 
 HELP_NCOLS = 55
+
+
+def help_text():
+    if is_experimental():
+        compact = 'Compact:           c\n'
+    else:
+        compact = ''
+
+    return HELP_TEXT.format(compact=compact)
 
 
 def format_title(kind, tree, description, x_max):
@@ -138,8 +149,8 @@ class QueryBuilder:
                 elif key == 'r':
                     self.show_fetching_schema = True
                 elif key == 'c':
-                    pass
-                    # self.tree.toggle_compact()
+                    if is_experimental():
+                        self.tree.toggle_compact()
 
         return False
 
@@ -196,7 +207,7 @@ class QueryBuilder:
         y_max, x_max = self.stdscr.getmaxyx()
         margin = (x_max - HELP_NCOLS) // 2
         text_col_left = margin + 2
-        help_lines = HELP_TEXT.splitlines()
+        help_lines = help_text().splitlines()
         horizontal_line = '─' * (HELP_NCOLS - 2)
         row = min((y_max - 6) // 2, y_max // 3)
 

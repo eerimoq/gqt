@@ -20,6 +20,7 @@ from .cache import read_tree_from_cache
 from .endpoint import create_query
 from .endpoint import fetch_schema
 from .endpoint import post
+from .experimental import set_experimental
 from .query_builder import query_builder
 from .version import __version__
 
@@ -185,7 +186,11 @@ def main():
     parser.add_argument('-H', '--header',
                         action='append',
                         help='Extra HTTP header. May be given multiple times.')
+    parser.add_argument('--experimental',
+                        action='store_true',
+                        help='Enable experimental features.')
     args = parser.parse_args()
+    set_experimental(args.experimental)
 
     try:
         headers = make_headers(args.header)
