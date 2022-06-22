@@ -1244,6 +1244,12 @@ class Search:
         self.match_index = 1
         self.matches = []
 
+    def clear(self):
+        self.value = ''
+        self.pos = 0
+        self.match_index = 1
+        self.matches = []
+
     def key(self, key):
         self.value, self.pos = edit(self.value,
                                     self.pos,
@@ -1303,6 +1309,9 @@ class Tree:
 
     def search_hide(self):
         self._search.hide()
+
+    def search_clear(self):
+        self._search.clear()
 
     def search_key(self, key):
         self._search.key(key)

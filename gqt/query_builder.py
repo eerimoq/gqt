@@ -72,6 +72,7 @@ class QueryBuilder:
 
         try:
             self.tree = read_tree_from_cache(endpoint, query_name)
+            self.tree.search_clear()
             self.show_fetching_schema = False
         except Exception:
             self.tree = None
