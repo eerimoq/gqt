@@ -1244,7 +1244,7 @@ class Search:
         self.match_index = 1
         self.matches = []
 
-    def clear(self):
+    def reset(self):
         self.value = ''
         self.pos = 0
         self.match_index = 1
@@ -1310,8 +1310,8 @@ class Tree:
     def search_hide(self):
         self._search.hide()
 
-    def search_clear(self):
-        self._search.clear()
+    def search_reset(self):
+        self._search.reset()
 
     def search_key(self, key):
         self._search.key(key)
