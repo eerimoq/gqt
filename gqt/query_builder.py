@@ -108,8 +108,9 @@ class QueryBuilder:
             self.addstr(max(cursor.y_mutation - 2, 0), 0, ' ')
             self.draw_title(max(cursor.y_mutation - 1, 0), mutation_line)
 
+        self.addstr(y_max - 1, 0, ' ' * x_max)
+
         if self.error is not None:
-            self.addstr(y_max - 1, 0, ' ' * x_max)
             self.addstr_error(y_max - 1, 0, self.error)
             self.error = None
 
@@ -264,7 +265,7 @@ class QueryBuilder:
             y, cursor = self.tree.draw(self.stdscr, self.y_offset, 2)
 
             if y == self.y_offset:
-                self.draw(cursor, y_max - 1, x_max, y)
+                self.draw(cursor, y_max, x_max, y)
                 break
 
             if cursor.y < 1:
@@ -272,13 +273,12 @@ class QueryBuilder:
             elif cursor.y >= y_max - 1:
                 self.y_offset -= 1
             else:
-                self.draw(cursor, y_max - 1, x_max, y)
+                self.draw(cursor, y_max, x_max, y)
                 break
-
-        self.addstr(y_max - 1, 0, ' ' * x_max)
 
         if self.show_search:
             curses.curs_set(True)
+            self.addstr(y_max - 1, 0, ' ' * x_max)
             value, pos, index, count = self.tree.search_info()
             self.addstr(y_max - 1, 0, f'/{value}')
 
