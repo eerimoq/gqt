@@ -1250,6 +1250,12 @@ class Search:
         self.match_index = 1
         self.matches = []
 
+    def selected_node(self):
+        if self.matches:
+            return self.matches[self.match_index - 1]
+        else:
+            return None
+
     def match(self, text):
         if self.value:
             return text.lower().find(self.value.lower())
@@ -1286,8 +1292,7 @@ class Search:
         self._match()
 
     def hide(self):
-        self.match_index = 1
-        self.matches = []
+        self.reset()
 
     def reset(self):
         self.value = ''
@@ -1367,6 +1372,11 @@ class Tree:
         self._search_update()
 
     def search_hide(self):
+        node = self._search.selected_node()
+
+        if node is not None:
+            self._cursor = node
+
         self._search.hide()
 
     def search_reset(self):
