@@ -264,16 +264,18 @@ class QueryBuilder:
             y, cursor = self.tree.draw(self.stdscr, self.y_offset, 2)
 
             if y == self.y_offset:
-                self.draw(cursor, y_max, x_max, y)
+                self.draw(cursor, y_max - 1, x_max, y)
                 break
 
             if cursor.y < 1:
                 self.y_offset += 1
-            elif cursor.y >= y_max:
+            elif cursor.y >= y_max - 1:
                 self.y_offset -= 1
             else:
-                self.draw(cursor, y_max, x_max, y)
+                self.draw(cursor, y_max - 1, x_max, y)
                 break
+
+        self.addstr(y_max - 1, 0, ' ' * x_max)
 
         if self.show_search:
             curses.curs_set(True)

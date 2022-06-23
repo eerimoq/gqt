@@ -1371,20 +1371,11 @@ class Tree:
         self._search.show()
         self._search_update()
 
-    def search_hide(self):
+    def _update_cursor(self):
         node = self._search.selected_node()
 
         if node is not None:
             self._cursor = node
-
-        self._search.hide()
-
-    def search_reset(self):
-        self._search.reset()
-
-    def search_key(self, key):
-        self._search.key(key)
-        self._search_update()
 
     def _find_matches(self, node, matches):
         if node.is_match():
@@ -1396,11 +1387,24 @@ class Tree:
         if node.next is not None:
             self._find_matches(node.next, matches)
 
+    def search_hide(self):
+        self._search.hide()
+
+    def search_reset(self):
+        self._search.reset()
+
+    def search_key(self, key):
+        self._search.key(key)
+        self._search_update()
+        self._update_cursor()
+
     def search_key_up(self):
         self._search.key_up()
+        self._update_cursor()
 
     def search_key_down(self):
         self._search.key_down()
+        self._update_cursor()
 
     def search_info(self):
         return self._search.info()
