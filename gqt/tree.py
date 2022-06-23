@@ -1245,20 +1245,20 @@ class MoveSelectedState:
 class Search:
 
     def __init__(self):
-        self.value = ''
-        self.pos = 0
-        self.match_index = 1
-        self.matches = []
+        self._value = ''
+        self._pos = 0
+        self._match_index = 1
+        self._matches = []
 
     def selected_node(self):
-        if self.matches:
-            return self.matches[self.match_index - 1]
+        if self._matches:
+            return self._matches[self._match_index - 1]
         else:
             return None
 
     def match(self, text):
-        if self.value:
-            return text.lower().find(self.value.lower())
+        if self._value:
+            return text.lower().find(self._value.lower())
         else:
             return -1
 
@@ -1266,12 +1266,12 @@ class Search:
         return self.match(text) != -1
 
     def is_cursor(self, node):
-        return node is self.matches[self.match_index - 1]
+        return node is self._matches[self._match_index - 1]
 
     def draw(self, stdscr, y, x, text, node):
         addstr(stdscr, y, x, text)
 
-        if not self.matches:
+        if not self._matches:
             return
 
         index = self.match(text)
@@ -1285,7 +1285,7 @@ class Search:
             addstr(stdscr,
                    y,
                    x + index,
-                   text[index:index + len(self.value)],
+                   text[index:index + len(self._value)],
                    color)
 
     def show(self):
@@ -1295,40 +1295,40 @@ class Search:
         self.reset()
 
     def reset(self):
-        self.value = ''
-        self.pos = 0
-        self.match_index = 1
-        self.matches = []
+        self._value = ''
+        self._pos = 0
+        self._match_index = 1
+        self._matches = []
 
     def key(self, key):
-        self.value, self.pos = edit(self.value,
-                                    self.pos,
-                                    KEY_BINDINGS.get(key, key))
+        self._value, self._pos = edit(self._value,
+                                      self._pos,
+                                      KEY_BINDINGS.get(key, key))
         self._match()
 
     def key_up(self):
-        if len(self.matches) > 0:
-            self.match_index -= 1
+        if len(self._matches) > 0:
+            self._match_index -= 1
 
-            if self.match_index < 1:
-                self.match_index = len(self.matches)
+            if self._match_index < 1:
+                self._match_index = len(self._matches)
 
     def key_down(self):
-        if len(self.matches) > 0:
-            self.match_index += 1
+        if len(self._matches) > 0:
+            self._match_index += 1
 
-            if self.match_index > len(self.matches):
-                self.match_index = 1
+            if self._match_index > len(self._matches):
+                self._match_index = 1
 
     def info(self):
-        return (self.value, self.pos, self.match_index, len(self.matches))
+        return (self._value, self._pos, self._match_index, len(self._matches))
 
     def _match(self):
-        if self.value:
+        if self._value:
             # Search for all matching fields.
             pass
         else:
-            self.matches = []
+            self._matches = []
 
 
 class Tree:
@@ -1364,8 +1364,8 @@ class Tree:
         if len(self._root.fields) > 0:
             self._find_matches(self._root.fields[0], matches)
 
-        self._search.match_index = 1
-        self._search.matches = matches
+        self._search._match_index = 1
+        self._search._matches = matches
 
     def search_show(self):
         self._search.show()
