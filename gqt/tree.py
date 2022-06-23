@@ -90,6 +90,9 @@ class Node:
         self.type = None
         self.description = None
 
+    def is_match(self):
+        return False
+
     def draw(self, stdscr, y, x, cursor):
         raise NotImplementedError()
 
@@ -144,6 +147,12 @@ class Object(Node):
         self.number_of_query_fields = number_of_query_fields
         self.is_expanded = is_root
 
+    def is_match(self):
+        if self.is_root:
+            return False
+        else:
+            return self.state.search.is_match(self.name)
+
     def draw(self, stdscr, y, x, cursor):
         if cursor.node is self:
             cursor.y = y
@@ -158,14 +167,14 @@ class Object(Node):
                 y = field.draw(stdscr, y, x, cursor)
         elif self.is_expanded:
             addstr(stdscr, y, x, '▼', curses.color_pair(1))
-            addstr(stdscr, y, x + 2, self.name)
+            self.state.search.draw(stdscr, y, x + 2, self.name, self)
             y += 1
 
             for field in self.fields:
                 y = field.draw(stdscr, y, x + 2, cursor)
         else:
             addstr(stdscr, y, x, '▶', curses.color_pair(1))
-            addstr(stdscr, y, x + 2, self.name)
+            self.state.search.draw(stdscr, y, x + 2, self.name, self)
             y += 1
 
         return y
@@ -281,6 +290,9 @@ class Leaf(Node):
         if self.fields is not None:
             self.fields.parent = self
 
+    def is_match(self):
+        return self.state.search.is_match(self.name)
+
     def draw(self, stdscr, y, x, cursor):
         if self.fields is None:
             return self.draw_without_arguments(stdscr, y, x, cursor)
@@ -292,7 +304,7 @@ class Leaf(Node):
             cursor.y = y
             cursor.x = x
 
-        addstr(stdscr, y, x + 2, self.name)
+        self.state.search.draw(stdscr, y, x + 2, self.name, self)
 
         if self._is_selected:
             addstr(stdscr, y, x, '■', curses.color_pair(1))
@@ -316,7 +328,7 @@ class Leaf(Node):
         else:
             addstr(stdscr, y, x, '□', curses.color_pair(1))
 
-        addstr(stdscr, y, x + 2, self.name)
+        self.state.search.draw(stdscr, y, x + 2, self.name, self)
 
         return y + 1
 
@@ -1035,6 +1047,7 @@ class State:
     def __init__(self):
         self.cursor_at_input_field = False
         self.compact = False
+        self.search = None
 
 
 def find_type(types, name):
@@ -1237,6 +1250,38 @@ class Search:
         self.match_index = 1
         self.matches = []
 
+    def match(self, text):
+        if self.value:
+            return text.lower().find(self.value.lower())
+        else:
+            return -1
+
+    def is_match(self, text):
+        return self.match(text) != -1
+
+    def is_cursor(self, node):
+        return node is self.matches[self.match_index - 1]
+
+    def draw(self, stdscr, y, x, text, node):
+        addstr(stdscr, y, x, text)
+
+        if not self.matches:
+            return
+
+        index = self.match(text)
+
+        if index != -1:
+            if self.is_cursor(node):
+                color = curses.color_pair(6)
+            else:
+                color = curses.color_pair(5)
+
+            addstr(stdscr,
+                   y,
+                   x + index,
+                   text[index:index + len(self.value)],
+                   color)
+
     def show(self):
         self._match()
 
@@ -1270,6 +1315,9 @@ class Search:
             if self.match_index > len(self.matches):
                 self.match_index = 1
 
+    def info(self):
+        return (self.value, self.pos, self.match_index, len(self.matches))
+
     def _match(self):
         if self.value:
             # Search for all matching fields.
@@ -1285,6 +1333,7 @@ class Tree:
         self._state = state
         self._cursor = root.fields[0]
         self._search = Search()
+        self._state.search = self._search
 
     def cursor_type(self):
         if self._cursor is None:
@@ -1304,8 +1353,17 @@ class Tree:
 
         return self._root.draw(stdscr, y, x, cursor), cursor
 
+    def _search_update(self):
+        self._search.matches = []
+
+        if len(self._root.fields) > 0:
+            self._find_matches(self._root.fields[0], self._search.matches)
+
+        self._search.match_index = 1
+
     def search_show(self):
         self._search.show()
+        self._search_update()
 
     def search_hide(self):
         self._search.hide()
@@ -1315,6 +1373,17 @@ class Tree:
 
     def search_key(self, key):
         self._search.key(key)
+        self._search_update()
+
+    def _find_matches(self, node, matches):
+        if node.is_match():
+            matches.append(node)
+
+        if node.child is not None:
+            self._find_matches(node.child, matches)
+
+        if node.next is not None:
+            self._find_matches(node.next, matches)
 
     def search_key_up(self):
         self._search.key_up()
@@ -1323,10 +1392,7 @@ class Tree:
         self._search.key_down()
 
     def search_info(self):
-        return (self._search.value,
-                self._search.pos,
-                self._search.match_index,
-                len(self._search.matches))
+        return self._search.info()
 
     def key_up(self):
         if self._cursor is None:

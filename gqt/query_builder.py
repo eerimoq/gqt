@@ -304,6 +304,8 @@ class QueryBuilder:
         curses.init_pair(2, curses.COLOR_GREEN, -1)
         curses.init_pair(3, curses.COLOR_CYAN, -1)
         curses.init_pair(4, curses.COLOR_RED, -1)
+        curses.init_pair(5, -1, curses.COLOR_MAGENTA)
+        curses.init_pair(6, -1, curses.COLOR_GREEN)
 
         try:
             self.update(None)
