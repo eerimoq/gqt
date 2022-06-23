@@ -1354,12 +1354,13 @@ class Tree:
         return self._root.draw(stdscr, y, x, cursor), cursor
 
     def _search_update(self):
-        self._search.matches = []
+        matches = []
 
         if len(self._root.fields) > 0:
-            self._find_matches(self._root.fields[0], self._search.matches)
+            self._find_matches(self._root.fields[0], matches)
 
         self._search.match_index = 1
+        self._search.matches = matches
 
     def search_show(self):
         self._search.show()
