@@ -28,14 +28,22 @@ OPTIONAL_SYMBOLS = {
 }
 
 
-def query_variable(value, value_type, variables):
+class QueryError(Exception):
+
+    def __init__(self, message, node):
+        super().__init__()
+        self.message = message
+        self.node = node
+
+
+def query_variable(value, value_type, variables, node):
     if value:
         value = f'${value}'
         variables.append((value, value_type))
 
         return value
     else:
-        raise Exception('Missing variable name.')
+        raise QueryError('Missing variable name.', node)
 
 
 def find_root_field(cursor):
@@ -191,7 +199,7 @@ class Object(Node):
             else:
                 return f'{self.name}{arguments} {{{items}}}'
         else:
-            raise Exception(f"No fields selected in '{self.name}'.")
+            raise QueryError(f"No fields selected in '{self.name}'.", self)
 
     def key_left(self):
         if not self.is_expanded:
@@ -239,7 +247,7 @@ class Object(Node):
 
             return f"{kind}{variables} {{{items}}}"
         else:
-            raise Exception("No fields selected.")
+            raise QueryError("No fields selected.", None)
 
     def select(self):
         self.is_expanded = not self.is_expanded
@@ -454,7 +462,7 @@ class ScalarArgument(Node):
 
     def query(self, variables):
         if self.is_variable:
-            return query_variable(self.value, self.type, variables)
+            return query_variable(self.value, self.type, variables, self)
         elif self.symbol in '■●':
             if self.is_string():
                 return f'"{self.value}"'
@@ -463,21 +471,23 @@ class ScalarArgument(Node):
                     try:
                         int(self.value, 10)
                     except Exception:
-                        raise Exception(f"'{self.value}' is not an integer.")
+                        raise QueryError(f"'{self.value}' is not an integer.",
+                                         self)
                 elif self._type == 'Float':
                     try:
                         float(self.value)
                     except Exception:
-                        raise Exception(f"'{self.value}' is not a float.")
+                        raise QueryError(f"'{self.value}' is not a float.", self)
                 elif self._type == 'Boolean':
                     if self.value not in ['true', 'false']:
-                        raise Exception(
+                        raise QueryError(
                             f"Boolean must be 'true' or 'false', "
-                            f"not '{self.value}'.")
+                            f"not '{self.value}'.",
+                            self)
 
                 return self.value
             else:
-                raise Exception('Missing scalar value.')
+                raise QueryError('Missing scalar value.', self)
         else:
             return None
 
@@ -594,15 +604,15 @@ class EnumArgument(Node):
 
     def query(self, variables):
         if self.is_variable:
-            return query_variable(self.value, self.type, variables)
+            return query_variable(self.value, self.type, variables, self)
         elif self.symbol in '■●':
             if self.value:
                 if self.value in self.members:
                     return str(self.value)
                 else:
-                    raise Exception(f"Invalid enum value '{self.value}'.")
+                    raise QueryError(f"Invalid enum value '{self.value}'.", self)
             else:
-                raise Exception('Missing enum value.')
+                raise QueryError('Missing enum value.', self)
         else:
             return None
 
@@ -740,7 +750,7 @@ class InputArgument(Node):
 
     def query(self, variables):
         if self.is_variable:
-            return query_variable(self.value, self.type, variables)
+            return query_variable(self.value, self.type, variables, self)
         elif self.symbol in '■●':
             items = []
 
@@ -1027,7 +1037,7 @@ class ListArgument(Node):
 
                 return value
             else:
-                raise Exception('Missing variable name.')
+                raise QueryError('Missing variable name.', self)
         elif self.symbol in '■●':
             items = []
 
@@ -1471,7 +1481,13 @@ class Tree:
         return done
 
     def query(self):
-        return self._root.query_root(self._cursor)
+        try:
+            return self._root.query_root(self._cursor)
+        except QueryError as error:
+            if error.node is not None:
+                self._cursor = error.node
+
+            raise Exception(error.message)
 
     def toggle_compact(self):
         self._state.compact = not self._state.compact
