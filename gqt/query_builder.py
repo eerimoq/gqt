@@ -21,12 +21,11 @@ Move:              <Left>, <Right>, <Up> and <Down>
 Select:            <Space>
 Variable:          v or $
 {compact}\
-{search}\
 Delete list item:  <Backspace>
 Execute:           <Enter>
 Reload schema:     r
 Help:              h or ?
-Quit:              <Ctrl-C>\
+Quit:              q or <Ctrl-C>\
 '''
 
 HELP_NCOLS = 55
@@ -35,12 +34,10 @@ HELP_NCOLS = 55
 def help_text():
     if is_experimental():
         compact = 'Compact:           c\n'
-        search = 'Search:            /\n'
     else:
         compact = ''
-        search = ''
 
-    return HELP_TEXT.format(compact=compact, search=search)
+    return HELP_TEXT.format(compact=compact)
 
 
 def format_title(kind, tree, description, x_max):
@@ -72,13 +69,10 @@ class QueryBuilder:
 
         try:
             self.tree = read_tree_from_cache(endpoint, query_name)
-            self.tree.search_reset()
             self.show_fetching_schema = False
         except Exception:
             self.tree = None
             self.show_fetching_schema = True
-
-        self.show_search = False
 
     def draw(self, cursor, y_max, x_max, y):
         for i in range(y):
@@ -113,25 +107,6 @@ class QueryBuilder:
         if self.error is not None:
             self.addstr_error(y_max - 1, 0, self.error)
             self.error = None
-
-    def update_key_search(self, key):
-        if key == curses.KEY_UP:
-            self.tree.search_key_up()
-        elif key == curses.KEY_DOWN:
-            self.tree.search_key_down()
-        elif self.meta:
-            self.meta = False
-            self.tree.search_key('\x1b' + key)
-        elif key == '\x1b':
-            self.meta = True
-        elif key == '\n':
-            self.show_search = False
-            self.tree.search_hide()
-        else:
-            if isinstance(key, int):
-                key = curses.keyname(key).decode()
-
-            self.tree.search_key(key)
 
     def update_key(self, key):
         if key == curses.KEY_UP:
@@ -177,22 +152,20 @@ class QueryBuilder:
                 elif key == 'c':
                     if is_experimental():
                         self.tree.toggle_compact()
-                elif key == '/':
-                    if is_experimental():
-                        self.show_search = True
-                        self.tree.search_show()
+                elif key == 'q':
+                    raise KeyboardInterrupt()
 
         return False
 
     def update_key_help(self, key):
         if key in ['h', '?']:
             self.show_help = not self.show_help
+        elif key == 'q':
+            raise KeyboardInterrupt()
 
     def update(self, key):
         if self.show_help:
             self.update_key_help(key)
-        elif self.show_search:
-            self.update_key_search(key)
         else:
             if self.update_key(key):
                 try:
@@ -276,25 +249,11 @@ class QueryBuilder:
                 self.draw(cursor, y_max, x_max, y)
                 break
 
-        if self.show_search:
-            curses.curs_set(True)
-            self.addstr(y_max - 1, 0, ' ' * x_max)
-            value, pos, index, count = self.tree.search_info()
-            self.addstr(y_max - 1, 0, f'/{value}')
-
-            if count > 0:
-                text = f'{index} of {count} matches'
-            else:
-                text = 'no matches'
-
-            self.addstr(y_max - 1, x_max - len(text), text)
-            move(self.stdscr, y_max - 1, 1 + pos)
+        if cursor.y == 0:
+            curses.curs_set(False)
         else:
-            if cursor.y == 0:
-                curses.curs_set(False)
-            else:
-                curses.curs_set(True)
-                move(self.stdscr, cursor.y, cursor.x)
+            curses.curs_set(True)
+            move(self.stdscr, cursor.y, cursor.x)
 
         self.stdscr.refresh()
 

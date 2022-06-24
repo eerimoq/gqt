@@ -98,9 +98,6 @@ class Node:
         self.type = None
         self.description = None
 
-    def is_match(self):
-        return False
-
     def draw(self, stdscr, y, x, cursor):
         raise NotImplementedError()
 
@@ -155,12 +152,6 @@ class Object(Node):
         self.number_of_query_fields = number_of_query_fields
         self.is_expanded = is_root
 
-    def is_match(self):
-        if self.is_root:
-            return False
-        else:
-            return self.state.search.is_match(self.name)
-
     def draw(self, stdscr, y, x, cursor):
         if cursor.node is self:
             cursor.y = y
@@ -175,14 +166,14 @@ class Object(Node):
                 y = field.draw(stdscr, y, x, cursor)
         elif self.is_expanded:
             addstr(stdscr, y, x, '▼', curses.color_pair(1))
-            self.state.search.draw(stdscr, y, x + 2, self.name, self)
+            addstr(stdscr, y, x + 2, self.name)
             y += 1
 
             for field in self.fields:
                 y = field.draw(stdscr, y, x + 2, cursor)
         else:
             addstr(stdscr, y, x, '▶', curses.color_pair(1))
-            self.state.search.draw(stdscr, y, x + 2, self.name, self)
+            addstr(stdscr, y, x + 2, self.name)
             y += 1
 
         return y
@@ -298,9 +289,6 @@ class Leaf(Node):
         if self.fields is not None:
             self.fields.parent = self
 
-    def is_match(self):
-        return self.state.search.is_match(self.name)
-
     def draw(self, stdscr, y, x, cursor):
         if self.fields is None:
             return self.draw_without_arguments(stdscr, y, x, cursor)
@@ -312,7 +300,7 @@ class Leaf(Node):
             cursor.y = y
             cursor.x = x
 
-        self.state.search.draw(stdscr, y, x + 2, self.name, self)
+        addstr(stdscr, y, x + 2, self.name)
 
         if self._is_selected:
             addstr(stdscr, y, x, '■', curses.color_pair(1))
@@ -336,7 +324,7 @@ class Leaf(Node):
         else:
             addstr(stdscr, y, x, '□', curses.color_pair(1))
 
-        self.state.search.draw(stdscr, y, x + 2, self.name, self)
+        addstr(stdscr, y, x + 2, self.name)
 
         return y + 1
 
@@ -1057,7 +1045,6 @@ class State:
     def __init__(self):
         self.cursor_at_input_field = False
         self.compact = False
-        self.search = None
 
 
 def find_type(types, name):
@@ -1252,103 +1239,12 @@ class MoveSelectedState:
         self.is_cursor_seen = False
 
 
-class Search:
-
-    def __init__(self):
-        self._value = ''
-        self._pos = 0
-        self._match_index = 1
-        self._matches = []
-
-    def selected_node(self):
-        if self._matches:
-            return self._matches[self._match_index - 1]
-        else:
-            return None
-
-    def match(self, text):
-        if self._value:
-            return text.lower().find(self._value.lower())
-        else:
-            return -1
-
-    def is_match(self, text):
-        return self.match(text) != -1
-
-    def is_cursor(self, node):
-        return node is self._matches[self._match_index - 1]
-
-    def draw(self, stdscr, y, x, text, node):
-        addstr(stdscr, y, x, text)
-
-        if not self._matches:
-            return
-
-        index = self.match(text)
-
-        if index != -1:
-            if self.is_cursor(node):
-                color = curses.color_pair(6)
-            else:
-                color = curses.color_pair(5)
-
-            addstr(stdscr,
-                   y,
-                   x + index,
-                   text[index:index + len(self._value)],
-                   color)
-
-    def show(self):
-        self._match()
-
-    def hide(self):
-        self.reset()
-
-    def reset(self):
-        self._value = ''
-        self._pos = 0
-        self._match_index = 1
-        self._matches = []
-
-    def key(self, key):
-        self._value, self._pos = edit(self._value,
-                                      self._pos,
-                                      KEY_BINDINGS.get(key, key))
-        self._match()
-
-    def key_up(self):
-        if len(self._matches) > 0:
-            self._match_index -= 1
-
-            if self._match_index < 1:
-                self._match_index = len(self._matches)
-
-    def key_down(self):
-        if len(self._matches) > 0:
-            self._match_index += 1
-
-            if self._match_index > len(self._matches):
-                self._match_index = 1
-
-    def info(self):
-        return (self._value, self._pos, self._match_index, len(self._matches))
-
-    def _match(self):
-        if self._value:
-            # Search for all matching fields.
-            pass
-        else:
-            self._matches = []
-
-
 class Tree:
 
     def __init__(self, root, state):
         self._root = root
         self._state = state
         self._cursor = root.fields[0]
-        self._search = Search()
-        self._state.search = self._search
 
     def cursor_type(self):
         if self._cursor is None:
@@ -1367,57 +1263,6 @@ class Tree:
         cursor.node = self._cursor
 
         return self._root.draw(stdscr, y, x, cursor), cursor
-
-    def _search_update(self):
-        matches = []
-
-        if len(self._root.fields) > 0:
-            self._find_matches(self._root.fields[0], matches)
-
-        self._search._match_index = 1
-        self._search._matches = matches
-
-    def search_show(self):
-        self._search.show()
-        self._search_update()
-
-    def _update_cursor(self):
-        node = self._search.selected_node()
-
-        if node is not None:
-            self._cursor = node
-
-    def _find_matches(self, node, matches):
-        if node.is_match():
-            matches.append(node)
-
-        if node.child is not None:
-            self._find_matches(node.child, matches)
-
-        if node.next is not None:
-            self._find_matches(node.next, matches)
-
-    def search_hide(self):
-        self._search.hide()
-
-    def search_reset(self):
-        self._search.reset()
-
-    def search_key(self, key):
-        self._search.key(key)
-        self._search_update()
-        self._update_cursor()
-
-    def search_key_up(self):
-        self._search.key_up()
-        self._update_cursor()
-
-    def search_key_down(self):
-        self._search.key_down()
-        self._update_cursor()
-
-    def search_info(self):
-        return self._search.info()
 
     def key_up(self):
         if self._cursor is None:
