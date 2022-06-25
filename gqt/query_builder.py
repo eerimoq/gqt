@@ -242,9 +242,12 @@ class QueryBuilder:
                 break
 
             if cursor.y < 1:
-                self.y_offset += 1
+                self.y_offset += 10
+
+                if self.y_offset > 1:
+                    self.y_offset = 1
             elif cursor.y >= y_max - 1:
-                self.y_offset -= 1
+                self.y_offset -= min(10, y - cursor.y)
             else:
                 self.draw(cursor, y_max, x_max, y)
                 break
