@@ -76,10 +76,13 @@ curl -X POST \\
 '''
 
 
-def show(data, language, to_stderr=False):
+def show(data, language, color=False, to_stderr=False):
     if 'GQT_NO_BAT' not in os.environ and shutil.which('bat'):
         data += '\n'
         command = f'bat -p -l {language}'
+
+        if color:
+            command += ' --color always'
 
         if to_stderr:
             command += ' 1>&2'
@@ -189,6 +192,9 @@ def main():
     parser.add_argument('--experimental',
                         action='store_true',
                         help='Enable experimental features.')
+    parser.add_argument('--color',
+                        action='store_true',
+                        help='Force color output.')
     args = parser.parse_args()
     set_experimental(args.experimental)
 
@@ -213,7 +219,7 @@ def main():
             schema = print_schema(
                 build_client_schema(
                     fetch_schema(args.endpoint, headers, verify)))
-            show(schema, 'graphql')
+            show(schema, 'graphql', args.color)
         else:
             if args.repeat:
                 query = last_query(args.endpoint, args.query_name)
@@ -227,7 +233,7 @@ def main():
             variables = create_variables(args.variable)
 
             if args.print_query:
-                show(print_ast(parse(str(query))), 'graphql')
+                show(print_ast(parse(str(query))), 'graphql', args.color)
             elif args.print_curl:
                 query = json.dumps(create_query(query, variables))
                 print(CURL_COMMAND.format(endpoint=args.endpoint,
@@ -241,9 +247,9 @@ def main():
                 response = style_response(response, args.yaml)
 
                 if args.yaml:
-                    show(response, 'yaml')
+                    show(response, 'yaml', args.color)
                 else:
-                    show(response, 'json')
+                    show(response, 'json', args.color)
     except KeyboardInterrupt:
         sys.exit(1)
     except SystemExit:
@@ -256,7 +262,7 @@ def main():
         except Exception:
             sys.stderr.buffer.write(error.response.content.strip() + b'\n')
         else:
-            show(data, 'json', True)
+            show(data, 'json', args.color, True)
 
         sys.exit(f'error: {error}')
     except BaseException as error:
