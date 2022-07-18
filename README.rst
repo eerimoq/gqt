@@ -83,6 +83,14 @@ YAML output:
    statistics:
      numberOfGraphqlRequests: 8
 
+.. code-block::
+
+   Endpoint                      Query name
+   ----------------------------  ------------
+   https://mys-lang.org/graphql  <default>
+   https://mys-lang.org/graphql  time
+   https://mys-lang.org/graphql  stats
+
 Name queries:
 
 .. code-block::
@@ -190,6 +198,12 @@ Print the schema:
      numberOfDownloads: Int
    }
    ...
+
+Enpoint option and bearer token in HTTP auth header:
+
+.. code-block::
+
+   gqt -e https://api.github.com/graphql -H "Authorization: bearer ghp_<value>"
 
 Known issues
 ------------
