@@ -83,14 +83,6 @@ YAML output:
    statistics:
      numberOfGraphqlRequests: 8
 
-.. code-block::
-
-   Endpoint                      Query name
-   ----------------------------  ------------
-   https://mys-lang.org/graphql  <default>
-   https://mys-lang.org/graphql  time
-   https://mys-lang.org/graphql  stats
-
 Name queries:
 
 .. code-block::
