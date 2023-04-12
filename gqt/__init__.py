@@ -233,7 +233,11 @@ def main():
             variables = create_variables(args.variable)
 
             if args.print_query:
+                print('Query:')
                 show(print_ast(parse(str(query))), 'graphql', args.color)
+                print()
+                print('Variables:')
+                show(json.dumps(variables, indent=4), 'json', args.color)
             elif args.print_curl:
                 query = json.dumps(create_query(query, variables))
                 print(CURL_COMMAND.format(endpoint=args.endpoint,
