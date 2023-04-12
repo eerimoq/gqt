@@ -56,12 +56,19 @@ def format_title(kind, tree, description, x_max):
 
 class QueryBuilder:
 
-    def __init__(self, stdscr, endpoint, query_name, headers, verify):
+    def __init__(self, stdscr, endpoint, query_name, headers, verify, variables):
         self.stdscr = stdscr
         self.endpoint = endpoint
         self.query_name = query_name
         self.headers = headers
         self.verify = verify
+        self.variables = variables
+
+        if self.variables:
+            self.maximum_variable_length = max(len(variable) for variable in self.variables)
+        else:
+            self.maximum_variable_length = 0
+
         self.show_help = False
         self.y_offset = 1
         self.error = None
@@ -235,6 +242,7 @@ class QueryBuilder:
         while True:
             self.stdscr.erase()
             y_max, x_max = self.stdscr.getmaxyx()
+            self.draw_variables(x_max)
             y, cursor = self.tree.draw(self.stdscr, self.y_offset, 2)
 
             if y == self.y_offset:
@@ -259,6 +267,19 @@ class QueryBuilder:
             move(self.stdscr, cursor.y, cursor.x)
 
         self.stdscr.refresh()
+
+    def draw_variables(self, x_max):
+        if not self.variables:
+            return
+
+        margin = (x_max - self.maximum_variable_length - 3)
+        line = '╭─ Variables '
+        line += '─' * (self.maximum_variable_length - 10)
+        self.draw_title(2, line, margin)
+
+        for row, variable in enumerate(self.variables, 3):
+            self.addstr_frame(row, margin, '│')
+            self.addstr(row, margin + 2, variable)
 
     def run(self):
         self.stdscr.clear()
@@ -301,8 +322,7 @@ class QueryBuilder:
                text,
                curses.color_pair(4) | curses.A_BOLD)
 
-    def draw_title(self, y, line):
-        x = 0
+    def draw_title(self, y, line, x=0):
         parts = line.split(' ')
         self.addstr_frame(y, x, parts[0])
         x += 3
@@ -318,8 +338,13 @@ class QueryBuilder:
         return 10
 
 
-def selector(stdscr, endpoint, query_name, headers, verify):
-    return QueryBuilder(stdscr, endpoint, query_name, headers, verify).run()
+def selector(stdscr, endpoint, query_name, headers, verify, variables):
+    return QueryBuilder(stdscr,
+                        endpoint,
+                        query_name,
+                        headers,
+                        verify,
+                        variables).run()
 
 
 @contextmanager
@@ -334,6 +359,11 @@ def redirect_stdout_to_stderr():
         os.close(original_stdout)
 
 
-def query_builder(endpoint, query_name, headers, verify):
+def query_builder(endpoint, query_name, headers, verify, variables):
     with redirect_stdout_to_stderr():
-        return curses.wrapper(selector, endpoint, query_name, headers, verify)
+        return curses.wrapper(selector,
+                              endpoint,
+                              query_name,
+                              headers,
+                              verify,
+                              variables)

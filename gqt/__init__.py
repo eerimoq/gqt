@@ -221,16 +221,18 @@ def main():
                     fetch_schema(args.endpoint, headers, verify)))
             show(schema, 'graphql', args.color)
         else:
+            variables = create_variables(args.variable)
+
             if args.repeat:
                 query = last_query(args.endpoint, args.query_name)
             else:
                 query = query_builder(args.endpoint,
                                       args.query_name,
                                       headers,
-                                      verify)
+                                      verify,
+                                      list(variables.keys()))
 
             query = query.query()
-            variables = create_variables(args.variable)
 
             if args.print_query:
                 print('Query:')
