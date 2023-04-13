@@ -272,14 +272,24 @@ class QueryBuilder:
         if not self.variables:
             return
 
-        margin = (x_max - self.maximum_variable_length - 3)
-        line = '╭─ Variables '
+        col = (x_max - self.maximum_variable_length - 4) - 1
+        row = 2
+        line = '┌─ Variables '
         line += '─' * (self.maximum_variable_length - 10)
-        self.draw_title(2, line, margin)
+        line += '┐'
+        self.draw_title(row, line, col)
+        row += 1
 
-        for row, variable in enumerate(self.variables, 3):
-            self.addstr_frame(row, margin, '│')
-            self.addstr(row, margin + 2, variable)
+        for i, variable in enumerate(self.variables, row):
+            self.addstr_frame(i, col, '│')
+            self.addstr(i, col + 2, variable)
+            self.addstr_frame(i, x_max - 2, '│')
+
+        row += len(self.variables)
+        line = '└'
+        line += '─' * (self.maximum_variable_length + 2)
+        line += '┘'
+        self.addstr_frame(row, col, line)
 
     def run(self):
         self.stdscr.clear()
