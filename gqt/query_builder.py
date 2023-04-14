@@ -1,7 +1,9 @@
 import curses
 import os
 import sys
+import textwrap
 from contextlib import contextmanager
+from dataclasses import dataclass
 
 from graphql.language import parse
 
@@ -11,6 +13,7 @@ from .endpoint import fetch_schema
 from .experimental import is_experimental
 from .screen import addstr
 from .screen import move
+from .tree import Tree
 from .tree import load_tree_from_schema
 
 HELP_TEXT = '''\
@@ -40,18 +43,11 @@ def help_text():
     return HELP_TEXT.format(compact=compact)
 
 
-def format_title(kind, tree, description, x_max):
-    if tree is not None:
-        field_type = f' ─ {tree.cursor_type()}'
-    else:
-        field_type = ''
-
-    line = f'╭─ {kind}{field_type}{description} '
-
-    if len(line) >= x_max:
-        line = line[:x_max - 3] + '...'
-
-    return line
+@dataclass
+class Title:
+    kind: str
+    tree: Tree
+    description: str
 
 
 class QueryBuilder:
@@ -73,6 +69,7 @@ class QueryBuilder:
         self.y_offset = 1
         self.error = None
         self.meta = False
+        self.show_description = False
 
         try:
             self.tree = read_tree_from_cache(endpoint, query_name)
@@ -88,26 +85,23 @@ class QueryBuilder:
         self.addstr(0, 0, ' ' * x_max)
         x_endpoint = (x_max - len(self.endpoint))
         self.addstr(0, x_endpoint, self.endpoint)
-        description = self.tree.cursor_description()
-
-        if description:
-            description = description.split('\n')[0].strip()
-            description = f' ─ {description}'
-        else:
-            description = ''
 
         if cursor.y_mutation is None or cursor.y < cursor.y_mutation:
-            query_line = format_title('Query', self.tree, description, x_max)
-            mutation_line = format_title('Mutation', None, '', x_max)
+            query_title = Title('Query',
+                                self.tree,
+                                self.tree.cursor_description())
+            mutation_title = Title('Mutation', None, '')
         else:
-            query_line = format_title('Query', None, '', x_max)
-            mutation_line = format_title('Mutation', self.tree, description, x_max)
+            query_title = Title('Query', None, '')
+            mutation_title = Title('Mutation',
+                                   self.tree,
+                                   self.tree.cursor_description())
 
-        self.draw_title(0, query_line)
+        self.draw_title(0, query_title)
 
         if cursor.y_mutation is not None:
             self.addstr(max(cursor.y_mutation - 2, 0), 0, ' ')
-            self.draw_title(max(cursor.y_mutation - 1, 0), mutation_line)
+            self.draw_title(max(cursor.y_mutation - 1, 0), mutation_title)
 
         self.addstr(y_max - 1, 0, ' ' * x_max)
 
@@ -159,6 +153,8 @@ class QueryBuilder:
                 elif key == 'c':
                     if is_experimental():
                         self.tree.toggle_compact()
+                elif key == 'd':
+                    self.show_description = not self.show_description
                 elif key == 'q':
                     raise KeyboardInterrupt()
 
@@ -274,10 +270,11 @@ class QueryBuilder:
 
         col = (x_max - self.maximum_variable_length - 4) - 1
         row = 2
-        line = '┌─ Variables '
-        line += '─' * (self.maximum_variable_length - 10)
-        line += '┐'
-        self.draw_title(row, line, col)
+        self.addstr_frame(row, col, '┌─ ')
+        self.addstr(row, col + 3, 'Variables ')
+        self.addstr_frame(row,
+                          col + 13,
+                          '─' * (self.maximum_variable_length - 10) + '┐')
         row += 1
 
         for i, variable in enumerate(self.variables, row):
@@ -332,20 +329,44 @@ class QueryBuilder:
                text,
                curses.color_pair(4) | curses.A_BOLD)
 
-    def draw_title(self, y, line, x=0):
-        parts = line.split(' ')
-        self.addstr_frame(y, x, parts[0])
+    def draw_title(self, y, title):
+        x = 0
+        self.addstr_frame(y, x, '╭─ ')
         x += 3
-        self.addstr(y, x, parts[1])
-        x += len(parts[1]) + 1
+        self.addstr(y, x, title.kind)
+        x += len(title.kind)
 
-        if len(parts) > 2:
-            self.addstr_frame(y, x, parts[2])
+        if title.tree is None:
+            return
+
+        cursor_type = title.tree.cursor_type()
+        self.addstr_frame(y, x, ' ─ ')
+        x += 3
+        self.addstr(y, x, cursor_type)
+        x += len(cursor_type)
+
+        if title.description:
+            self.addstr_frame(y, x, ' ─')
             x += 2
-            self.addstr(y, x, ' '.join(parts[3:]))
+
+            for line in format_description(title.description, 80):
+                self.addstr(y, x, ' ' + line)
+                y += 1
 
     def page_up_down_lines(self):
         return 10
+
+
+def format_description(description, maximum_width):
+    lines = []
+
+    for line in description.splitlines():
+        if len(line) == 0:
+            lines.append('')
+        else:
+            lines += textwrap.wrap(line, maximum_width)
+
+    return lines
 
 
 def selector(stdscr, endpoint, query_name, headers, verify, variables):
