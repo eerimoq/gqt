@@ -368,7 +368,10 @@ def format_description(description, maximum_width):
         else:
             lines += textwrap.wrap(line, maximum_width)
 
-    return lines
+    return [
+        line + ' ' * (maximum_width - len(line))
+        for line in lines
+    ]
 
 
 def selector(stdscr, endpoint, query_name, headers, verify, variables):
