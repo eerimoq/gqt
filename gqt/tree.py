@@ -684,7 +684,7 @@ class InputArgument(Node):
 
         addstr(stdscr, y, x, self.symbol, curses.color_pair(3))
         x += 2
-        addstr(stdscr, y, x, f'{self.name}:')
+        addstr(stdscr, y, x, self.name)
         y += 1
 
         if self.symbol in '■●':
@@ -964,7 +964,7 @@ class ListArgument(Node):
             cursor.x = x
 
         addstr(stdscr, y, x, self.symbol, curses.color_pair(3))
-        addstr(stdscr, y, x + 2, f'{self.name}:')
+        addstr(stdscr, y, x + 2, self.name)
         y += 1
 
         if self.symbol in '■●':
