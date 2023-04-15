@@ -58,7 +58,7 @@ Repeat last query:
        }
    }
 
-Print the query instead of executing it:
+Print the query (and variables) instead of executing it:
 
 .. code-block::
 
