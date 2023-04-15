@@ -420,7 +420,7 @@ class TreeTest(unittest.TestCase):
         self.assertEqual(tree.query(), 'query Query {a(b:[null]) b}')
         self.assertDraw(tree,
                         '■ a\n'
-                        '  ■ b:\n'
+                        '  ■ b\n'
                         '    X [0]\n'
                         '      □ value:\n'
                         '    ▶ ...\n'
@@ -447,7 +447,7 @@ class TreeTest(unittest.TestCase):
         tree.key_down()
         self.assertDraw(tree,
                         '■ a\n'
-                        '  ■ b:\n'
+                        '  ■ b\n'
                         '    ▶ ...\n'
                         'X b')
         self.assertEqual(tree.query(), 'query Query {a(b:[]) b}')
@@ -456,7 +456,7 @@ class TreeTest(unittest.TestCase):
         tree.key_down()
         self.assertDraw(tree,
                         '■ a\n'
-                        '  ■ b:\n'
+                        '  ■ b\n'
                         '    ▼ [0]\n'
                         '      X value:\n'
                         '    ▶ ...\n'
@@ -466,7 +466,7 @@ class TreeTest(unittest.TestCase):
         tree.key_down()
         self.assertDraw(tree,
                         '■ a\n'
-                        '  ■ b:\n'
+                        '  ■ b\n'
                         '    ▶ [0]\n'
                         '    X ...\n'
                         '■ b')
@@ -489,8 +489,8 @@ class TreeTest(unittest.TestCase):
         self.assertEqual(tree.query(), 'query Query {a(x:{y:{}})}')
         self.assertDraw(tree,
                         '■ a\n'
-                        '  X x:\n'
-                        '    ● y:\n'
+                        '  X x\n'
+                        '    ● y\n'
                         '      □ z:')
         tree.key_down()
         tree.key_down()
@@ -500,14 +500,14 @@ class TreeTest(unittest.TestCase):
         self.assertEqual(tree.query(), 'query Query {a(x:{y:{z:"B"}})}')
         self.assertDraw(tree,
                         '■ a\n'
-                        '  ■ x:\n'
-                        '    ● y:\n'
+                        '  ■ x\n'
+                        '    ● y\n'
                         '      ■ z: BX')
         tree.key_up()
         tree.key('v')
         self.assertDraw(tree,
                         '■ a\n'
-                        '  ■ x:\n'
+                        '  ■ x\n'
                         '    $ y: X')
         tree.key('a')
         tree.key(' ')
@@ -517,19 +517,19 @@ class TreeTest(unittest.TestCase):
         tree.key_right()
         self.assertDraw(tree,
                         '■ a\n'
-                        '  ■ x:\n'
+                        '  ■ x\n'
                         '    $ y: vaX')
         tree.key('\t')
         self.assertDraw(tree,
                         '■ a\n'
-                        '  ■ x:\n'
+                        '  ■ x\n'
                         '    X y: va')
         self.assertEqual(tree.query(), 'query Query($va:Bar!) {a(x:{y:$va})}')
         tree.key('v')
         self.assertDraw(tree,
                         '■ a\n'
-                        '  ■ x:\n'
-                        '    X y:\n'
+                        '  ■ x\n'
+                        '    X y\n'
                         '      ■ z: B')
 
     def test_enum_argument(self):
