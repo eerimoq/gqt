@@ -32,6 +32,7 @@ Quit:              q or <Ctrl-C>\
 '''
 
 HELP_NCOLS = 55
+COLOR_GRAY = 8
 
 
 def help_text():
@@ -298,6 +299,7 @@ class QueryBuilder:
         curses.init_pair(4, curses.COLOR_RED, -1)
         curses.init_pair(5, -1, curses.COLOR_MAGENTA)
         curses.init_pair(6, -1, curses.COLOR_GREEN)
+        curses.init_pair(7, COLOR_GRAY, -1)
 
         try:
             self.update(None)
@@ -350,7 +352,7 @@ class QueryBuilder:
             x += 2
 
             for line in format_description(title.description, 80):
-                self.addstr(y, x, ' ' + line)
+                self.addstr(y, x, ' ' + line + ' ')
                 y += 1
 
     def page_up_down_lines(self):

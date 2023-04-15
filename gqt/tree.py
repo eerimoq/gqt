@@ -46,6 +46,13 @@ def query_variable(value, value_type, variables, node):
         raise QueryError('Missing variable name.', node)
 
 
+def make_field_name_attrs(is_deprecated):
+    if is_deprecated:
+        return curses.color_pair(7)
+    else:
+        return 0
+
+
 def find_root_field(cursor):
     if cursor.parent is None:
         return cursor
@@ -136,7 +143,8 @@ class Object(Node):
                  state,
                  number_of_query_fields,
                  is_root=False,
-                 is_union=False):
+                 is_union=False,
+                 is_deprecated=False):
         super().__init__()
         self.name = name
         self.type = field_type
@@ -151,6 +159,7 @@ class Object(Node):
         self.is_union = is_union
         self.number_of_query_fields = number_of_query_fields
         self.is_expanded = is_root
+        self.name_attrs = make_field_name_attrs(is_deprecated)
 
     def draw(self, stdscr, y, x, cursor):
         if cursor.node is self:
@@ -166,14 +175,14 @@ class Object(Node):
                 y = field.draw(stdscr, y, x, cursor)
         elif self.is_expanded:
             addstr(stdscr, y, x, '▼', curses.color_pair(1))
-            addstr(stdscr, y, x + 2, self.name)
+            addstr(stdscr, y, x + 2, self.name, self.name_attrs)
             y += 1
 
             for field in self.fields:
                 y = field.draw(stdscr, y, x + 2, cursor)
         else:
             addstr(stdscr, y, x, '▶', curses.color_pair(1))
-            addstr(stdscr, y, x + 2, self.name)
+            addstr(stdscr, y, x + 2, self.name, self.name_attrs)
             y += 1
 
         return y
@@ -277,7 +286,13 @@ class Object(Node):
 
 class Leaf(Node):
 
-    def __init__(self, name, field_type, description, fields, state):
+    def __init__(self,
+                 name,
+                 field_type,
+                 description,
+                 fields,
+                 state,
+                 is_deprecated):
         super().__init__()
         self._is_selected = False
         self.name = name
@@ -285,6 +300,7 @@ class Leaf(Node):
         self.description = description
         self.fields = fields
         self.state = state
+        self.name_attrs = make_field_name_attrs(is_deprecated)
 
         if self.fields is not None:
             self.fields.parent = self
@@ -300,7 +316,7 @@ class Leaf(Node):
             cursor.y = y
             cursor.x = x
 
-        addstr(stdscr, y, x + 2, self.name)
+        addstr(stdscr, y, x + 2, self.name, self.name_attrs)
 
         if self._is_selected:
             addstr(stdscr, y, x, '■', curses.color_pair(1))
@@ -324,7 +340,7 @@ class Leaf(Node):
         else:
             addstr(stdscr, y, x, '□', curses.color_pair(1))
 
-        addstr(stdscr, y, x + 2, self.name)
+        addstr(stdscr, y, x + 2, self.name, self.name_attrs)
 
         return y + 1
 
@@ -1083,6 +1099,7 @@ def build_field(field, types, state):
     field_type = item['name']
     field_type_string = get_type_string(field['type'])
     description = field['description']
+    is_deprecated = field.get('isDeprecated', False)
 
     if item['kind'] in ['OBJECT', 'INTERFACE']:
         fields = find_type(types, field_type)['fields']
@@ -1092,7 +1109,8 @@ def build_field(field, types, state):
                       description,
                       ObjectFields(field['args'], fields, types, state),
                       state,
-                      len(fields))
+                      len(fields),
+                      is_deprecated=is_deprecated)
     elif item['kind'] == 'UNION':
         fields = [
             {
@@ -1110,14 +1128,20 @@ def build_field(field, types, state):
                       ObjectFields(field['args'], fields, types, state),
                       state,
                       len(fields),
-                      is_union=True)
+                      is_union=True,
+                      is_deprecated=is_deprecated)
     else:
         if field['args']:
             fields = ObjectFields(field['args'], [], types, state)
         else:
             fields = None
 
-        return Leaf(name, field_type_string, description, fields, state)
+        return Leaf(name,
+                    field_type_string,
+                    description,
+                    fields,
+                    state,
+                    is_deprecated)
 
 
 def build_argument(argument, types, state):
