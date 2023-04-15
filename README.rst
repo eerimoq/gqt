@@ -66,11 +66,15 @@ Print the query instead of executing it:
 
 .. code-block:: graphql
 
+   Query:
    query Query {
      statistics {
        numberOfGraphqlRequests
      }
    }
+
+   Variables:
+   {}
 
 YAML output:
 
