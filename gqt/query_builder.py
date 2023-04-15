@@ -361,12 +361,34 @@ class QueryBuilder:
 
 def format_description(description, maximum_width):
     lines = []
+    rest = ''
 
     for line in description.splitlines():
         if len(line) == 0:
+            if rest:
+                lines.append(rest)
+                rest = ''
+
             lines.append('')
         else:
-            lines += textwrap.wrap(line, maximum_width)
+            if rest:
+                if line[0].islower():
+                    line = rest + ' ' + line
+                else:
+                    lines.append(rest)
+
+                rest = ''
+
+            wrapped_lines = textwrap.wrap(line, maximum_width)
+
+            if wrapped_lines[-1][-1].islower():
+                rest = wrapped_lines[-1]
+                wrapped_lines = wrapped_lines[:-1]
+
+            lines += wrapped_lines
+
+    if rest:
+        lines.append(rest)
 
     return [
         line + ' ' * (maximum_width - len(line))
