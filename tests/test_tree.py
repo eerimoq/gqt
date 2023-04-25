@@ -582,13 +582,71 @@ class TreeTest(unittest.TestCase):
                   '}'
                   'interface Foo {'
                   '  b: String'
+                  '}'
+                  'type Bar implements Foo {'
+                  '  b: String'
+                  '  c: String'
+                  '}'
+                  'type Fie implements Foo {'
+                  '  b: String'
+                  '  c: Int'
                   '}')
         tree = load_tree(schema)
         tree.key_right()
+        self.assertDraw(tree,
+                        'X a\n'
+                        '  □ b\n'
+                        '  ▶ Bar\n'
+                        '  ▶ Fie')
         tree.key_down()
         self.assertEqual(tree.cursor_type(), 'String')
         tree.select()
+        self.assertDraw(tree,
+                        '▼ a\n'
+                        '  X b\n'
+                        '  ▶ Bar\n'
+                        '  ▶ Fie')
         self.assertEqual(tree.query(), 'query Query {a {b}}')
+        tree.select()
+        tree.key_down()
+        self.assertDraw(tree,
+                        '▼ a\n'
+                        '  □ b\n'
+                        '  X Bar\n'
+                        '  ▶ Fie')
+        self.assertEqual(tree.cursor_type(), 'Bar')
+        tree.key_right()
+        tree.key_down()
+        tree.select()
+        tree.key_down()
+        tree.select()
+        self.assertDraw(tree,
+                        '▼ a\n'
+                        '  □ b\n'
+                        '  ▼ Bar\n'
+                        '    ■ b\n'
+                        '    X c\n'
+                        '  ▶ Fie')
+        self.assertEqual(tree.cursor_type(), 'String')
+        self.assertEqual(tree.query(),
+                         'query Query {a {... on Bar {b c}}}')
+        tree.key_down()
+        tree.key_right()
+        tree.key_down()
+        tree.select()
+        tree.key_down()
+        self.assertDraw(tree,
+                        '▼ a\n'
+                        '  □ b\n'
+                        '  ▼ Bar\n'
+                        '    ■ b\n'
+                        '    ■ c\n'
+                        '  ▼ Fie\n'
+                        '    ■ b\n'
+                        '    X c')
+        self.assertEqual(tree.cursor_type(), 'Int')
+        self.assertEqual(tree.query(),
+                         'query Query {a {... on Bar {b c} ... on Fie {b}}}')
 
     def test_union(self):
         schema = ('union SearchResult = Book | Author '

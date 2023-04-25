@@ -60,11 +60,18 @@ def find_root_field(cursor):
         return find_root_field(cursor.parent)
 
 
-def fields_query(fields, variables, is_union=False):
+def is_field_implementor(offset, implementors_offset):
+    if implementors_offset is None:
+        return False
+
+    return offset >= implementors_offset
+
+
+def fields_query(fields, variables, is_union=False, implementors_offset=None):
     items = []
     arguments = []
 
-    for field in fields:
+    for i, field in enumerate(fields):
         value = field.query(variables)
 
         if value is None:
@@ -73,7 +80,7 @@ def fields_query(fields, variables, is_union=False):
         if isinstance(field,
                       (ScalarArgument, InputArgument, ListArgument, EnumArgument)):
             arguments.append(f'{field.name}:{value}')
-        elif is_union:
+        elif is_union or is_field_implementor(i, implementors_offset):
             items.append(f'... on {value}')
         else:
             items.append(value)
@@ -105,7 +112,7 @@ class Node:
         self.type = None
         self.description = None
 
-    def draw(self, stdscr, y, x, cursor):
+    def draw(self, stdscr, y, x, cursor, is_implementor=False):
         raise NotImplementedError()
 
     def key_left(self):
@@ -144,7 +151,8 @@ class Object(Node):
                  number_of_query_fields,
                  is_root=False,
                  is_union=False,
-                 is_deprecated=False):
+                 is_deprecated=False,
+                 number_of_implementors=0):
         super().__init__()
         self.name = name
         self.type = field_type
@@ -161,10 +169,20 @@ class Object(Node):
         self.is_expanded = is_root
         self.name_attrs = make_field_name_attrs(is_deprecated)
 
-    def draw(self, stdscr, y, x, cursor):
+        if number_of_implementors == 0:
+            self.implementors_offset = None
+        else:
+            self.implementors_offset = (len(fields) - number_of_implementors)
+
+    def draw(self, stdscr, y, x, cursor, is_implementor=False):
         if cursor.node is self:
             cursor.y = y
             cursor.x = x
+
+        if is_implementor:
+            color = curses.color_pair(8)
+        else:
+            color = curses.color_pair(1)
 
         if self.is_root:
             for i, field in enumerate(self.fields):
@@ -172,16 +190,24 @@ class Object(Node):
                     y += 2
                     cursor.y_mutation = y
 
-                y = field.draw(stdscr, y, x, cursor)
+                y = field.draw(stdscr,
+                               y,
+                               x,
+                               cursor,
+                               is_field_implementor(i, self.implementors_offset))
         elif self.is_expanded:
-            addstr(stdscr, y, x, '▼', curses.color_pair(1))
+            addstr(stdscr, y, x, '▼', color)
             addstr(stdscr, y, x + 2, self.name, self.name_attrs)
             y += 1
 
-            for field in self.fields:
-                y = field.draw(stdscr, y, x + 2, cursor)
+            for i, field in enumerate(self.fields):
+                y = field.draw(stdscr,
+                               y,
+                               x + 2,
+                               cursor,
+                               is_field_implementor(i, self.implementors_offset))
         else:
-            addstr(stdscr, y, x, '▶', curses.color_pair(1))
+            addstr(stdscr, y, x, '▶', color)
             addstr(stdscr, y, x + 2, self.name, self.name_attrs)
             y += 1
 
@@ -191,7 +217,10 @@ class Object(Node):
         if not self.is_expanded:
             return None
 
-        items, arguments = fields_query(self.fields, variables, self.is_union)
+        items, arguments = fields_query(self.fields,
+                                        variables,
+                                        self.is_union,
+                                        self.implementors_offset)
 
         if items:
             if self.is_union:
@@ -305,7 +334,7 @@ class Leaf(Node):
         if self.fields is not None:
             self.fields.parent = self
 
-    def draw(self, stdscr, y, x, cursor):
+    def draw(self, stdscr, y, x, cursor, is_implementor=False):
         if self.fields is None:
             return self.draw_without_arguments(stdscr, y, x, cursor)
         else:
@@ -402,7 +431,7 @@ class ScalarArgument(Node):
     def is_string(self):
         return self.is_scalar and self._type in ['String', 'ID']
 
-    def draw(self, stdscr, y, x, cursor):
+    def draw(self, stdscr, y, x, cursor, is_implementor=False):
         if cursor.node is self:
             cursor.y = y
 
@@ -530,7 +559,7 @@ class EnumArgument(Node):
         else:
             self.symbol = '●'
 
-    def draw(self, stdscr, y, x, cursor):
+    def draw(self, stdscr, y, x, cursor, is_implementor=False):
         if cursor.node is self:
             cursor.y = y
 
@@ -693,7 +722,7 @@ class InputArgument(Node):
 
         return y
 
-    def draw(self, stdscr, y, x, cursor):
+    def draw(self, stdscr, y, x, cursor, is_implementor=False):
         if self.is_variable:
             return self.draw_variable(stdscr, y, x, cursor)
         else:
@@ -973,7 +1002,7 @@ class ListArgument(Node):
 
         return y
 
-    def draw(self, stdscr, y, x, cursor):
+    def draw(self, stdscr, y, x, cursor, is_implementor=False):
         if self.is_variable:
             return self.draw_variable(stdscr, y, x, cursor)
         else:
@@ -1101,7 +1130,7 @@ def build_field(field, types, state):
     description = field['description']
     is_deprecated = field.get('isDeprecated', False)
 
-    if item['kind'] in ['OBJECT', 'INTERFACE']:
+    if item['kind'] == 'OBJECT':
         fields = find_type(types, field_type)['fields']
 
         return Object(name,
@@ -1111,6 +1140,29 @@ def build_field(field, types, state):
                       state,
                       len(fields),
                       is_deprecated=is_deprecated)
+    elif item['kind'] == 'INTERFACE':
+        interface_type = find_type(types, field_type)
+        possible_types = interface_type['possibleTypes']
+        fields = (
+            interface_type['fields']
+            + [
+                {
+                    'name': field['name'],
+                    'description': '',
+                    'args': [],
+                    'type': find_type(types, field['name'])
+                }
+                for field in possible_types
+            ])
+
+        return Object(name,
+                      field_type_string,
+                      description,
+                      ObjectFields(field['args'], fields, types, state),
+                      state,
+                      len(fields),
+                      is_deprecated=is_deprecated,
+                      number_of_implementors=len(possible_types))
     elif item['kind'] == 'UNION':
         fields = [
             {

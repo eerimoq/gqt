@@ -62,7 +62,8 @@ class QueryBuilder:
         self.variables = variables
 
         if self.variables:
-            self.maximum_variable_length = max(len(variable) for variable in self.variables)
+            self.maximum_variable_length = max(len(variable)
+                                               for variable in self.variables)
         else:
             self.maximum_variable_length = 0
 
@@ -300,6 +301,7 @@ class QueryBuilder:
         curses.init_pair(5, -1, curses.COLOR_MAGENTA)
         curses.init_pair(6, -1, curses.COLOR_GREEN)
         curses.init_pair(7, COLOR_GRAY, -1)
+        curses.init_pair(8, curses.COLOR_MAGENTA, -1)
 
         try:
             self.update(None)
