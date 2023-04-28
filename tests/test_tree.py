@@ -583,6 +583,7 @@ class TreeTest(unittest.TestCase):
                   'interface Foo {'
                   '  b: String'
                   '}'
+                  '"""Bar description."""\n'
                   'type Bar implements Foo {'
                   '  b: String'
                   '  c: String'
@@ -615,6 +616,7 @@ class TreeTest(unittest.TestCase):
                         '  X Bar\n'
                         '  ▶ Fie')
         self.assertEqual(tree.cursor_type(), 'Bar')
+        self.assertEqual(tree.cursor_description(), 'Bar description.')
         tree.key_right()
         tree.key_down()
         tree.select()
@@ -631,6 +633,7 @@ class TreeTest(unittest.TestCase):
         self.assertEqual(tree.query(),
                          'query Query {a {... on Bar {b c}}}')
         tree.key_down()
+        self.assertEqual(tree.cursor_description(), None)
         tree.key_right()
         tree.key_down()
         tree.select()
@@ -653,6 +656,7 @@ class TreeTest(unittest.TestCase):
                   'type Book {'
                   '  title: String!'
                   '}'
+                  '"""Author description."""\n'
                   'type Author {'
                   '  name: String!'
                   '}'
@@ -664,12 +668,14 @@ class TreeTest(unittest.TestCase):
         tree.key_down()
         tree.key_down()
         self.assertEqual(tree.cursor_type(), 'Book')
+        self.assertEqual(tree.cursor_description(), None)
         tree.key_right()
         tree.key_down()
         tree.select()
         self.assertEqual(tree.query(),
                          'query Query {search {__typename ... on Book {title}}}')
         tree.key_down()
+        self.assertEqual(tree.cursor_description(), 'Author description.')
         tree.key_right()
         tree.key_down()
         tree.select()

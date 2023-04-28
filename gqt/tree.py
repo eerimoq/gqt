@@ -1143,17 +1143,18 @@ def build_field(field, types, state):
     elif item['kind'] == 'INTERFACE':
         interface_type = find_type(types, field_type)
         possible_types = interface_type['possibleTypes']
-        fields = (
-            interface_type['fields']
-            + [
-                {
-                    'name': field['name'],
-                    'description': '',
-                    'args': [],
-                    'type': find_type(types, field['name'])
-                }
-                for field in possible_types
-            ])
+        fields = []
+
+        for possible_type in possible_types:
+            field_type = find_type(types, possible_type['name'])
+            fields.append({
+                'name': possible_type['name'],
+                'description': field_type['description'],
+                'args': [],
+                'type': field_type
+            })
+
+        fields = (interface_type['fields'] + fields)
 
         return Object(name,
                       field_type_string,
@@ -1164,15 +1165,16 @@ def build_field(field, types, state):
                       is_deprecated=is_deprecated,
                       number_of_implementors=len(possible_types))
     elif item['kind'] == 'UNION':
-        fields = [
-            {
-                'name': field['name'],
-                'description': '',
+        fields = []
+
+        for possible_type in find_type(types, field_type)['possibleTypes']:
+            field_type = find_type(types, possible_type['name'])
+            fields.append({
+                'name': possible_type['name'],
+                'description': field_type['description'],
                 'args': [],
-                'type': find_type(types, field['name'])
-            }
-            for field in find_type(types, field_type)['possibleTypes']
-        ]
+                'type': field_type
+            })
 
         return Object(name,
                       field_type_string,
