@@ -93,6 +93,21 @@ def fields_query(fields, variables, is_union=False, implementors_offset=None):
     return ' '.join(items), arguments
 
 
+def create_fields_from_possible_types(possible_types, types):
+    fields = []
+
+    for possible_type in possible_types:
+        field_type = find_type(types, possible_type['name'])
+        fields.append({
+            'name': possible_type['name'],
+            'description': field_type['description'],
+            'args': [],
+            'type': field_type
+        })
+
+    return fields
+
+
 class Cursor:
 
     def __init__(self):
@@ -1143,18 +1158,8 @@ def build_field(field, types, state):
     elif item['kind'] == 'INTERFACE':
         interface_type = find_type(types, field_type)
         possible_types = interface_type['possibleTypes']
-        fields = []
-
-        for possible_type in possible_types:
-            field_type = find_type(types, possible_type['name'])
-            fields.append({
-                'name': possible_type['name'],
-                'description': field_type['description'],
-                'args': [],
-                'type': field_type
-            })
-
-        fields = (interface_type['fields'] + fields)
+        fields = (interface_type['fields']
+                  + create_fields_from_possible_types(possible_types, types))
 
         return Object(name,
                       field_type_string,
@@ -1165,16 +1170,9 @@ def build_field(field, types, state):
                       is_deprecated=is_deprecated,
                       number_of_implementors=len(possible_types))
     elif item['kind'] == 'UNION':
-        fields = []
-
-        for possible_type in find_type(types, field_type)['possibleTypes']:
-            field_type = find_type(types, possible_type['name'])
-            fields.append({
-                'name': possible_type['name'],
-                'description': field_type['description'],
-                'args': [],
-                'type': field_type
-            })
+        fields = create_fields_from_possible_types(
+            find_type(types, field_type)['possibleTypes'],
+            types)
 
         return Object(name,
                       field_type_string,
