@@ -35,6 +35,10 @@ HELP_NCOLS = 55
 COLOR_GRAY = 8
 
 
+class QuitError(Exception):
+    pass
+
+
 def help_text():
     if is_experimental():
         compact = 'Compact:           c\n'
@@ -158,7 +162,7 @@ class QueryBuilder:
                 elif key == 'd':
                     self.show_description = not self.show_description
                 elif key == 'q':
-                    raise KeyboardInterrupt()
+                    raise QuitError()
 
         return False
 
@@ -166,7 +170,7 @@ class QueryBuilder:
         if key in ['h', '?']:
             self.show_help = not self.show_help
         elif key == 'q':
-            raise KeyboardInterrupt()
+            raise QuitError()
 
     def update(self, key):
         if self.show_help:
@@ -314,11 +318,18 @@ class QueryBuilder:
                     continue
 
                 done = self.update(key)
-        finally:
-            if self.tree is not None:
-                write_tree_to_cache(self.tree, self.endpoint, self.query_name)
+
+            self.write_tree_to_cache()
+        except QuitError:
+            self.write_tree_to_cache()
+
+            raise
 
         return self.tree
+
+    def write_tree_to_cache(self):
+        if self.tree is not None:
+            write_tree_to_cache(self.tree, self.endpoint, self.query_name)
 
     def addstr(self, y, x, text):
         addstr(self.stdscr, y, x, text)

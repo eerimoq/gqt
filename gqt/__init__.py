@@ -21,6 +21,7 @@ from .endpoint import create_query
 from .endpoint import fetch_schema
 from .endpoint import post
 from .experimental import set_experimental
+from .query_builder import QuitError
 from .query_builder import query_builder
 from .version import __version__
 
@@ -258,6 +259,8 @@ def main():
                     show(response, 'json', args.color)
     except KeyboardInterrupt:
         sys.exit(1)
+    except QuitError:
+        sys.exit(0)
     except SystemExit:
         raise
     except requests.exceptions.HTTPError as error:
