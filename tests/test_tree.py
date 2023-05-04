@@ -11,6 +11,19 @@ def load_tree(schema):
     return load_tree_from_schema(introspection_from_schema(build_schema(schema)))
 
 
+def remove_ids(data):
+    if isinstance(data, dict):
+        data.pop('id', None)
+
+        for item in data.values():
+            remove_ids(item)
+    elif isinstance(data, list):
+        for item in data:
+            remove_ids(item)
+
+    return data
+
+
 class Stdscr:
 
     def __init__(self, y_max, x_max):
@@ -864,3 +877,99 @@ class TreeTest(unittest.TestCase):
                         '  □ x\n'
                         '  □ y\n'
                         '  □ z')
+
+    def test_to_from_json(self):
+        schema = ('type Query {'
+                  '  a: A'
+                  '  b: A'
+                  '}'
+                  'type A {'
+                  '  x: String'
+                  '  y: String'
+                  '  z: String'
+                  '}')
+        tree = load_tree(schema)
+        self.assertDraw(tree,
+                        'X a\n'
+                        '▶ b')
+        self.assertEqual(
+            tree.to_json(),
+            {
+                'root': {
+                    'name': None,
+                    'is_expanded': True,
+                    'fields': [
+                        {
+                            'has_cursor': True,
+                            'name': 'a'
+                        }
+                    ]
+                }
+            })
+        tree.key_right()
+        tree.key_down()
+        self.assertDraw(tree,
+                        '▼ a\n'
+                        '  X x\n'
+                        '  □ y\n'
+                        '  □ z\n'
+                        '▶ b')
+        self.assertEqual(
+            tree.to_json(),
+            {
+                'root': {
+                    'name': None,
+                    'is_expanded': True,
+                    'fields': [
+                        {
+                            'name': 'a',
+                            'is_expanded': True,
+                            'fields': [
+                                {
+                                    'has_cursor': True,
+                                    'name': 'x'
+                                }
+                            ]
+                        }
+                    ]
+                }
+            })
+        tree.key_down()
+        tree.select()
+        tree.key_down()
+        tree.key_down()
+        tree.key_right()
+        self.assertDraw(tree,
+                        '▼ a\n'
+                        '  □ x\n'
+                        '  ■ y\n'
+                        '  □ z\n'
+                        'X b\n'
+                        '  □ x\n'
+                        '  □ y\n'
+                        '  □ z')
+        self.assertEqual(
+            tree.to_json(),
+            {
+                'root': {
+                    'name': None,
+                    'is_expanded': True,
+                    'fields': [
+                        {
+                            'name': 'a',
+                            'is_expanded': True,
+                            'fields': [
+                                {
+                                    'name': 'y',
+                                    'is_selected': True
+                                }
+                            ]
+                        },
+                        {
+                            'has_cursor': True,
+                            'name': 'b',
+                            'is_expanded': True
+                        }
+                    ]
+                }
+            })

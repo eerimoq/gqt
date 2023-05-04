@@ -154,6 +154,12 @@ class Node:
     def is_selected(self):
         return False
 
+    def to_json(self, cursor):
+        return None
+
+    def from_json(self, data):
+        pass
+
 
 class Object(Node):
 
@@ -327,6 +333,35 @@ class Object(Node):
         else:
             self.child = None
 
+    def to_json(self, cursor):
+        has_cursor = (cursor is self)
+
+        if not has_cursor and not self.fields.has_fields():
+            return None
+
+        data = {
+            'name': self.name
+        }
+
+        if has_cursor:
+            data['has_cursor'] = True
+
+        if self.fields.has_fields():
+            fields = []
+
+            for field in self.fields:
+                field = field.to_json(cursor)
+
+                if field is not None:
+                    fields.append(field)
+
+            data['is_expanded'] = self.is_expanded
+
+            if fields:
+                data['fields'] = fields
+
+        return data
+
 
 class Leaf(Node):
 
@@ -410,6 +445,24 @@ class Leaf(Node):
 
     def is_selected(self):
         return self._is_selected
+
+    def to_json(self, cursor):
+        has_cursor = (cursor is self)
+
+        if not has_cursor and not self._is_selected:
+            return None
+
+        data = {
+            'name': self.name,
+        }
+
+        if has_cursor:
+            data['has_cursor'] = True
+
+        if self._is_selected:
+            data['is_selected'] = True
+
+        return data
 
 
 class ScalarArgument(Node):
@@ -1307,6 +1360,9 @@ class ObjectFields:
     def __getitem__(self, key):
         return self.fields()[key]
 
+    def has_fields(self):
+        return self._all_fields is not None
+
 
 class MoveSelectedState:
 
@@ -1433,6 +1489,14 @@ class Tree:
             return
 
         self._cursor = self._find_last(self._root.fields[-1])
+
+    def to_json(self):
+        return {
+            'root': self._root.to_json(self._cursor)
+        }
+
+    def from_json(self, data):
+        pass
 
     def _move_cursor_to_selected_node_or_none(self):
         state = MoveSelectedState()
