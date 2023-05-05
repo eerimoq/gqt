@@ -1,4 +1,6 @@
+import json
 import unittest
+from copy import deepcopy
 from unittest.mock import patch
 
 from graphql import build_schema
@@ -61,6 +63,19 @@ class TreeTest(unittest.TestCase):
 
         stdscr.addstr(cursor.y, cursor.x, 'X')
         self.assertEqual(stdscr.render(), expected)
+
+    def assertEqualJson(self, data, expected):
+        data = deepcopy(data)
+        data.pop('schema')
+
+        try:
+            self.assertEqual(data, expected)
+        except AssertionError:
+            print()
+            print('Actual:', json.dumps(data, indent=4))
+            print('Expected:', json.dump(expected, indent=4))
+
+            raise
 
     def test_basic(self):
         schema = ('type Query {'
@@ -878,7 +893,7 @@ class TreeTest(unittest.TestCase):
                         '  □ y\n'
                         '  □ z')
 
-    def test_to_from_json(self):
+    def test_to_from_json_basic(self):
         schema = ('type Query {'
                   '  a: A'
                   '  b: A'
@@ -893,8 +908,7 @@ class TreeTest(unittest.TestCase):
                         'X a\n'
                         '▶ b')
         data = tree.to_json()
-        data_schema = data.pop('schema')
-        self.assertEqual(
+        self.assertEqualJson(
             data,
             {
                 'version': 1,
@@ -910,7 +924,6 @@ class TreeTest(unittest.TestCase):
                 }
             })
         tree = load_tree(schema)
-        data['schema'] = data_schema
         tree.from_json(data)
         self.assertDraw(tree,
                         'X a\n'
@@ -924,8 +937,7 @@ class TreeTest(unittest.TestCase):
                         '  □ z\n'
                         '▶ b')
         data = tree.to_json()
-        data_schema = data.pop('schema')
-        self.assertEqual(
+        self.assertEqualJson(
             data,
             {
                 'version': 1,
@@ -947,7 +959,6 @@ class TreeTest(unittest.TestCase):
                 }
             })
         tree = load_tree(schema)
-        data['schema'] = data_schema
         tree.from_json(data)
         self.assertDraw(tree,
                         '▼ a\n'
@@ -970,8 +981,7 @@ class TreeTest(unittest.TestCase):
                         '  □ y\n'
                         '  □ z')
         data = tree.to_json()
-        data_schema = data.pop('schema')
-        self.assertEqual(
+        self.assertEqualJson(
             data,
             {
                 'version': 1,
@@ -998,7 +1008,6 @@ class TreeTest(unittest.TestCase):
                 }
             })
         tree = load_tree(schema)
-        data['schema'] = data_schema
         tree.from_json(data)
         self.assertDraw(tree,
                         '▼ a\n'
@@ -1009,3 +1018,85 @@ class TreeTest(unittest.TestCase):
                         '  □ x\n'
                         '  □ y\n'
                         '  □ z')
+
+    def test_to_from_json_input_argument(self):
+        schema = ('type Query {'
+                  '  a(x: Foo): String'
+                  '}'
+                  'input Foo {'
+                  '  y: Bar!'
+                  '}'
+                  'input Bar {'
+                  '  z: String'
+                  '}')
+        tree = load_tree(schema)
+        tree.select()
+        tree.key_down()
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  X x')
+        data = tree.to_json()
+        self.assertEqualJson(
+            data,
+            {
+                'version': 1,
+                'root': {
+                    'type': 'object',
+                    'is_expanded': True,
+                    'fields': {
+                        'a': {
+                            'type': 'leaf',
+                            'is_selected': True
+                        }
+                    }
+                }
+            })
+        # tree = load_tree(schema)
+        # tree.from_json(data)
+        self.assertEqual(tree.query(), 'query Query {a}')
+        tree.select()
+        self.assertEqual(tree.query(), 'query Query {a(x:{y:{}})}')
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  X x\n'
+                        '    ● y\n'
+                        '      □ z:')
+        tree.key_down()
+        tree.key_down()
+        tree.select()
+        tree.key('\t')
+        tree.key('B')
+        self.assertEqual(tree.query(), 'query Query {a(x:{y:{z:"B"}})}')
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  ■ x\n'
+                        '    ● y\n'
+                        '      ■ z: BX')
+        tree.key_up()
+        tree.key('v')
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  ■ x\n'
+                        '    $ y: X')
+        tree.key('a')
+        tree.key(' ')
+        tree.key('\x7f')
+        tree.key_left()
+        tree.key('v')
+        tree.key_right()
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  ■ x\n'
+                        '    $ y: vaX')
+        tree.key('\t')
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  ■ x\n'
+                        '    X y: va')
+        self.assertEqual(tree.query(), 'query Query($va:Bar!) {a(x:{y:$va})}')
+        tree.key('v')
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  ■ x\n'
+                        '    X y\n'
+                        '      ■ z: B')
