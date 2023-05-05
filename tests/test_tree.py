@@ -1057,11 +1057,44 @@ class TreeTest(unittest.TestCase):
                     }
                 }
             })
-        # tree = load_tree(schema)
-        # tree.from_json(data)
-        self.assertEqual(tree.query(), 'query Query {a}')
+        tree = load_tree(schema)
+        tree.from_json(data)
         tree.select()
-        self.assertEqual(tree.query(), 'query Query {a(x:{y:{}})}')
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  X x\n'
+                        '    ● y\n'
+                        '      □ z:')
+        data = tree.to_json()
+        self.assertEqualJson(
+            data,
+            {
+                'version': 1,
+                'root': {
+                    'type': 'object',
+                    'is_expanded': True,
+                    'fields': {
+                        'a': {
+                            'type': 'leaf',
+                            'is_selected': True,
+                            'fields': {
+                                'x': {
+                                    'type': 'input_argument',
+                                    'has_cursor': True,
+                                    'is_selected': True,
+                                    'fields': {
+                                        'y': {
+                                            'type': 'input_argument'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+        tree = load_tree(schema)
+        tree.from_json(data)
         self.assertDraw(tree,
                         '■ a\n'
                         '  X x\n'
@@ -1078,6 +1111,44 @@ class TreeTest(unittest.TestCase):
                         '  ■ x\n'
                         '    ● y\n'
                         '      ■ z: BX')
+        data = tree.to_json()
+        self.assertEqualJson(
+            data,
+            {
+                'version': 1,
+                'root': {
+                    'type': 'object',
+                    'is_expanded': True,
+                    'fields': {
+                        'a': {
+                            'type': 'leaf',
+                            'is_selected': True,
+                            'fields': {
+                                'x': {
+                                    'type': 'input_argument',
+                                    'is_selected': True,
+                                    'fields': {
+                                        'y': {
+                                            'type': 'input_argument',
+                                            'fields': {
+                                                'z': {
+                                                    'type': 'scalar_argument',
+                                                    'has_cursor': True,
+                                                    'value': 'B',
+                                                    'pos': 1,
+                                                    'is_selected': True
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+        # tree = load_tree(schema)
+        # tree.from_json(data)
         tree.key_up()
         tree.key('v')
         self.assertDraw(tree,

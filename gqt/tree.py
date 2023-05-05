@@ -155,10 +155,10 @@ class Node:
         return False
 
     def to_json(self, cursor):
-        return None
+        raise NotImplementedError()
 
     def from_json(self, data):
-        return None
+        raise NotImplementedError()
 
 
 class Object(Node):
@@ -363,6 +363,9 @@ class Object(Node):
         return data
 
     def from_json(self, data):
+        if data['type'] != 'object':
+            return None
+
         self.is_expanded = data.get('is_expanded', False)
 
         if self.is_expanded:
@@ -503,12 +506,26 @@ class Leaf(Node):
         return data
 
     def from_json(self, data):
+        if data['type'] != 'leaf':
+            return None
+
         self._is_selected = data.get('is_selected', False)
 
         if data.get('has_cursor', False):
             cursor = self
         else:
             cursor = None
+
+        for field_name, field_data in data.get('fields', {}).items():
+            field = self.fields.get(field_name)
+
+            if field is None:
+                continue
+
+            field_cursor = field.from_json(field_data)
+
+            if field_cursor is not None:
+                cursor = field_cursor
 
         return cursor
 
@@ -643,7 +660,56 @@ class ScalarArgument(Node):
     def is_selected(self):
         return self.is_variable or self.symbol in '■●'
 
+    def to_json(self, cursor):
+        has_cursor = (cursor is self)
 
+        if (not has_cursor
+            and not self.value
+            and self.pos == 0
+            and not self.is_variable):
+            return None
+
+        data = {
+            'type': 'scalar_argument'
+        }
+
+        if has_cursor:
+            data['has_cursor'] = True
+
+        if self.value:
+            data['value'] = self.value
+
+        if self.pos != 0:
+            data['pos'] = self.pos
+
+        if self.is_variable:
+            data['is_variable'] = True
+
+        if self.symbol == '■':
+            data['is_selected'] = True
+
+        return data
+
+    def from_json(self, data):
+        if data['type'] != 'scalar_argument':
+            return None
+
+        if data.get('is_selected', False):
+            self.symbol = '■'
+            self.child = self.fields[0]
+
+        self.is_variable = data.get('is_variable', False)
+        self.pos = data.get('pos', 0)
+        self.value = data.get('value', '')
+
+        if data.get('has_cursor', False):
+            cursor = self
+        else:
+            cursor = None
+
+        return cursor
+
+    
 class EnumArgument(Node):
 
     def __init__(self,
@@ -919,7 +985,8 @@ class InputArgument(Node):
         if (not has_cursor
             and not self.value
             and self.pos == 0
-            and not self.is_variable):
+            and not self.is_variable
+            and not self.fields.has_fields()):
             return None
 
         data = {
@@ -938,7 +1005,41 @@ class InputArgument(Node):
         if self.is_variable:
             data['is_variable'] = True
 
+        if self.symbol == '■':
+            data['is_selected'] = True
+
+        if self.fields.has_fields():
+            fields = {}
+
+            for field in self.fields:
+                field_data = field.to_json(cursor)
+
+                if field_data is not None:
+                    fields[field.name] = field_data
+
+            if fields:
+                data['fields'] = fields
+
         return data
+
+    def from_json(self, data):
+        if data['type'] != 'input_argument':
+            return None
+
+        if data.get('is_selected', False):
+            self.symbol = '■'
+            self.child = self.fields[0]
+
+        self.is_variable = data.get('is_variable', False)
+        self.pos = data.get('pos', 0)
+        self.value = data.get('value', '')
+
+        if data.get('has_cursor', False):
+            cursor = self
+        else:
+            cursor = None
+
+        return cursor
 
 #
 #     def is_selected(self):
@@ -1580,6 +1681,11 @@ class Tree:
         }
 
     def from_json(self, data):
+        version = data['version']
+
+        if version != 1:
+            raise Exception(f'Unsupported tree JSON version {version}')
+
         self._schema = data['schema']
         self._cursor = self._root.from_json(data['root'])
 
