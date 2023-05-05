@@ -347,18 +347,12 @@ class Object(Node):
             data['has_cursor'] = True
 
         if self.fields.has_fields():
-            fields = {}
-
-            for field in self.fields:
-                field_data = field.to_json(cursor)
-
-                if field_data is not None:
-                    fields[field.name] = field_data
-
-            data['is_expanded'] = self.is_expanded
+            fields = self.fields.to_json(cursor)
 
             if fields:
                 data['fields'] = fields
+
+            data['is_expanded'] = self.is_expanded
 
         return data
 
@@ -376,18 +370,7 @@ class Object(Node):
         else:
             cursor = None
 
-        for field_name, field_data in data.get('fields', {}).items():
-            field = self.fields.get(field_name)
-
-            if field is None:
-                continue
-
-            field_cursor = field.from_json(field_data)
-
-            if field_cursor is not None:
-                cursor = field_cursor
-
-        return cursor
+        return self.fields.from_json(data.get('fields', {}), cursor)
 
 
 class Leaf(Node):
@@ -492,13 +475,7 @@ class Leaf(Node):
             data['is_selected'] = True
 
         if self.fields is not None and self.fields.has_fields():
-            fields = {}
-
-            for field in self.fields:
-                field_data = field.to_json(cursor)
-
-                if field_data is not None:
-                    fields[field.name] = field_data
+            fields = self.fields.to_json(cursor)
 
             if fields:
                 data['fields'] = fields
@@ -516,16 +493,8 @@ class Leaf(Node):
         else:
             cursor = None
 
-        for field_name, field_data in data.get('fields', {}).items():
-            field = self.fields.get(field_name)
-
-            if field is None:
-                continue
-
-            field_cursor = field.from_json(field_data)
-
-            if field_cursor is not None:
-                cursor = field_cursor
+        if self.fields is not None:
+            cursor = self.fields.from_json(data.get('fields', {}), cursor)
 
         return cursor
 
@@ -709,7 +678,7 @@ class ScalarArgument(Node):
 
         return cursor
 
-    
+
 class EnumArgument(Node):
 
     def __init__(self,
@@ -1009,13 +978,7 @@ class InputArgument(Node):
             data['is_selected'] = True
 
         if self.fields.has_fields():
-            fields = {}
-
-            for field in self.fields:
-                field_data = field.to_json(cursor)
-
-                if field_data is not None:
-                    fields[field.name] = field_data
+            fields = self.fields.to_json(cursor)
 
             if fields:
                 data['fields'] = fields
@@ -1039,7 +1002,7 @@ class InputArgument(Node):
         else:
             cursor = None
 
-        return cursor
+        return self.fields.from_json(data.get('fields', {}), cursor)
 
 #
 #     def is_selected(self):
@@ -1544,6 +1507,31 @@ class ObjectFields:
 
     def has_fields(self):
         return self._all_fields is not None
+
+    def to_json(self, cursor):
+        fields = {}
+
+        for field in self.fields():
+            field_data = field.to_json(cursor)
+
+            if field_data is not None:
+                fields[field.name] = field_data
+
+        return fields
+
+    def from_json(self, data, cursor):
+        for field_name, field_data in data.items():
+            field = self.get(field_name)
+
+            if field is None:
+                continue
+
+            field_cursor = field.from_json(field_data)
+
+            if field_cursor is not None:
+                cursor = field_cursor
+
+        return cursor
 
 
 class MoveSelectedState:
