@@ -29,7 +29,7 @@ def make_query_pickle_path(endpoint, query_name):
 
 def make_query_json_path(endpoint, query_name):
     name = make_endpoint_cache_name(endpoint)
-    endpoint_path = CACHE_PATH / __version__ / name
+    endpoint_path = CACHE_PATH / name
 
     if query_name is None:
         return endpoint_path / 'query.json'
