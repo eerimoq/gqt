@@ -73,7 +73,7 @@ class TreeTest(unittest.TestCase):
         except AssertionError:
             print()
             print('Actual:', json.dumps(data, indent=4))
-            print('Expected:', json.dump(expected, indent=4))
+            print('Expected:', json.dumps(expected, indent=4))
 
             raise
 
@@ -1046,7 +1046,13 @@ class TreeTest(unittest.TestCase):
                     'fields': {
                         'a': {
                             'type': 'leaf',
-                            'is_selected': True
+                            'is_selected': True,
+                            'fields': {
+                                'x': {
+                                    'type': 'input_argument',
+                                    'has_cursor': True
+                                }
+                            }
                         }
                     }
                 }

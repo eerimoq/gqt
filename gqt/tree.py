@@ -473,7 +473,9 @@ class Leaf(Node):
     def to_json(self, cursor):
         has_cursor = (cursor is self)
 
-        if not has_cursor and not self._is_selected:
+        if (not has_cursor
+            and not self._is_selected
+            and not (self.fields is not None and self.fields.has_fields())):
             return None
 
         data = {
@@ -485,6 +487,18 @@ class Leaf(Node):
 
         if self._is_selected:
             data['is_selected'] = True
+
+        if self.fields is not None and self.fields.has_fields():
+            fields = {}
+
+            for field in self.fields:
+                field_data = field.to_json(cursor)
+
+                if field_data is not None:
+                    fields[field.name] = field_data
+
+            if fields:
+                data['fields'] = fields
 
         return data
 
@@ -898,6 +912,34 @@ class InputArgument(Node):
             return '{' + ','.join(items) + '}'
         else:
             return None
+
+    def to_json(self, cursor):
+        has_cursor = (cursor is self)
+
+        if (not has_cursor
+            and not self.value
+            and self.pos == 0
+            and not self.is_variable):
+            return None
+
+        data = {
+            'type': 'input_argument'
+        }
+
+        if has_cursor:
+            data['has_cursor'] = True
+
+        if self.value:
+            data['value'] = self.value
+
+        if self.pos != 0:
+            data['pos'] = self.pos
+
+        if self.is_variable:
+            data['is_variable'] = True
+
+        return data
+
 #
 #     def is_selected(self):
 #         if self.is_variable:
