@@ -212,8 +212,13 @@ class QueryBuilder:
         self.addstr_frame(row + 3, col, f'│ {horizontal_space} │')
         self.addstr_frame(row + 4, col, f'└─{horizontal_line}─┘')
         self.stdscr.refresh()
-        self.tree = load_tree_from_schema(
-            fetch_schema(self.endpoint, self.headers, self.verify))
+        schema = fetch_schema(self.endpoint, self.headers, self.verify)
+        tree = load_tree_from_schema(schema)
+
+        if is_experimental():
+            tree.from_json(self.tree.to_json())
+
+        self.tree = tree
 
     def draw_help(self):
         curses.curs_set(False)
