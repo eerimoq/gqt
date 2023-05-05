@@ -892,18 +892,27 @@ class TreeTest(unittest.TestCase):
         self.assertDraw(tree,
                         'X a\n'
                         '▶ b')
+        data = tree.to_json()
         self.assertEqual(
-            tree.to_json(),
+            data,
             {
+                'version': 1,
                 'root': {
+                    'type': 'object',
                     'is_expanded': True,
                     'fields': {
                         'a': {
+                            'type': 'object',
                             'has_cursor': True
                         }
                     }
                 }
             })
+        tree = load_tree(schema)
+        tree.from_json(data)
+        self.assertDraw(tree,
+                        'X a\n'
+                        '▶ b')
         tree.key_right()
         tree.key_down()
         self.assertDraw(tree,
@@ -912,16 +921,21 @@ class TreeTest(unittest.TestCase):
                         '  □ y\n'
                         '  □ z\n'
                         '▶ b')
+        data = tree.to_json()
         self.assertEqual(
-            tree.to_json(),
+            data,
             {
+                'version': 1,
                 'root': {
+                    'type': 'object',
                     'is_expanded': True,
                     'fields': {
                         'a': {
+                            'type': 'object',
                             'is_expanded': True,
                             'fields': {
                                 'x': {
+                                    'type': 'leaf',
                                     'has_cursor': True
                                 }
                             }
@@ -929,6 +943,14 @@ class TreeTest(unittest.TestCase):
                     }
                 }
             })
+        tree = load_tree(schema)
+        tree.from_json(data)
+        self.assertDraw(tree,
+                        '▼ a\n'
+                        '  X x\n'
+                        '  □ y\n'
+                        '  □ z\n'
+                        '▶ b')
         tree.key_down()
         tree.select()
         tree.key_down()
@@ -943,24 +965,41 @@ class TreeTest(unittest.TestCase):
                         '  □ x\n'
                         '  □ y\n'
                         '  □ z')
+        data = tree.to_json()
         self.assertEqual(
-            tree.to_json(),
+            data,
             {
+                'version': 1,
                 'root': {
+                    'type': 'object',
                     'is_expanded': True,
                     'fields': {
                         'a': {
+                            'type': 'object',
                             'is_expanded': True,
                             'fields': {
                                 'y': {
+                                    'type': 'leaf',
                                     'is_selected': True
                                 }
                             }
                         },
                         'b': {
+                            'type': 'object',
                             'has_cursor': True,
                             'is_expanded': True
                         }
                     }
                 }
             })
+        tree = load_tree(schema)
+        tree.from_json(data)
+        self.assertDraw(tree,
+                        '▼ a\n'
+                        '  □ x\n'
+                        '  ■ y\n'
+                        '  □ z\n'
+                        'X b\n'
+                        '  □ x\n'
+                        '  □ y\n'
+                        '  □ z')

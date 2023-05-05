@@ -158,7 +158,7 @@ class Node:
         return None
 
     def from_json(self, data):
-        pass
+        return None
 
 
 class Object(Node):
@@ -339,7 +339,9 @@ class Object(Node):
         if not has_cursor and not self.fields.has_fields():
             return None
 
-        data = {}
+        data = {
+            'type': 'object'
+        }
 
         if has_cursor:
             data['has_cursor'] = True
@@ -359,6 +361,27 @@ class Object(Node):
                 data['fields'] = fields
 
         return data
+
+    def from_json(self, data):
+        self.is_expanded = data.get('is_expanded', False)
+
+        if data.get('has_cursor', False):
+            cursor = self
+        else:
+            cursor = None
+
+        for field_name, field_data in data.get('fields', {}).items():
+            field = self.fields.get(field_name)
+
+            if field is None:
+                continue
+
+            field_cursor = field.from_json(field_data)
+
+            if field_cursor is not None:
+                cursor = field_cursor
+
+        return cursor
 
 
 class Leaf(Node):
@@ -450,7 +473,9 @@ class Leaf(Node):
         if not has_cursor and not self._is_selected:
             return None
 
-        data = {}
+        data = {
+            'type': 'leaf'
+        }
 
         if has_cursor:
             data['has_cursor'] = True
@@ -459,6 +484,16 @@ class Leaf(Node):
             data['is_selected'] = True
 
         return data
+
+    def from_json(self, data):
+        self._is_selected = data.get('is_selected', False)
+
+        if data.get('has_cursor', False):
+            cursor = self
+        else:
+            cursor = None
+
+        return cursor
 
 
 class ScalarArgument(Node):
@@ -1353,6 +1388,11 @@ class ObjectFields:
     def index(self, item):
         return self.fields().index(item)
 
+    def get(self, name):
+        for field in self.fields():
+            if field.name == name:
+                return field
+
     def __getitem__(self, key):
         return self.fields()[key]
 
@@ -1488,11 +1528,12 @@ class Tree:
 
     def to_json(self):
         return {
+            'version': 1,
             'root': self._root.to_json(self._cursor)
         }
 
     def from_json(self, data):
-        pass
+        self._cursor = self._root.from_json(data['root'])
 
     def _move_cursor_to_selected_node_or_none(self):
         state = MoveSelectedState()
