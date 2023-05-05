@@ -334,16 +334,9 @@ class Object(Node):
             self.child = None
 
     def to_json(self, cursor):
-        has_cursor = (cursor is self)
+        data = {}
 
-        if not has_cursor and not self.fields.has_fields():
-            return None
-
-        data = {
-            'type': 'object'
-        }
-
-        if has_cursor:
+        if cursor is self:
             data['has_cursor'] = True
 
         if self.fields.has_fields():
@@ -353,6 +346,11 @@ class Object(Node):
                 data['fields'] = fields
 
             data['is_expanded'] = self.is_expanded
+
+        if not data:
+            return None
+
+        data['type'] = 'object'
 
         return data
 
@@ -630,19 +628,9 @@ class ScalarArgument(Node):
         return self.is_variable or self.symbol in '■●'
 
     def to_json(self, cursor):
-        has_cursor = (cursor is self)
+        data = {}
 
-        if (not has_cursor
-            and not self.value
-            and self.pos == 0
-            and not self.is_variable):
-            return None
-
-        data = {
-            'type': 'scalar_argument'
-        }
-
-        if has_cursor:
+        if cursor is self:
             data['has_cursor'] = True
 
         if self.value:
@@ -656,6 +644,11 @@ class ScalarArgument(Node):
 
         if self.symbol == '■':
             data['is_selected'] = True
+
+        if not data:
+            return None
+
+        data['type'] = 'scalar_argument'
 
         return data
 
@@ -949,20 +942,9 @@ class InputArgument(Node):
             return None
 
     def to_json(self, cursor):
-        has_cursor = (cursor is self)
+        data = {}
 
-        if (not has_cursor
-            and not self.value
-            and self.pos == 0
-            and not self.is_variable
-            and not self.fields.has_fields()):
-            return None
-
-        data = {
-            'type': 'input_argument'
-        }
-
-        if has_cursor:
+        if cursor is self:
             data['has_cursor'] = True
 
         if self.value:
@@ -982,6 +964,11 @@ class InputArgument(Node):
 
             if fields:
                 data['fields'] = fields
+
+        if not data:
+            return None
+
+        data['type'] = 'input_argument'
 
         return data
 

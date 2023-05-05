@@ -1081,12 +1081,7 @@ class TreeTest(unittest.TestCase):
                                 'x': {
                                     'type': 'input_argument',
                                     'has_cursor': True,
-                                    'is_selected': True,
-                                    'fields': {
-                                        'y': {
-                                            'type': 'input_argument'
-                                        }
-                                    }
+                                    'is_selected': True
                                 }
                             }
                         }
