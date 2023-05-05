@@ -365,6 +365,9 @@ class Object(Node):
     def from_json(self, data):
         self.is_expanded = data.get('is_expanded', False)
 
+        if self.is_expanded:
+            self.child = self.fields[0]
+
         if data.get('has_cursor', False):
             cursor = self
         else:
