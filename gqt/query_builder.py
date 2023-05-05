@@ -215,8 +215,9 @@ class QueryBuilder:
         schema = fetch_schema(self.endpoint, self.headers, self.verify)
         tree = load_tree_from_schema(schema)
 
-        if is_experimental():
-            tree.from_json(self.tree.to_json())
+        if self.tree is not None:
+            if is_experimental():
+                tree.from_json(self.tree.to_json())
 
         self.tree = tree
 
