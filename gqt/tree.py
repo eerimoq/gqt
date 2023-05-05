@@ -339,21 +339,19 @@ class Object(Node):
         if not has_cursor and not self.fields.has_fields():
             return None
 
-        data = {
-            'name': self.name
-        }
+        data = {}
 
         if has_cursor:
             data['has_cursor'] = True
 
         if self.fields.has_fields():
-            fields = []
+            fields = {}
 
             for field in self.fields:
-                field = field.to_json(cursor)
+                field_data = field.to_json(cursor)
 
-                if field is not None:
-                    fields.append(field)
+                if field_data is not None:
+                    fields[field.name] = field_data
 
             data['is_expanded'] = self.is_expanded
 
@@ -452,9 +450,7 @@ class Leaf(Node):
         if not has_cursor and not self._is_selected:
             return None
 
-        data = {
-            'name': self.name,
-        }
+        data = {}
 
         if has_cursor:
             data['has_cursor'] = True

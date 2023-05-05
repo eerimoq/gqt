@@ -896,14 +896,12 @@ class TreeTest(unittest.TestCase):
             tree.to_json(),
             {
                 'root': {
-                    'name': None,
                     'is_expanded': True,
-                    'fields': [
-                        {
-                            'has_cursor': True,
-                            'name': 'a'
+                    'fields': {
+                        'a': {
+                            'has_cursor': True
                         }
-                    ]
+                    }
                 }
             })
         tree.key_right()
@@ -918,20 +916,17 @@ class TreeTest(unittest.TestCase):
             tree.to_json(),
             {
                 'root': {
-                    'name': None,
                     'is_expanded': True,
-                    'fields': [
-                        {
-                            'name': 'a',
+                    'fields': {
+                        'a': {
                             'is_expanded': True,
-                            'fields': [
-                                {
-                                    'has_cursor': True,
-                                    'name': 'x'
+                            'fields': {
+                                'x': {
+                                    'has_cursor': True
                                 }
-                            ]
+                            }
                         }
-                    ]
+                    }
                 }
             })
         tree.key_down()
@@ -952,24 +947,20 @@ class TreeTest(unittest.TestCase):
             tree.to_json(),
             {
                 'root': {
-                    'name': None,
                     'is_expanded': True,
-                    'fields': [
-                        {
-                            'name': 'a',
+                    'fields': {
+                        'a': {
                             'is_expanded': True,
-                            'fields': [
-                                {
-                                    'name': 'y',
+                            'fields': {
+                                'y': {
                                     'is_selected': True
                                 }
-                            ]
+                            }
                         },
-                        {
+                        'b': {
                             'has_cursor': True,
-                            'name': 'b',
                             'is_expanded': True
                         }
-                    ]
+                    }
                 }
             })
