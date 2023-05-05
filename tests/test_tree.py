@@ -893,6 +893,7 @@ class TreeTest(unittest.TestCase):
                         'X a\n'
                         '▶ b')
         data = tree.to_json()
+        data_schema = data.pop('schema')
         self.assertEqual(
             data,
             {
@@ -909,6 +910,7 @@ class TreeTest(unittest.TestCase):
                 }
             })
         tree = load_tree(schema)
+        data['schema'] = data_schema
         tree.from_json(data)
         self.assertDraw(tree,
                         'X a\n'
@@ -922,6 +924,7 @@ class TreeTest(unittest.TestCase):
                         '  □ z\n'
                         '▶ b')
         data = tree.to_json()
+        data_schema = data.pop('schema')
         self.assertEqual(
             data,
             {
@@ -944,6 +947,7 @@ class TreeTest(unittest.TestCase):
                 }
             })
         tree = load_tree(schema)
+        data['schema'] = data_schema
         tree.from_json(data)
         self.assertDraw(tree,
                         '▼ a\n'
@@ -966,6 +970,7 @@ class TreeTest(unittest.TestCase):
                         '  □ y\n'
                         '  □ z')
         data = tree.to_json()
+        data_schema = data.pop('schema')
         self.assertEqual(
             data,
             {
@@ -993,6 +998,7 @@ class TreeTest(unittest.TestCase):
                 }
             })
         tree = load_tree(schema)
+        data['schema'] = data_schema
         tree.from_json(data)
         self.assertDraw(tree,
                         '▼ a\n'

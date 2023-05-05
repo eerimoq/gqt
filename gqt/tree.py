@@ -1409,7 +1409,8 @@ class MoveSelectedState:
 
 class Tree:
 
-    def __init__(self, root, state):
+    def __init__(self, schema, root, state):
+        self._schema = schema
         self._root = root
         self._state = state
         self._cursor = root.fields[0]
@@ -1529,10 +1530,12 @@ class Tree:
     def to_json(self):
         return {
             'version': 1,
+            'schema': self._schema,
             'root': self._root.to_json(self._cursor)
         }
 
     def from_json(self, data):
+        self._schema = data['schema']
         self._cursor = self._root.from_json(data['root'])
 
     def _move_cursor_to_selected_node_or_none(self):
@@ -1613,4 +1616,11 @@ def load_tree_from_schema(schema):
                   True)
     tree.fields[0].cursor = True
 
-    return Tree(tree, state)
+    return Tree(schema, tree, state)
+
+
+def load_tree_from_json(data):
+    tree = load_tree_from_schema(data['schema'])
+    tree.from_json(data)
+
+    return tree
