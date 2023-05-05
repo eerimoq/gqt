@@ -29,7 +29,7 @@ def make_query_pickle_path(endpoint, query_name):
 
 def make_query_json_path(endpoint, query_name):
     name = make_endpoint_cache_name(endpoint)
-    endpoint_path = CACHE_PATH / name
+    endpoint_path = CACHE_PATH / 'json' / name
 
     if query_name is None:
         return endpoint_path / 'query.json'
@@ -61,13 +61,19 @@ def clear_cache():
 
 
 def get_cached_queries():
-    cache_path = CACHE_PATH / __version__
+    if is_experimental():
+        cache_path = CACHE_PATH / 'json'
+        suffix = 'json'
+    else:
+        cache_path = CACHE_PATH / __version__
+        suffix = 'pickle'
+
     items = []
 
     for path in cache_path.glob('*'):
         endpoint = b64decode(path.name).decode()
 
-        if (path / 'query.pickle').exists():
+        if (path / f'query.{suffix}').exists():
             items.append((endpoint, '<default>'))
 
         for query_name_path in path.glob('query_names/*'):
