@@ -1108,6 +1108,36 @@ class ListItem(Node):
 
         return value
 
+    def to_json(self, cursor):
+        data = {}
+
+        if cursor is self:
+            data['has_cursor'] = True
+
+        if self.is_expanded:
+            data['is_expanded'] = True
+
+        data['type'] = 'list_item'
+
+        return data
+
+    def from_json(self, data):
+        if data['type'] != 'list_item':
+            return None
+
+        self.is_expanded = data.get('is_expanded', False)
+
+        if self.is_expanded:
+            self.child = self.item
+            self.parent.item_selected(self)
+
+        if data.get('has_cursor', False):
+            cursor = self
+        else:
+            cursor = None
+
+        return cursor
+
 
 class ListArgument(Node):
 
@@ -1277,6 +1307,55 @@ class ListArgument(Node):
             return f'[{", ".join(items)}]'
         else:
             return None
+
+    def to_json(self, cursor):
+        data = {}
+
+        if cursor is self:
+            data['has_cursor'] = True
+
+        if self.value:
+            data['value'] = self.value
+
+        if self.pos != 0:
+            data['pos'] = self.pos
+
+        if self.is_variable:
+            data['is_variable'] = True
+
+        if self.symbol == '■':
+            data['is_selected'] = True
+
+        data['items'] = [
+            item.to_json(cursor)
+            for item in self.items
+        ]
+
+        if not data:
+            return None
+
+        data['type'] = 'list_argument'
+
+        return data
+
+    def from_json(self, data):
+        if data['type'] != 'list_argument':
+            return None
+
+        if data.get('is_selected', False):
+            self.symbol = '■'
+            self.child = self.items[0]
+
+        self.is_variable = data.get('is_variable', False)
+        self.pos = data.get('pos', 0)
+        self.value = data.get('value', '')
+
+        if data.get('has_cursor', False):
+            cursor = self
+        else:
+            cursor = None
+
+        return cursor
 
 
 class State:
