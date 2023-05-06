@@ -454,7 +454,7 @@ class TreeTest(unittest.TestCase):
                         '    ▶ ...\n'
                         '■ b')
         tree.key_up()
-        tree.key('$')
+        tree.key('v')
         self.assertDraw(tree,
                         '■ a\n'
                         '  $ b: X\n'
@@ -1844,7 +1844,7 @@ class TreeTest(unittest.TestCase):
         tree = load_tree(schema)
         tree.from_json(data)
         tree.key_up()
-        tree.key('$')
+        tree.key('v')
         self.assertDraw(tree,
                         '■ a\n'
                         '  $ b: X\n'

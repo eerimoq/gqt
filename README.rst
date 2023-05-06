@@ -143,8 +143,8 @@ List cached queries:
    https://mys-lang.org/graphql  time
    https://mys-lang.org/graphql  stats
 
-Make arguments variables by pressing ``v`` or ``$`` and give them as
-``-v <name>=<value>`` on the command line:
+Make arguments variables by pressing ``v`` and give them as ``-v
+<name>=<value>`` on the command line:
 
 .. code-block::
 

@@ -574,7 +574,7 @@ class ScalarArgument(Node):
                                         KEY_BINDINGS.get(key, key))
 
             return True
-        elif key in 'v$':
+        elif key == 'v':
             self.is_variable = not self.is_variable
 
             return True
@@ -759,7 +759,7 @@ class EnumArgument(Node):
                                         KEY_BINDINGS.get(key, key))
 
             return True
-        elif key in 'v$':
+        elif key == 'v':
             self.is_variable = not self.is_variable
 
             return True
@@ -935,9 +935,9 @@ class InputArgument(Node):
                                             KEY_BINDINGS.get(key, key))
 
                 return True
-            elif key in 'v$':
+            elif key == 'v':
                 return self.key_variable()
-        elif key in 'v$':
+        elif key == 'v':
             return self.key_variable()
 
         return False
@@ -1315,9 +1315,9 @@ class ListArgument(Node):
                                             KEY_BINDINGS.get(key, key))
 
                 return True
-            elif key in 'v$':
+            elif key == 'v':
                 return self.key_variable()
-        elif key in 'v$':
+        elif key == 'v':
             return self.key_variable()
 
         return False

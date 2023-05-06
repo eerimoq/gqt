@@ -22,7 +22,7 @@ Move:              <Left>, <Right>, <Up> and <Down>
                    <Meta-<> and <Meta->>
                    <Tab>
 Select:            <Space>
-Variable:          v or $
+Variable:          v
 {compact}\
 Delete list item:  <Backspace>
 Execute:           <Enter>
