@@ -155,10 +155,12 @@ class Node:
         return False
 
     def to_json(self, cursor):
-        raise NotImplementedError()
+        raise NotImplementedError(
+            f'to_json() is not implemented for {type(self)}.')
 
     def from_json(self, data):
-        raise NotImplementedError()
+        raise NotImplementedError(
+            f'from_json() is not implemented for {type(self)}.')
 
 
 class Object(Node):
@@ -793,6 +795,49 @@ class EnumArgument(Node):
 
     def is_selected(self):
         return self.is_variable or self.symbol in '■●'
+
+    def to_json(self, cursor):
+        data = {}
+
+        if cursor is self:
+            data['has_cursor'] = True
+
+        if self.value:
+            data['value'] = self.value
+
+        if self.pos != 0:
+            data['pos'] = self.pos
+
+        if self.is_variable:
+            data['is_variable'] = True
+
+        if self.symbol == '■':
+            data['is_selected'] = True
+
+        if not data:
+            return None
+
+        data['type'] = 'enum_argument'
+
+        return data
+
+    def from_json(self, data):
+        if data['type'] != 'enum_argument':
+            return None
+
+        if data.get('is_selected', False):
+            self.symbol = '■'
+
+        self.is_variable = data.get('is_variable', False)
+        self.pos = data.get('pos', 0)
+        self.value = data.get('value', '')
+
+        if data.get('has_cursor', False):
+            cursor = self
+        else:
+            cursor = None
+
+        return cursor
 
 
 class InputArgument(Node):

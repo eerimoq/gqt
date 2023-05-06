@@ -2080,3 +2080,153 @@ class TreeTest(unittest.TestCase):
             })
         tree = load_tree(schema)
         tree.from_json(data)
+
+    def test_enum_argument_to_from_json(self):
+        schema = ('type Query {'
+                  '  a(x: Foo): String'
+                  '}'
+                  'enum Foo {'
+                  '  A'
+                  '  B'
+                  '  C'
+                  '}')
+        tree = load_tree(schema)
+        tree.select()
+        tree.key_down()
+        self.assertEqual(tree.cursor_type(), 'Foo')
+        tree.select()
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  X x:  (A, B, C)')
+        data = tree.to_json()
+        self.assertEqualJson(
+            data,
+            {
+                'version': 1,
+                'root': {
+                    'fields': {
+                        'a': {
+                            'is_selected': True,
+                            'fields': {
+                                'x': {
+                                    'has_cursor': True,
+                                    'is_selected': True,
+                                    'type': 'enum_argument'
+                                }
+                            },
+                            'type': 'leaf'
+                        }
+                    },
+                    'is_expanded': True,
+                    'type': 'object'
+                }
+            })
+        tree = load_tree(schema)
+        tree.from_json(data)
+
+        with self.assertRaises(Exception) as cm:
+            tree.query()
+
+        self.assertEqual(str(cm.exception), "Missing enum value.")
+        tree.key('\t')
+        tree.key('D')
+        data = tree.to_json()
+        self.assertEqualJson(
+            data,
+            {
+                'version': 1,
+                'root': {
+                    'fields': {
+                        'a': {
+                            'is_selected': True,
+                            'fields': {
+                                'x': {
+                                    'has_cursor': True,
+                                    'is_selected': True,
+                                    'value': 'D',
+                                    'pos': 1,
+                                    'type': 'enum_argument'
+                                }
+                            },
+                            'type': 'leaf'
+                        }
+                    },
+                    'is_expanded': True,
+                    'type': 'object'
+                },
+                'cursor_at_input_field': True
+            })
+        tree = load_tree(schema)
+        tree.from_json(data)
+
+        with self.assertRaises(Exception) as cm:
+            tree.query()
+
+        self.assertEqual(str(cm.exception), "Invalid enum value 'D'.")
+        tree.key('\x08')
+        tree.key('C')
+        tree.key_left()
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  ■ x: X')
+        data = tree.to_json()
+        self.assertEqualJson(
+            data,
+            {
+                'version': 1,
+                'root': {
+                    'fields': {
+                        'a': {
+                            'is_selected': True,
+                            'fields': {
+                                'x': {
+                                    'has_cursor': True,
+                                    'is_selected': True,
+                                    'value': 'C',
+                                    'type': 'enum_argument'
+                                }
+                            },
+                            'type': 'leaf'
+                        }
+                    },
+                    'is_expanded': True,
+                    'type': 'object'
+                },
+                'cursor_at_input_field': True
+            })
+        tree = load_tree(schema)
+        tree.from_json(data)
+        tree.key_right()
+        self.assertEqual(tree.query(), 'query Query {a(x:C)}')
+        tree.key('\t')
+        tree.select()
+        self.assertEqual(tree.query(), 'query Query {a}')
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  X x: C')
+        data = tree.to_json()
+        self.assertEqualJson(
+            data,
+            {
+                'version': 1,
+                'root': {
+                    'fields': {
+                        'a': {
+                            'is_selected': True,
+                            'fields': {
+                                'x': {
+                                    'has_cursor': True,
+                                    'value': 'C',
+                                    'pos': 1,
+                                    'type': 'enum_argument'
+                                }
+                            },
+                            'type': 'leaf'
+                        }
+                    },
+                    'is_expanded': True,
+                    'type': 'object'
+                }
+            })
+        tree = load_tree(schema)
+        tree.from_json(data)
