@@ -658,7 +658,6 @@ class ScalarArgument(Node):
 
         if data.get('is_selected', False):
             self.symbol = '■'
-            self.child = self.fields[0]
 
         self.is_variable = data.get('is_variable', False)
         self.pos = data.get('pos', 0)
@@ -1649,11 +1648,16 @@ class Tree:
         self._cursor = self._find_last(self._root.fields[-1])
 
     def to_json(self):
-        return {
+        data = {
             'version': 1,
             'schema': self._schema,
             'root': self._root.to_json(self._cursor)
         }
+
+        if self._state.cursor_at_input_field:
+            data['cursor_at_input_field'] = self._state.cursor_at_input_field
+
+        return data
 
     def from_json(self, data):
         version = data['version']
@@ -1663,6 +1667,7 @@ class Tree:
 
         self._schema = data['schema']
         self._cursor = self._root.from_json(data['root'])
+        self._state.cursor_at_input_field = data.get('cursor_at_input_field', False)
 
     def _move_cursor_to_selected_node_or_none(self):
         state = MoveSelectedState()
