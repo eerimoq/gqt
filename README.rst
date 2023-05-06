@@ -257,27 +257,6 @@ Ideas
 
 - Keep valid parts of any existing query when reloading the schema.
 
-- Cache across updates.
-
-  - Save introspection response.
-
-  - Save last query.
-
-  - Save cursor and possibly other state.
-
-  .. code-block::
-
-     -- ~/.cache/gqt/cache/generic/
-        +-- <endpoint 1>
-            +-- schema.json
-            +-- query.graphql
-            +-- state.json
-            +-- query_names/
-                +-- stats/
-                    +-- schema.json
-                    +-- query.graphql
-                    +-- state.json
-
 - Optionally give schema path on command line. For endpoints that does
   not support schema introspection.
 
