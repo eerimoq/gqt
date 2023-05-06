@@ -1047,7 +1047,7 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'x': {
                                     'type': 'input_argument',
                                     'has_cursor': True
@@ -1077,7 +1077,7 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'x': {
                                     'type': 'input_argument',
                                     'has_cursor': True,
@@ -1118,14 +1118,14 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'x': {
                                     'type': 'input_argument',
                                     'is_selected': True,
-                                    'fields': {
+                                    'arguments': {
                                         'y': {
                                             'type': 'input_argument',
-                                            'fields': {
+                                            'arguments': {
                                                 'z': {
                                                     'type': 'scalar_argument',
                                                     'has_cursor': True,
@@ -1163,16 +1163,16 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'x': {
                                     'type': 'input_argument',
                                     'is_selected': True,
-                                    'fields': {
+                                    'arguments': {
                                         'y': {
                                             'type': 'input_argument',
                                             'has_cursor': True,
                                             'is_variable': True,
-                                            'fields': {
+                                            'arguments': {
                                                 'z': {
                                                     'type': 'scalar_argument',
                                                     'value': 'B',
@@ -1213,18 +1213,18 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'x': {
                                     'type': 'input_argument',
                                     'is_selected': True,
-                                    'fields': {
+                                    'arguments': {
                                         'y': {
                                             'type': 'input_argument',
                                             'value': 'va',
                                             'pos': 2,
                                             'has_cursor': True,
                                             'is_variable': True,
-                                            'fields': {
+                                            'arguments': {
                                                 'z': {
                                                     'type': 'scalar_argument',
                                                     'value': 'B',
@@ -1260,18 +1260,18 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'x': {
                                     'type': 'input_argument',
                                     'is_selected': True,
-                                    'fields': {
+                                    'arguments': {
                                         'y': {
                                             'type': 'input_argument',
                                             'value': 'va',
                                             'pos': 2,
                                             'has_cursor': True,
                                             'is_variable': True,
-                                            'fields': {
+                                            'arguments': {
                                                 'z': {
                                                     'type': 'scalar_argument',
                                                     'value': 'B',
@@ -1308,17 +1308,17 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'x': {
                                     'type': 'input_argument',
                                     'is_selected': True,
-                                    'fields': {
+                                    'arguments': {
                                         'y': {
                                             'type': 'input_argument',
                                             'value': 'va',
                                             'pos': 2,
                                             'has_cursor': True,
-                                            'fields': {
+                                            'arguments': {
                                                 'z': {
                                                     'type': 'scalar_argument',
                                                     'value': 'B',
@@ -1359,7 +1359,7 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'b': {
                                     'has_cursor': True,
                                     'type': 'list_argument',
@@ -1397,7 +1397,7 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'b': {
                                     'is_selected': True,
                                     'type': 'list_argument',
@@ -1437,7 +1437,7 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'b': {
                                     'is_selected': True,
                                     'type': 'list_argument',
@@ -1483,7 +1483,7 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'b': {
                                     'is_selected': True,
                                     'type': 'list_argument',
@@ -1536,7 +1536,7 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'b': {
                                     'is_selected': True,
                                     'type': 'list_argument',
@@ -1595,7 +1595,7 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'b': {
                                     'is_selected': True,
                                     'type': 'list_argument',
@@ -1657,7 +1657,7 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'b': {
                                     'is_selected': True,
                                     'type': 'list_argument',
@@ -1717,7 +1717,7 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'b': {
                                     'is_selected': True,
                                     'type': 'list_argument',
@@ -1769,7 +1769,7 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'b': {
                                     'is_selected': True,
                                     'type': 'list_argument',
@@ -1816,7 +1816,7 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'b': {
                                     'is_selected': True,
                                     'type': 'list_argument',
@@ -1861,7 +1861,7 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'b': {
                                     'has_cursor': True,
                                     'is_selected': True,
@@ -1908,7 +1908,7 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'b': {
                                     'is_selected': True,
                                     'is_variable': True,
@@ -1960,7 +1960,7 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'b': {
                                     'is_selected': True,
                                     'type': 'list_argument',
@@ -2005,7 +2005,7 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'b': {
                                     'is_selected': True,
                                     'type': 'list_argument',
@@ -2055,7 +2055,7 @@ class TreeTest(unittest.TestCase):
                         'a': {
                             'type': 'leaf',
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'b': {
                                     'is_selected': True,
                                     'type': 'list_argument',
@@ -2107,7 +2107,7 @@ class TreeTest(unittest.TestCase):
                     'fields': {
                         'a': {
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'x': {
                                     'has_cursor': True,
                                     'is_selected': True,
@@ -2139,7 +2139,7 @@ class TreeTest(unittest.TestCase):
                     'fields': {
                         'a': {
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'x': {
                                     'has_cursor': True,
                                     'is_selected': True,
@@ -2178,7 +2178,7 @@ class TreeTest(unittest.TestCase):
                     'fields': {
                         'a': {
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'x': {
                                     'has_cursor': True,
                                     'is_selected': True,
@@ -2213,7 +2213,7 @@ class TreeTest(unittest.TestCase):
                     'fields': {
                         'a': {
                             'is_selected': True,
-                            'fields': {
+                            'arguments': {
                                 'x': {
                                     'has_cursor': True,
                                     'value': 'C',

@@ -342,11 +342,7 @@ class Object(Node):
             data['has_cursor'] = True
 
         if self.fields.has_fields():
-            fields = self.fields.to_json(cursor)
-
-            if fields:
-                data['fields'] = fields
-
+            self.fields.to_json(data, cursor)
             data['is_expanded'] = self.is_expanded
 
         if not data:
@@ -370,7 +366,7 @@ class Object(Node):
         else:
             cursor = None
 
-        return self.fields.from_json(data.get('fields', {}), cursor)
+        return self.fields.from_json(data, cursor)
 
 
 class Leaf(Node):
@@ -466,10 +462,7 @@ class Leaf(Node):
             data['is_selected'] = True
 
         if self.fields is not None and self.fields.has_fields():
-            fields = self.fields.to_json(cursor)
-
-            if fields:
-                data['fields'] = fields
+            self.fields.to_json(data, cursor)
 
         if not data:
             return None
@@ -490,7 +483,7 @@ class Leaf(Node):
             cursor = None
 
         if self.fields is not None:
-            cursor = self.fields.from_json(data.get('fields', {}), cursor)
+            cursor = self.fields.from_json(data, cursor)
 
             if self._is_selected:
                 self.child = self.fields[0]
@@ -1003,10 +996,7 @@ class InputArgument(Node):
             data['is_selected'] = True
 
         if self.fields.has_fields():
-            fields = self.fields.to_json(cursor)
-
-            if fields:
-                data['fields'] = fields
+            self.fields.to_json(data, cursor)
 
         if not data:
             return None
@@ -1032,7 +1022,7 @@ class InputArgument(Node):
         else:
             cursor = None
 
-        return self.fields.from_json(data.get('fields', {}), cursor)
+        return self.fields.from_json(data, cursor)
 
 #
 #     def is_selected(self):
@@ -1634,8 +1624,13 @@ class ObjectFields:
     def index(self, item):
         return self.fields().index(item)
 
-    def get(self, name):
-        for field in self.fields():
+    def get_argument(self, name):
+        for field in self.fields()[:len(self._arguments_info)]:
+            if field.name == name:
+                return field
+
+    def get_field(self, name):
+        for field in self.fields()[len(self._arguments_info):]:
             if field.name == name:
                 return field
 
@@ -1645,20 +1640,43 @@ class ObjectFields:
     def has_fields(self):
         return self._all_fields is not None
 
-    def to_json(self, cursor):
+    def to_json(self, data, cursor):
+        arguments = {}
         fields = {}
 
-        for field in self.fields():
+        for i, field in enumerate(self.fields()):
             field_data = field.to_json(cursor)
 
             if field_data is not None:
-                fields[field.name] = field_data
+                if i < len(self._arguments_info):
+                    arguments[field.name] = field_data
+                else:
+                    fields[field.name] = field_data
 
-        return fields
+        if arguments:
+            data['arguments'] = arguments
+
+        if fields:
+            data['fields'] = fields
 
     def from_json(self, data, cursor):
-        for field_name, field_data in data.items():
-            field = self.get(field_name)
+        arguments = data.get('arguments', {})
+
+        for argument_name, argument_data in arguments.items():
+            argument = self.get_argument(argument_name)
+
+            if argument is None:
+                continue
+
+            argument_cursor = argument.from_json(argument_data)
+
+            if argument_cursor is not None:
+                cursor = argument_cursor
+
+        fields = data.get('fields', {})
+
+        for field_name, field_data in fields.items():
+            field = self.get_field(field_name)
 
             if field is None:
                 continue
