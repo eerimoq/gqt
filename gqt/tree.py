@@ -482,9 +482,6 @@ class Leaf(Node):
 
         self._is_selected = data.get('is_selected', False)
 
-        if self._is_selected:
-           self.child = self.fields[0]
-
         if data.get('has_cursor', False):
             cursor = self
         else:
@@ -492,6 +489,9 @@ class Leaf(Node):
 
         if self.fields is not None:
             cursor = self.fields.from_json(data.get('fields', {}), cursor)
+
+            if self._is_selected:
+                self.child = self.fields[0]
 
         return cursor
 
@@ -1372,13 +1372,15 @@ class ListArgument(Node):
         if item_cursor is not None:
             cursor = item_cursor
 
-        if data.get('is_selected', False):
-            self.symbol = '■'
-            self.child = self.items[0]
-
         self.is_variable = data.get('is_variable', False)
         self.pos = data.get('pos', 0)
         self.value = data.get('value', '')
+
+        if data.get('is_selected', False):
+            self.symbol = '■'
+
+            if not self.is_variable:
+                self.child = self.items[0]
 
         return cursor
 
