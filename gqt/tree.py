@@ -1116,6 +1116,11 @@ class ListItem(Node):
         if self.is_expanded:
             data['is_expanded'] = True
 
+        item = self.item.to_json(cursor)
+
+        if item is not None:
+            data['item'] = item
+
         data['type'] = 'list_item'
 
         return data
@@ -1124,16 +1129,23 @@ class ListItem(Node):
         if data['type'] != 'list_item':
             return None
 
-        self.is_expanded = data.get('is_expanded', False)
-
-        if self.is_expanded:
-            self.child = self.item
-            self.parent.item_selected(self)
-
         if data.get('has_cursor', False):
             cursor = self
         else:
             cursor = None
+
+        self.is_expanded = data.get('is_expanded', False)
+
+        if self.is_expanded:
+            self.child = self.item
+
+        item = data.get('item')
+
+        if item is not None:
+            item_cursor = self.item.from_json(item)
+
+            if item_cursor is not None:
+                cursor = item_cursor
 
         return cursor
 
@@ -1341,6 +1353,25 @@ class ListArgument(Node):
         if data['type'] != 'list_argument':
             return None
 
+        if data.get('has_cursor', False):
+            cursor = self
+        else:
+            cursor = None
+
+        for item in data['items'][:-1]:
+            item_cursor = self.items[-1].from_json(item)
+
+            if item_cursor is not None:
+                cursor = item_cursor
+
+            self.append_item()
+
+        item = data['items'][-1]
+        item_cursor = self.items[-1].from_json(item)
+
+        if item_cursor is not None:
+            cursor = item_cursor
+
         if data.get('is_selected', False):
             self.symbol = '■'
             self.child = self.items[0]
@@ -1348,11 +1379,6 @@ class ListArgument(Node):
         self.is_variable = data.get('is_variable', False)
         self.pos = data.get('pos', 0)
         self.value = data.get('value', '')
-
-        if data.get('has_cursor', False):
-            cursor = self
-        else:
-            cursor = None
 
         return cursor
 

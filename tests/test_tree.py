@@ -1413,8 +1413,8 @@ class TreeTest(unittest.TestCase):
                     }
                 }
             })
-        # tree = load_tree(schema)
-        # tree.from_json(data)
+        tree = load_tree(schema)
+        tree.from_json(data)
         self.assertEqual(tree.cursor_type(), 'String')
         self.assertEqual(tree.query(), 'query Query {a(b:[])}')
         tree.key_right()
@@ -1457,6 +1457,8 @@ class TreeTest(unittest.TestCase):
                     }
                 }
             })
+        tree = load_tree(schema)
+        tree.from_json(data)
         self.assertEqual(tree.query(), 'query Query {a(b:[null])}')
         tree.key_down()
         tree.select()
@@ -1488,7 +1490,14 @@ class TreeTest(unittest.TestCase):
                                     'items': [
                                         {
                                             'type': 'list_item',
-                                            'is_expanded': True
+                                            'is_expanded': True,
+                                            'item': {
+                                                'has_cursor': True,
+                                                'value': 'g',
+                                                'pos': 1,
+                                                'is_selected': True,
+                                                'type': 'scalar_argument'
+                                            }
                                         },
                                         {
                                             'type': 'list_item'
@@ -1501,6 +1510,8 @@ class TreeTest(unittest.TestCase):
                 },
                 'cursor_at_input_field': True
             })
+        tree = load_tree(schema)
+        tree.from_json(data)
         self.assertEqual(tree.query(), 'query Query {a(b:["g"])}')
         tree.key_down()
         tree.key_right()
