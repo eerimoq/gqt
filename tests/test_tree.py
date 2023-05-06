@@ -1353,6 +1353,8 @@ class TreeTest(unittest.TestCase):
             {
                 'version': 1,
                 'root': {
+                    'is_expanded': True,
+                    'type': 'object',
                     'fields': {
                         'a': {
                             'type': 'leaf',
@@ -1369,13 +1371,11 @@ class TreeTest(unittest.TestCase):
                                 }
                             }
                         }
-                    },
-                    'is_expanded': True,
-                    'type': 'object'
+                    }
                 }
             })
-        # tree = load_tree(schema)
-        # tree.from_json(data)
+        tree = load_tree(schema)
+        tree.from_json(data)
         self.assertEqual(tree.query(), 'query Query {a}')
         self.assertEqual(tree.cursor_type(), '[String]')
         tree.select()
@@ -1391,6 +1391,8 @@ class TreeTest(unittest.TestCase):
             {
                 'version': 1,
                 'root': {
+                    'is_expanded': True,
+                    'type': 'object',
                     'fields': {
                         'a': {
                             'type': 'leaf',
@@ -1408,9 +1410,7 @@ class TreeTest(unittest.TestCase):
                                 }
                             }
                         }
-                    },
-                    'is_expanded': True,
-                    'type': 'object'
+                    }
                 }
             })
         # tree = load_tree(schema)
@@ -1431,6 +1431,8 @@ class TreeTest(unittest.TestCase):
             {
                 'version': 1,
                 'root': {
+                    'is_expanded': True,
+                    'type': 'object',
                     'fields': {
                         'a': {
                             'type': 'leaf',
@@ -1452,9 +1454,7 @@ class TreeTest(unittest.TestCase):
                                 }
                             }
                         }
-                    },
-                    'is_expanded': True,
-                    'type': 'object'
+                    }
                 }
             })
         self.assertEqual(tree.query(), 'query Query {a(b:[null])}')
@@ -1475,6 +1475,8 @@ class TreeTest(unittest.TestCase):
             {
                 'version': 1,
                 'root': {
+                    'is_expanded': True,
+                    'type': 'object',
                     'fields': {
                         'a': {
                             'type': 'leaf',
@@ -1495,9 +1497,7 @@ class TreeTest(unittest.TestCase):
                                 }
                             }
                         }
-                    },
-                    'is_expanded': True,
-                    'type': 'object'
+                    }
                 },
                 'cursor_at_input_field': True
             })

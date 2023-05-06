@@ -455,18 +455,9 @@ class Leaf(Node):
         return self._is_selected
 
     def to_json(self, cursor):
-        has_cursor = (cursor is self)
+        data = {}
 
-        if (not has_cursor
-            and not self._is_selected
-            and not (self.fields is not None and self.fields.has_fields())):
-            return None
-
-        data = {
-            'type': 'leaf'
-        }
-
-        if has_cursor:
+        if cursor is self:
             data['has_cursor'] = True
 
         if self._is_selected:
@@ -478,6 +469,11 @@ class Leaf(Node):
             if fields:
                 data['fields'] = fields
 
+        if not data:
+            return None
+
+        data['type'] = 'leaf'
+
         return data
 
     def from_json(self, data):
@@ -485,6 +481,9 @@ class Leaf(Node):
             return None
 
         self._is_selected = data.get('is_selected', False)
+
+        if self._is_selected:
+           self.child = self.fields[0]
 
         if data.get('has_cursor', False):
             cursor = self
