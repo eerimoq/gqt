@@ -216,8 +216,7 @@ class QueryBuilder:
         tree = load_tree_from_schema(schema)
 
         if self.tree is not None:
-            if is_experimental():
-                tree.from_json(self.tree.to_json())
+            tree.from_json(self.tree.to_json())
 
         self.tree = tree
 
