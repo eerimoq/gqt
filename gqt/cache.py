@@ -6,7 +6,6 @@ from base64 import b64encode
 from xdg import XDG_CACHE_HOME
 
 from .tree import load_tree_from_json
-from .version import __version__
 
 CACHE_PATH = XDG_CACHE_HOME / 'gqt' / 'cache'
 
