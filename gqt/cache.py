@@ -18,10 +18,10 @@ def make_query_json_path(endpoint, query_name):
     name = make_endpoint_cache_name(endpoint)
     endpoint_path = CACHE_PATH / 'json' / name
 
-    if query_name is None:
-        return endpoint_path / 'query.json'
-    else:
-        return endpoint_path / 'query_names' / query_name / 'query.json'
+    if query_name is not None:
+        endpoint_path = endpoint_path / 'query_names' / query_name
+
+    return endpoint_path / 'query.json'
 
 
 def read_tree_from_cache(endpoint, query_name):
