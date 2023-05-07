@@ -182,6 +182,7 @@ class Object(Node):
         self.description = description
         self.fields = fields
         self.state = state
+        self.is_deprecated = is_deprecated
 
         if not is_root:
             self.fields.parent = self
@@ -190,12 +191,18 @@ class Object(Node):
         self.is_union = is_union
         self.number_of_query_fields = number_of_query_fields
         self.is_expanded = is_root
-        self.name_attrs = make_field_name_attrs(is_deprecated)
+        self._name_attrs = None
 
         if number_of_implementors == 0:
             self.implementors_offset = None
         else:
             self.implementors_offset = (len(fields) - number_of_implementors)
+
+    def name_attrs(self):
+        if self._name_attrs is None:
+            self._name_attrs = make_field_name_attrs(self.is_deprecated)
+
+        return self._name_attrs
 
     def draw(self, stdscr, y, x, cursor, is_implementor=False):
         if cursor.node is self:
@@ -220,7 +227,7 @@ class Object(Node):
                                is_field_implementor(i, self.implementors_offset))
         elif self.is_expanded:
             addstr(stdscr, y, x, '▼', color)
-            addstr(stdscr, y, x + 2, self.name, self.name_attrs)
+            addstr(stdscr, y, x + 2, self.name, self.name_attrs())
             y += 1
 
             for i, field in enumerate(self.fields):
@@ -231,7 +238,7 @@ class Object(Node):
                                is_field_implementor(i, self.implementors_offset))
         else:
             addstr(stdscr, y, x, '▶', color)
-            addstr(stdscr, y, x + 2, self.name, self.name_attrs)
+            addstr(stdscr, y, x + 2, self.name, self.name_attrs())
             y += 1
 
         return y
@@ -385,10 +392,17 @@ class Leaf(Node):
         self.description = description
         self.fields = fields
         self.state = state
-        self.name_attrs = make_field_name_attrs(is_deprecated)
+        self.is_deprecated = is_deprecated
+        self._name_attrs = None
 
         if self.fields is not None:
             self.fields.parent = self
+
+    def name_attrs(self):
+        if self._name_attrs is None:
+            self._name_attrs = make_field_name_attrs(self.is_deprecated)
+
+        return self._name_attrs
 
     def draw(self, stdscr, y, x, cursor, is_implementor=False):
         if self.fields is None:
@@ -401,7 +415,7 @@ class Leaf(Node):
             cursor.y = y
             cursor.x = x
 
-        addstr(stdscr, y, x + 2, self.name, self.name_attrs)
+        addstr(stdscr, y, x + 2, self.name, self.name_attrs())
 
         if self._is_selected:
             addstr(stdscr, y, x, '■', curses.color_pair(1))
@@ -425,7 +439,7 @@ class Leaf(Node):
         else:
             addstr(stdscr, y, x, '□', curses.color_pair(1))
 
-        addstr(stdscr, y, x + 2, self.name, self.name_attrs)
+        addstr(stdscr, y, x + 2, self.name, self.name_attrs())
 
         return y + 1
 
