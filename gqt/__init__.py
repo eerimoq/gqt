@@ -181,7 +181,7 @@ def main():
     parser.add_argument('-l', '--list-cached-queries',
                         action='store_true',
                         help='List all cached queries and exit.')
-    parser.add_argument('-C', '--clear-cache',
+    parser.add_argument('--clear-cache',
                         action='store_true',
                         help='Clear the cache and exit.')
     parser.add_argument('--no-verify',
