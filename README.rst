@@ -201,14 +201,6 @@ Enpoint option and bearer token in HTTP auth header:
 
    gqt -e https://api.github.com/graphql -H "Authorization: bearer ghp_<value>"
 
-Known issues
-------------
-
-- There is one query cache per ``gqt`` version. Would be nice to keep
-  the cache after upgrading ``gqt``.
-
-- The query is cleared when reloading the schema.
-
 Ideas
 -----
 
