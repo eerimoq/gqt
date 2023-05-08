@@ -1,7 +1,7 @@
 import json
 import shutil
-from base64 import b64decode
-from base64 import b64encode
+from urllib.parse import quote_plus
+from urllib.parse import unquote_plus
 
 from xdg import XDG_CACHE_HOME
 
@@ -11,12 +11,12 @@ CACHE_PATH = XDG_CACHE_HOME / 'gqt' / 'cache'
 
 
 def make_endpoint_cache_name(endpoint):
-    return b64encode(endpoint.encode('utf-8')).decode('utf-8')
+    return quote_plus(endpoint)
 
 
 def make_query_json_path(endpoint, query_name):
     name = make_endpoint_cache_name(endpoint)
-    endpoint_path = CACHE_PATH / 'json' / name
+    endpoint_path = CACHE_PATH / name
 
     if query_name is not None:
         endpoint_path = endpoint_path / 'query_names' / query_name
@@ -40,11 +40,10 @@ def clear_cache():
 
 
 def get_cached_queries():
-    cache_path = CACHE_PATH / 'json'
     items = []
 
-    for path in cache_path.glob('*'):
-        endpoint = b64decode(path.name).decode()
+    for path in CACHE_PATH.glob('*'):
+        endpoint = unquote_plus(path.name)
 
         if (path / 'query.json').exists():
             items.append((endpoint, '<default>'))

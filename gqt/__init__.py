@@ -25,6 +25,7 @@ from .query_builder import QuitError
 from .query_builder import query_builder
 from .version import __version__
 
+
 def default_endpoint():
     return os.environ.get('GQT_ENDPOINT', 'https://mys-lang.org/graphql')
 
