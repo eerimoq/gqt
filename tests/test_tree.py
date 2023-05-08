@@ -2230,3 +2230,31 @@ class TreeTest(unittest.TestCase):
             })
         tree = load_tree(schema)
         tree.from_json(data)
+
+    def test_deprecated_to_from_json(self):
+        schema = ('type Query {'
+                  '  a: String @deprecated(reason: "None.")'
+                  '}')
+        tree = load_tree(schema)
+        self.assertDraw(tree,
+                        'X a')
+        data = tree.to_json()
+        self.assertEqualJson(
+            data,
+            {
+                'version': 1,
+                'root': {
+                    'fields': {
+                        'a': {
+                            'has_cursor': True,
+                            'type': 'leaf'
+                        }
+                    },
+                    'is_expanded': True,
+                    'type': 'object'
+                }
+            })
+        tree = load_tree(schema)
+        tree.from_json(data)
+        self.assertDraw(tree,
+                        'X a')
