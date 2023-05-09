@@ -10,13 +10,12 @@ from .tree import load_tree_from_json
 CACHE_PATH = XDG_CACHE_HOME / 'gqt' / 'cache'
 
 
-def make_endpoint_cache_name(endpoint):
-    return quote_plus(endpoint)
+def make_endpoint_path(endpoint):
+    return CACHE_PATH / quote_plus(endpoint)
 
 
 def make_query_json_path(endpoint, query_name):
-    name = make_endpoint_cache_name(endpoint)
-    endpoint_path = CACHE_PATH / name
+    endpoint_path = make_endpoint_path(endpoint)
 
     if query_name is not None:
         endpoint_path = endpoint_path / 'query_names' / query_name
@@ -24,15 +23,39 @@ def make_query_json_path(endpoint, query_name):
     return endpoint_path / 'query.json'
 
 
+def make_most_recent_query_name_path(endpoint, query_name):
+    return make_endpoint_path(endpoint) / 'most_recent_query_name.txt'
+
+
 def read_tree_from_cache(endpoint, query_name):
-    return load_tree_from_json(
-        json.loads(make_query_json_path(endpoint, query_name).read_text()))
+    path = make_query_json_path(endpoint, query_name)
+
+    if not path.exists():
+        most_recent_path = make_most_recent_query_name_path(endpoint, query_name)
+
+        if most_recent_path.exists():
+            query_name = most_recent_path.read_text() or None
+        else:
+            query_name = None
+
+        path = make_query_json_path(endpoint, query_name)
+
+    return load_tree_from_json(json.loads(path.read_text()))
 
 
 def write_tree_to_cache(tree, endpoint, query_name):
     path = make_query_json_path(endpoint, query_name)
     path.parent.mkdir(exist_ok=True, parents=True)
     path.write_text(json.dumps(tree.to_json()))
+    path = make_most_recent_query_name_path(endpoint, query_name)
+
+    if query_name is None:
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
+    else:
+        path.write_text(query_name)
 
 
 def clear_cache():
