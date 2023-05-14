@@ -1850,6 +1850,10 @@ class Tree:
 
         self._schema = data['schema']
         self._cursor = self._root.from_json(data['root'])
+
+        if self._cursor is None:
+            self._cursor = self._root.fields[0]
+
         self._state.cursor_at_input_field = data.get('cursor_at_input_field', False)
 
     def _move_cursor_to_selected_node_or_none(self):

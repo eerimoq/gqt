@@ -2258,3 +2258,174 @@ class TreeTest(unittest.TestCase):
         tree.from_json(data)
         self.assertDraw(tree,
                         'X a')
+
+    def test_modify_schema_to_from_json(self):
+        schema = ('type Query {'
+                  '  a: A!'
+                  '}'
+                  'type A {'
+                  '  x: String!'
+                  '}')
+        tree = load_tree(schema)
+        self.assertDraw(tree,
+                        'X a')
+        data = tree.to_json()
+        self.assertEqualJson(
+            data,
+            {
+                'version': 1,
+                'root': {
+                    'fields': {
+                        'a': {
+                            'has_cursor': True,
+                            'type': 'object'
+                        }
+                    },
+                    'is_expanded': True,
+                    'type': 'object'
+                }
+            })
+        schema = ('type Query {'
+                  '  a: A!'
+                  '  b: String'
+                  '}'
+                  'type A {'
+                  '  x: String!'
+                  '  y: String!'
+                  '}')
+        tree = load_tree(schema)
+        tree.from_json(data)
+        self.assertDraw(tree,
+                        'X a\n'
+                        '□ b')
+        data = tree.to_json()
+        self.assertEqualJson(
+            data,
+            {
+                'version': 1,
+                'root': {
+                    'fields': {
+                        'a': {
+                            'has_cursor': True,
+                            'type': 'object'
+                        }
+                    },
+                    'is_expanded': True,
+                    'type': 'object'
+                }
+            })
+        schema = ('type Query {'
+                  '  b: String'
+                  '}')
+        tree = load_tree(schema)
+        self.assertEqual(tree.cursor_type(), 'String')
+        tree.from_json(data)
+        self.assertEqual(tree.cursor_type(), 'String')
+        tree.select()
+        self.assertDraw(tree,
+                        'X b')
+        data = tree.to_json()
+        self.assertEqualJson(
+            data,
+            {
+                'version': 1,
+                'root': {
+                    'fields': {
+                        'b': {
+                            'has_cursor': True,
+                            'is_selected': True,
+                            'type': 'leaf'
+                        }
+                    },
+                    'is_expanded': True,
+                    'type': 'object'
+                }
+            })
+        schema = ('type Query {'
+                  '  b: Int!'
+                  '}')
+        tree = load_tree(schema)
+        tree.from_json(data)
+        self.assertDraw(tree,
+                        'X b')
+        data = tree.to_json()
+        self.assertEqualJson(
+            data,
+            {
+                'version': 1,
+                'root': {
+                    'fields': {
+                        'b': {
+                            'has_cursor': True,
+                            'is_selected': True,
+                            'type': 'leaf'
+                        }
+                    },
+                    'is_expanded': True,
+                    'type': 'object'
+                }
+            })
+        schema = ('type Query {'
+                  '  a: String'
+                  '  b: A!'
+                  '}'
+                  'type A {'
+                  '  x: Int'
+                  '  y: String!'
+                  '}')
+        tree = load_tree(schema)
+        tree.from_json(data)
+        self.assertDraw(tree,
+                        'X a\n'
+                        '▶ b')
+        tree.key_down()
+        tree.key_right()
+        tree.key_down()
+        tree.key_down()
+        tree.select()
+        data = tree.to_json()
+        self.assertEqualJson(
+            data,
+            {
+                'version': 1,
+                'root': {
+                    'fields': {
+                        'b': {
+                            'fields': {
+                                'y': {
+                                    'has_cursor': True,
+                                    'is_selected': True,
+                                    'type': 'leaf'
+                                }
+                            },
+                            'is_expanded': True,
+                            'type': 'object'
+                        }
+                    },
+                    'is_expanded': True,
+                    'type': 'object'
+                }
+            })
+        schema = ('type Query {'
+                  '  b: Int!'
+                  '}')
+        tree = load_tree(schema)
+        tree.from_json(data)
+        self.assertDraw(tree,
+                        'X b')
+        data = tree.to_json()
+        self.assertEqualJson(
+            data,
+            {
+                'version': 1,
+                'root': {
+                    'fields': {
+                        'b': {
+                            'has_cursor': True,
+                            'type': 'leaf'
+                        }
+                    },
+                    'is_expanded': True,
+                    'type': 'object'
+                }
+            })

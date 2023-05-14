@@ -247,8 +247,6 @@ Ideas
      │     ■ width: 800
      │     ■ height: 600
 
-- Keep valid parts of any existing query when reloading the schema.
-
 - Optionally give schema path on command line. For endpoints that does
   not support schema introspection.
 
