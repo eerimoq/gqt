@@ -1848,7 +1848,6 @@ class Tree:
         if version != 1:
             raise Exception(f'Unsupported tree JSON version {version}')
 
-        self._schema = data['schema']
         self._cursor = self._root.from_json(data['root'])
 
         if self._cursor is None:

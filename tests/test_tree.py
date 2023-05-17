@@ -3,8 +3,10 @@ import unittest
 from copy import deepcopy
 from unittest.mock import patch
 
+from graphql import build_client_schema
 from graphql import build_schema
 from graphql import introspection_from_schema
+from graphql import print_schema
 
 from gqt.tree import load_tree_from_schema
 
@@ -2429,3 +2431,30 @@ class TreeTest(unittest.TestCase):
                     'type': 'object'
                 }
             })
+
+    def test_reload_schema_to_from_json(self):
+        schema = ('type Query {\n'
+                  '  a: A!\n'
+                  '}\n'
+                  '\n'
+                  'type A {\n'
+                  '  x: String!\n'
+                  '}')
+        tree = load_tree(schema)
+        data = tree.to_json()
+        self.assertEqual(print_schema(build_client_schema(data['schema'])),
+                         schema)
+        schema = ('type Query {\n'
+                  '  a: A!\n'
+                  '  b: String\n'
+                  '}\n'
+                  '\n'
+                  'type A {\n'
+                  '  x: String!\n'
+                  '  y: String!\n'
+                  '}')
+        tree = load_tree(schema)
+        tree.from_json(data)
+        data = tree.to_json()
+        self.assertEqual(print_schema(build_client_schema(data['schema'])),
+                         schema)
