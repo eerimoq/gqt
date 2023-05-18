@@ -10,7 +10,6 @@ from graphql.language import parse
 from .cache import read_tree_from_cache
 from .cache import write_tree_to_cache
 from .endpoint import fetch_schema
-from .experimental import is_experimental
 from .screen import addstr
 from .screen import move
 from .tree import Tree
@@ -23,7 +22,6 @@ Move:              <Left>, <Right>, <Up> and <Down>
                    <Tab>
 Select:            <Space>
 Variable:          v
-{compact}\
 Delete list item:  <Backspace>
 Execute:           <Enter>
 Reload schema:     r
@@ -40,12 +38,7 @@ class QuitError(Exception):
 
 
 def help_text():
-    if is_experimental():
-        compact = 'Compact:           c\n'
-    else:
-        compact = ''
-
-    return HELP_TEXT.format(compact=compact)
+    return HELP_TEXT
 
 
 @dataclass
@@ -156,9 +149,6 @@ class QueryBuilder:
                     self.show_help = not self.show_help
                 elif key == 'r':
                     self.show_fetching_schema = True
-                elif key == 'c':
-                    if is_experimental():
-                        self.tree.toggle_compact()
                 elif key == 'd':
                     self.show_description = not self.show_description
                 elif key == 'q':

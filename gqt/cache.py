@@ -23,7 +23,7 @@ def make_query_json_path(endpoint, query_name):
     return endpoint_path / 'query.json'
 
 
-def make_most_recent_query_name_path(endpoint, query_name):
+def make_most_recent_query_name_path(endpoint):
     return make_endpoint_path(endpoint) / 'most_recent_query_name.txt'
 
 
@@ -31,7 +31,7 @@ def read_tree_from_cache(endpoint, query_name):
     path = make_query_json_path(endpoint, query_name)
 
     if not path.exists():
-        most_recent_path = make_most_recent_query_name_path(endpoint, query_name)
+        most_recent_path = make_most_recent_query_name_path(endpoint)
 
         if most_recent_path.exists():
             query_name = most_recent_path.read_text() or None
@@ -47,7 +47,7 @@ def write_tree_to_cache(tree, endpoint, query_name):
     path = make_query_json_path(endpoint, query_name)
     path.parent.mkdir(exist_ok=True, parents=True)
     path.write_text(json.dumps(tree.to_json()))
-    path = make_most_recent_query_name_path(endpoint, query_name)
+    path = make_most_recent_query_name_path(endpoint)
 
     if query_name is None:
         try:

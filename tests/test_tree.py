@@ -853,48 +853,6 @@ class TreeTest(unittest.TestCase):
                         '□ b\n'
                         '□ c')
 
-    def test_compact(self):
-        schema = ('type Query {'
-                  '  a: A'
-                  '  b: A'
-                  '}'
-                  'type A {'
-                  '  x: String'
-                  '  y: String'
-                  '  z: String'
-                  '}')
-        tree = load_tree(schema)
-        tree.key_right()
-        tree.key_down()
-        tree.key_down()
-        tree.select()
-        tree.key_down()
-        tree.key_down()
-        tree.key_right()
-        self.assertDraw(tree,
-                        '▼ a\n'
-                        '  □ x\n'
-                        '  ■ y\n'
-                        '  □ z\n'
-                        'X b\n'
-                        '  □ x\n'
-                        '  □ y\n'
-                        '  □ z')
-        tree.toggle_compact()
-        self.assertDraw(tree,
-                        '▼ a\n'
-                        '  X y')
-        tree.toggle_compact()
-        self.assertDraw(tree,
-                        '▼ a\n'
-                        '  □ x\n'
-                        '  X y\n'
-                        '  □ z\n'
-                        '▼ b\n'
-                        '  □ x\n'
-                        '  □ y\n'
-                        '  □ z')
-
     def test_compact_to_from_json(self):
         schema = ('type Query {'
                   '  a: A'

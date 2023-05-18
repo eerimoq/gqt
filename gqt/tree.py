@@ -145,12 +145,6 @@ class Node:
     def query(self, variables):
         raise NotImplementedError()
 
-    def make_compact(self):
-        pass
-
-    def make_not_compact(self):
-        pass
-
     def is_selected(self):
         return False
 
@@ -325,22 +319,6 @@ class Object(Node):
                 return True
 
         return False
-
-    def make_compact(self):
-        self.fields.make_compact()
-
-        if self.is_expanded and len(self.fields) > 0:
-            self.child = self.fields[0]
-        else:
-            self.child = None
-
-    def make_not_compact(self):
-        self.fields.make_not_compact()
-
-        if self.is_expanded and len(self.fields) > 0:
-            self.child = self.fields[0]
-        else:
-            self.child = None
 
     def to_json(self, cursor):
         data = {}
@@ -1038,40 +1016,6 @@ class InputArgument(Node):
 
         return self.fields.from_json(data, cursor)
 
-#
-#     def is_selected(self):
-#         if self.is_variable:
-#             return True
-#
-#         if self.symbol not in '■●':
-#             return False
-#
-#         for field in self.fields:
-#             if field.is_selected():
-#                 return True
-#
-#         return False
-#
-#     def make_compact(self):
-#         self.fields.make_compact()
-#
-#         if self.is_variable:
-#             self.child = None
-#         elif self.symbol != '□' and len(self.fields) > 0:
-#             self.child = self.fields[0]
-#         else:
-#             self.child = None
-#
-#     def make_not_compact(self):
-#         self.fields.make_not_compact()
-#
-#         if self.is_variable:
-#             self.child = None
-#         elif self.symbol != '□' and len(self.fields) > 0:
-#             self.child = self.fields[0]
-#         else:
-#             self.child = None
-
 
 class ListItem(Node):
 
@@ -1438,7 +1382,6 @@ class State:
 
     def __init__(self):
         self.cursor_at_input_field = False
-        self.compact = False
 
 
 def find_type(types, name):
@@ -1574,32 +1517,6 @@ class ObjectFields:
         self._fields = None
         self.parent = None
         self._all_fields = None
-
-    def make_compact(self):
-        if self._all_fields is None:
-            return
-
-        self._fields = [
-            field
-            for field in self._all_fields
-            if field.is_selected()
-        ]
-
-        for field in self._fields:
-            field.make_compact()
-
-        self.set_next_and_prev()
-
-    def make_not_compact(self):
-        if self._all_fields is None:
-            return
-
-        self._fields = self._all_fields
-
-        for field in self._fields:
-            field.make_not_compact()
-
-        self.set_next_and_prev()
 
     def set_next_and_prev(self):
         if len(self._fields) > 1:
@@ -1805,18 +1722,6 @@ class Tree:
                 self._cursor = error.node
 
             raise Exception(error.message)
-
-    def toggle_compact(self):
-        self._state.compact = not self._state.compact
-
-        if self._state.compact:
-            self._move_cursor_to_selected_node_or_none()
-            self._root.make_compact()
-        else:
-            self._root.make_not_compact()
-
-            if self._cursor is None:
-                self._cursor = self._root.fields[0]
 
     def go_to_begin(self):
         if self._cursor is None:
