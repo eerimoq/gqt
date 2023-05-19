@@ -3,15 +3,15 @@ import shutil
 from urllib.parse import quote_plus
 from urllib.parse import unquote_plus
 
-from xdg import XDG_CACHE_HOME
+from xdg import XDG_DATA_HOME
 
 from .tree import load_tree_from_json
 
-CACHE_PATH = XDG_CACHE_HOME / 'gqt' / 'cache'
+DATABASE_PATH = XDG_DATA_HOME / 'gqt' / 'database'
 
 
 def make_endpoint_path(endpoint):
-    return CACHE_PATH / quote_plus(endpoint)
+    return DATABASE_PATH / quote_plus(endpoint)
 
 
 def make_query_json_path(endpoint, query_name):
@@ -27,7 +27,7 @@ def make_most_recent_query_name_path(endpoint):
     return make_endpoint_path(endpoint) / 'most_recent_query_name.txt'
 
 
-def read_tree_from_cache(endpoint, query_name):
+def read_tree_from_database(endpoint, query_name):
     path = make_query_json_path(endpoint, query_name)
 
     if not path.exists():
@@ -43,7 +43,7 @@ def read_tree_from_cache(endpoint, query_name):
     return load_tree_from_json(json.loads(path.read_text()))
 
 
-def write_tree_to_cache(tree, endpoint, query_name):
+def write_tree_to_database(tree, endpoint, query_name):
     path = make_query_json_path(endpoint, query_name)
     path.parent.mkdir(exist_ok=True, parents=True)
     path.write_text(json.dumps(tree.to_json()))
@@ -58,14 +58,14 @@ def write_tree_to_cache(tree, endpoint, query_name):
         path.write_text(query_name)
 
 
-def clear_cache():
-    shutil.rmtree(CACHE_PATH, ignore_errors=True)
+def clear_database():
+    shutil.rmtree(DATABASE_PATH, ignore_errors=True)
 
 
-def get_cached_queries():
+def get_queries():
     items = []
 
-    for path in CACHE_PATH.glob('*'):
+    for path in DATABASE_PATH.glob('*'):
         endpoint = unquote_plus(path.name)
 
         if (path / 'query.json').exists():

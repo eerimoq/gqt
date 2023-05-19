@@ -14,9 +14,9 @@ from graphql.language import parse
 from graphql.language import print_ast
 from tabulate import tabulate
 
-from .cache import clear_cache
-from .cache import get_cached_queries
-from .cache import read_tree_from_cache
+from .database import clear_database
+from .database import get_queries
+from .database import read_tree_from_database
 from .endpoint import create_query
 from .endpoint import fetch_schema
 from .endpoint import post
@@ -32,13 +32,12 @@ def default_endpoint():
 
 def last_query(endpoint, query_name):
     try:
-        return read_tree_from_cache(endpoint, query_name)
+        return read_tree_from_database(endpoint, query_name)
     except Exception:
         if query_name is None:
-            message = f"No cached query found for endpoint '{endpoint}'."
+            message = f"No query found for endpoint '{endpoint}'."
         else:
-            message = (f"No cached query '{query_name}' found for endpoint"
-                       f" '{endpoint}'.")
+            message = f"No query '{query_name}' found for endpoint '{endpoint}'."
 
         sys.exit(message)
 
@@ -140,8 +139,8 @@ def create_variables(variables):
     return result
 
 
-def list_cached_queries():
-    print(tabulate(get_cached_queries(), ('Endpoint', 'Query name')))
+def list_queries():
+    print(tabulate(get_queries(), ('Endpoint', 'Query name')))
 
 
 def main():
@@ -178,12 +177,12 @@ def main():
     parser.add_argument('-p', '--print-schema',
                         action='store_true',
                         help='Print the schema.')
-    parser.add_argument('-l', '--list-cached-queries',
+    parser.add_argument('-l', '--list-queries',
                         action='store_true',
-                        help='List all cached queries and exit.')
-    parser.add_argument('--clear-cache',
+                        help='List all queries and exit.')
+    parser.add_argument('--clear',
                         action='store_true',
-                        help='Clear the cache and exit.')
+                        help='Clear the database and exit.')
     parser.add_argument('--no-verify',
                         action='store_true',
                         help='No SSL verification.')
@@ -204,12 +203,12 @@ def main():
     except Exception:
         sys.exit('Bad header given.')
 
-    if args.clear_cache:
-        clear_cache()
+    if args.clear:
+        clear_database()
         return
 
-    if args.list_cached_queries:
-        list_cached_queries()
+    if args.list_queries:
+        list_queries()
         return
 
     logging.captureWarnings(True)

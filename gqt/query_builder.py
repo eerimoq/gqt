@@ -7,8 +7,8 @@ from dataclasses import dataclass
 
 from graphql.language import parse
 
-from .cache import read_tree_from_cache
-from .cache import write_tree_to_cache
+from .database import read_tree_from_database
+from .database import write_tree_to_database
 from .endpoint import fetch_schema
 from .screen import addstr
 from .screen import move
@@ -71,7 +71,7 @@ class QueryBuilder:
         self.show_description = False
 
         try:
-            self.tree = read_tree_from_cache(endpoint, query_name)
+            self.tree = read_tree_from_database(endpoint, query_name)
             self.show_fetching_schema = False
         except Exception:
             self.tree = None
@@ -314,17 +314,17 @@ class QueryBuilder:
 
                 done = self.update(key)
 
-            self.write_tree_to_cache()
+            self.write_tree_to_database()
         except QuitError:
-            self.write_tree_to_cache()
+            self.write_tree_to_database()
 
             raise
 
         return self.tree
 
-    def write_tree_to_cache(self):
+    def write_tree_to_database(self):
         if self.tree is not None:
-            write_tree_to_cache(self.tree, self.endpoint, self.query_name)
+            write_tree_to_database(self.tree, self.endpoint, self.query_name)
 
     def addstr(self, y, x, text):
         addstr(self.stdscr, y, x, text)

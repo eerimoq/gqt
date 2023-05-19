@@ -1,6 +1,5 @@
 all:
 	$(MAKE) style
-	$(MAKE) lint
 	$(MAKE) test
 
 test:
