@@ -298,9 +298,9 @@ class Object(Node):
             else:
                 kind = 'mutation Mutation'
 
-            return f"{kind}{variables} {{{items}}}"
+            return f'{kind}{variables} {{{items}}}'
         else:
-            raise QueryError("No fields selected.", None)
+            raise QueryError('No fields selected.', None)
 
     def select(self):
         self.is_expanded = not self.is_expanded
@@ -1414,7 +1414,7 @@ def build_field(field, types, state):
     try:
         name = field['name']
     except Exception:
-        raise Exception("No field name.")
+        raise Exception('No field name.')
 
     item = get_type(field['type'])
     field_type = item['name']

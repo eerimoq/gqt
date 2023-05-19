@@ -6,7 +6,7 @@ from graphql import get_introspection_query
 
 def fetch_schema(endpoint, headers, verify):
     response = post(endpoint,
-                    {"query": get_introspection_query()},
+                    {'query': get_introspection_query()},
                     headers,
                     verify)
     response = response.json()
@@ -28,7 +28,7 @@ def post(endpoint, query, headers, verify):
 
 
 def create_query(query, variables):
-    query = {"query": query}
+    query = {'query': query}
 
     if variables:
         query['variables'] = variables
