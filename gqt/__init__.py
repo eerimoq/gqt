@@ -20,7 +20,6 @@ from .database import read_tree_from_database
 from .endpoint import create_query
 from .endpoint import fetch_schema
 from .endpoint import post
-from .experimental import set_experimental
 from .query_builder import QuitError
 from .query_builder import query_builder
 from .version import __version__
@@ -189,14 +188,10 @@ def main():
     parser.add_argument('-H', '--header',
                         action='append',
                         help='Extra HTTP header. May be given multiple times.')
-    parser.add_argument('--experimental',
-                        action='store_true',
-                        help='Enable experimental features.')
     parser.add_argument('--color',
                         action='store_true',
                         help='Force color output.')
     args = parser.parse_args()
-    set_experimental(args.experimental)
 
     try:
         headers = make_headers(args.header)
