@@ -26,7 +26,7 @@ Delete list item:  <Backspace>
 Execute:           <Enter>
 Reload schema:     r
 Help:              h or ?
-Quit:              q or <Ctrl-C>\
+Quit:              q\
 '''
 
 HELP_NCOLS = 55
