@@ -129,7 +129,7 @@ Name queries:
        latestRelease:
          version: 0.20.0
 
-List cached queries:
+List queries:
 
 .. code-block::
 
