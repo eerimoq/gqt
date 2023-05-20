@@ -34,7 +34,7 @@ def read_tree_from_database(endpoint, query_name):
         most_recent_path = make_most_recent_query_name_path(endpoint)
 
         if most_recent_path.exists():
-            query_name = most_recent_path.read_text() or None
+            query_name = most_recent_path.read_text()
         else:
             query_name = None
 
