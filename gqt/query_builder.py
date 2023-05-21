@@ -132,6 +132,9 @@ class QueryBuilder:
         elif self.meta:
             self.meta = False
 
+            if isinstance(key, int):
+                key = curses.keyname(key).decode()
+
             if key == '<':
                 self.tree.go_to_begin()
             elif key == '>':

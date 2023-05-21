@@ -16,6 +16,7 @@ KEY_BINDINGS = {
     '\x14': 'ctrl t',
     'KEY_LEFT': 'left',
     '\x1b\x7f': 'meta backspace',
+    '\x1bKEY_BACKSPACE': 'meta backspace',
     '\x1bd': 'meta d',
     'kLFT5': 'meta left',
     'kRIT5': 'meta right',
@@ -34,6 +35,18 @@ class QueryError(Exception):
         super().__init__()
         self.message = message
         self.node = node
+
+
+class Value:
+
+    def __init__(self):
+        self.text = ''
+        self.pos = 0
+
+    def edit(self, key):
+        self.text, self.pos = edit(self.text,
+                                   self.pos,
+                                   KEY_BINDINGS.get(key, key))
 
 
 def query_variable(value, value_type, variables, node):
@@ -506,8 +519,7 @@ class ScalarArgument(Node):
 
         self.state = state
         self.types = types
-        self.value = ''
-        self.pos = 0
+        self.value = Value()
 
         if self.is_optional:
             self.symbol = '□'
@@ -522,7 +534,7 @@ class ScalarArgument(Node):
             cursor.y = y
 
             if self.state.cursor_at_input_field:
-                cursor.x = x + len(self.name) + 4 + self.pos
+                cursor.x = x + len(self.name) + 4 + self.value.pos
             else:
                 cursor.x = x
 
@@ -536,7 +548,7 @@ class ScalarArgument(Node):
         addstr(stdscr,
                y,
                x + 2 + len(self.name) + 2,
-               self.value,
+               self.value.text,
                curses.color_pair(2))
 
         return y + 1
@@ -561,9 +573,7 @@ class ScalarArgument(Node):
 
             return True
         elif self.state.cursor_at_input_field:
-            self.value, self.pos = edit(self.value,
-                                        self.pos,
-                                        KEY_BINDINGS.get(key, key))
+            self.value.edit(key)
 
             return True
         elif key == 'v':
@@ -581,30 +591,30 @@ class ScalarArgument(Node):
 
     def query(self, variables):
         if self.is_variable:
-            return query_variable(self.value, self.type, variables, self)
+            return query_variable(self.value.text, self.type, variables, self)
         elif self.symbol in '■●':
             if self.is_string():
-                return f'"{self.value}"'
-            elif self.value:
+                return f'"{self.value.text}"'
+            elif self.value.text:
                 if self._type == 'Int':
                     try:
-                        int(self.value, 10)
+                        int(self.value.text, 10)
                     except Exception:
-                        raise QueryError(f"'{self.value}' is not an integer.",
+                        raise QueryError(f"'{self.value.text}' is not an integer.",
                                          self)
                 elif self._type == 'Float':
                     try:
-                        float(self.value)
+                        float(self.value.text)
                     except Exception:
-                        raise QueryError(f"'{self.value}' is not a float.", self)
+                        raise QueryError(f"'{self.value.text}' is not a float.", self)
                 elif self._type == 'Boolean':
-                    if self.value not in ['true', 'false']:
+                    if self.value.text not in ['true', 'false']:
                         raise QueryError(
                             f"Boolean must be 'true' or 'false', "
-                            f"not '{self.value}'.",
+                            f"not '{self.value.text}'.",
                             self)
 
-                return self.value
+                return self.value.text
             else:
                 raise QueryError('Missing scalar value.', self)
         else:
@@ -619,11 +629,11 @@ class ScalarArgument(Node):
         if cursor is self:
             data['has_cursor'] = True
 
-        if self.value:
-            data['value'] = self.value
+        if self.value.text:
+            data['value'] = self.value.text
 
-        if self.pos != 0:
-            data['pos'] = self.pos
+        if self.value.pos != 0:
+            data['pos'] = self.value.pos
 
         if self.is_variable:
             data['is_variable'] = True
@@ -646,8 +656,8 @@ class ScalarArgument(Node):
             self.symbol = '■'
 
         self.is_variable = data.get('is_variable', False)
-        self.pos = data.get('pos', 0)
-        self.value = data.get('value', '')
+        self.value.pos = data.get('pos', 0)
+        self.value.text = data.get('value', '')
 
         if data.get('has_cursor', False):
             cursor = self
@@ -680,8 +690,7 @@ class EnumArgument(Node):
             for value in find_type(types, field_type['name'])['enumValues']
         ]
         self.state = state
-        self.value = ''
-        self.pos = 0
+        self.value = Value()
 
         if self.is_optional:
             self.symbol = '□'
@@ -693,7 +702,7 @@ class EnumArgument(Node):
             cursor.y = y
 
             if self.state.cursor_at_input_field:
-                cursor.x = x + len(self.name) + 4 + self.pos
+                cursor.x = x + len(self.name) + 4 + self.value.pos
             else:
                 cursor.x = x
 
@@ -707,18 +716,18 @@ class EnumArgument(Node):
         addstr(stdscr,
                y,
                x + 2 + len(self.name) + 2,
-               self.value,
+               self.value.text,
                curses.color_pair(2))
 
         if not self.is_variable:
-            x += (2 + len(self.name + self.value) + 3)
+            x += (2 + len(self.name + self.value.text) + 3)
 
-            if self.value not in self.members:
+            if self.value.text not in self.members:
                 _, x_max = stdscr.getmaxyx()
                 members = [
                     member
                     for member in self.members
-                    if member.startswith(self.value)
+                    if member.startswith(self.value.text)
                 ]
                 members = '(' + ', '.join(members) + ')'
                 members = members[:max(x_max - x, 0)]
@@ -746,9 +755,7 @@ class EnumArgument(Node):
 
             return True
         elif self.state.cursor_at_input_field:
-            self.value, self.pos = edit(self.value,
-                                        self.pos,
-                                        KEY_BINDINGS.get(key, key))
+            self.value.edit(key)
 
             return True
         elif key == 'v':
@@ -766,13 +773,13 @@ class EnumArgument(Node):
 
     def query(self, variables):
         if self.is_variable:
-            return query_variable(self.value, self.type, variables, self)
+            return query_variable(self.value.text, self.type, variables, self)
         elif self.symbol in '■●':
-            if self.value:
-                if self.value in self.members:
-                    return str(self.value)
+            if self.value.text:
+                if self.value.text in self.members:
+                    return str(self.value.text)
                 else:
-                    raise QueryError(f"Invalid enum value '{self.value}'.", self)
+                    raise QueryError(f"Invalid enum value '{self.value.text}'.", self)
             else:
                 raise QueryError('Missing enum value.', self)
         else:
@@ -787,11 +794,11 @@ class EnumArgument(Node):
         if cursor is self:
             data['has_cursor'] = True
 
-        if self.value:
-            data['value'] = self.value
+        if self.value.text:
+            data['value'] = self.value.text
 
-        if self.pos != 0:
-            data['pos'] = self.pos
+        if self.value.pos != 0:
+            data['pos'] = self.value.pos
 
         if self.is_variable:
             data['is_variable'] = True
@@ -814,8 +821,8 @@ class EnumArgument(Node):
             self.symbol = '■'
 
         self.is_variable = data.get('is_variable', False)
-        self.pos = data.get('pos', 0)
-        self.value = data.get('value', '')
+        self.value.pos = data.get('pos', 0)
+        self.value.text = data.get('value', '')
 
         if data.get('has_cursor', False):
             cursor = self
@@ -842,8 +849,7 @@ class InputArgument(Node):
         self.is_variable = False
         self.state = state
         self.types = types
-        self.value = ''
-        self.pos = 0
+        self.value = Value()
 
         if self.is_optional:
             fields = find_type(types, field_type['name'])['inputFields']
@@ -864,7 +870,7 @@ class InputArgument(Node):
             cursor.y = y
 
             if self.state.cursor_at_input_field:
-                cursor.x = x + len(self.name) + 4 + self.pos
+                cursor.x = x + len(self.name) + 4 + self.value.pos
             else:
                 cursor.x = x
 
@@ -873,7 +879,7 @@ class InputArgument(Node):
         addstr(stdscr,
                y,
                x + 2 + len(self.name) + 2,
-               self.value,
+               self.value.text,
                curses.color_pair(2))
 
         return y + 1
@@ -922,9 +928,7 @@ class InputArgument(Node):
 
                 return True
             elif self.state.cursor_at_input_field:
-                self.value, self.pos = edit(self.value,
-                                            self.pos,
-                                            KEY_BINDINGS.get(key, key))
+                self.value.edit(key)
 
                 return True
             elif key == 'v':
@@ -955,7 +959,7 @@ class InputArgument(Node):
 
     def query(self, variables):
         if self.is_variable:
-            return query_variable(self.value, self.type, variables, self)
+            return query_variable(self.value.text, self.type, variables, self)
         elif self.symbol in '■●':
             items = []
 
@@ -975,11 +979,11 @@ class InputArgument(Node):
         if cursor is self:
             data['has_cursor'] = True
 
-        if self.value:
-            data['value'] = self.value
+        if self.value.text:
+            data['value'] = self.value.text
 
-        if self.pos != 0:
-            data['pos'] = self.pos
+        if self.value.pos != 0:
+            data['pos'] = self.value.pos
 
         if self.is_variable:
             data['is_variable'] = True
@@ -1006,8 +1010,8 @@ class InputArgument(Node):
             self.child = self.fields[0]
 
         self.is_variable = data.get('is_variable', False)
-        self.pos = data.get('pos', 0)
-        self.value = data.get('value', '')
+        self.value.pos = data.get('pos', 0)
+        self.value.text = data.get('value', '')
 
         if data.get('has_cursor', False):
             cursor = self
@@ -1160,8 +1164,7 @@ class ListArgument(Node):
         self.state = state
         self.field_type = field_type
         self.types = types
-        self.value = ''
-        self.pos = 0
+        self.value = Value()
 
         if self.is_optional:
             self.symbol = '□'
@@ -1201,7 +1204,7 @@ class ListArgument(Node):
             cursor.y = y
 
             if self.state.cursor_at_input_field:
-                cursor.x = x + len(self.name) + 4 + self.pos
+                cursor.x = x + len(self.name) + 4 + self.value.pos
             else:
                 cursor.x = x
 
@@ -1210,7 +1213,7 @@ class ListArgument(Node):
         addstr(stdscr,
                y,
                x + 2 + len(self.name) + 2,
-               self.value,
+               self.value.text,
                curses.color_pair(2))
 
         return y + 1
@@ -1268,9 +1271,7 @@ class ListArgument(Node):
 
                 return True
             elif self.state.cursor_at_input_field:
-                self.value, self.pos = edit(self.value,
-                                            self.pos,
-                                            KEY_BINDINGS.get(key, key))
+                self.value.edit(key)
 
                 return True
             elif key == 'v':
@@ -1292,8 +1293,8 @@ class ListArgument(Node):
 
     def query(self, variables):
         if self.is_variable:
-            if self.value:
-                value = f'${self.value}'
+            if self.value.text:
+                value = f'${self.value.text}'
                 variables.append((value, self.type))
 
                 return value
@@ -1318,11 +1319,11 @@ class ListArgument(Node):
         if cursor is self:
             data['has_cursor'] = True
 
-        if self.value:
-            data['value'] = self.value
+        if self.value.text:
+            data['value'] = self.value.text
 
-        if self.pos != 0:
-            data['pos'] = self.pos
+        if self.value.pos != 0:
+            data['pos'] = self.value.pos
 
         if self.is_variable:
             data['is_variable'] = True
@@ -1366,8 +1367,8 @@ class ListArgument(Node):
             cursor = item_cursor
 
         self.is_variable = data.get('is_variable', False)
-        self.pos = data.get('pos', 0)
-        self.value = data.get('value', '')
+        self.value.pos = data.get('pos', 0)
+        self.value.text = data.get('value', '')
 
         if data.get('is_selected', False):
             self.symbol = '■'
