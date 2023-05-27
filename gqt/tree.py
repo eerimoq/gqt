@@ -299,9 +299,17 @@ class Object(Node):
 
         if items:
             if variables:
+                cleaned_variables = {}
+
+                for name, value in set(variables):
+                    if name in cleaned_variables:
+                        raise Exception(f"Variable '{name[1:]}' has more than on type.")
+
+                    cleaned_variables[name] = value
+
                 variables = '(' + ','.join([
                     f'{name}:{value}'
-                    for name, value in variables
+                    for name, value in cleaned_variables.items()
                 ]) + ')'
             else:
                 variables = ''

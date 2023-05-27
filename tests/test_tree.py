@@ -2416,3 +2416,38 @@ class TreeTest(unittest.TestCase):
         data = tree.to_json()
         self.assertEqual(print_schema(build_client_schema(data['schema'])),
                          schema)
+
+    def test_use_variable_twice(self):
+        schema = ('type Query {'
+                  '  a(b: String): String'
+                  '  b(b: String): String'
+                  '  c(b: Int): String'
+                  '}')
+        tree = load_tree(schema)
+        tree.select()
+        tree.key_down()
+        tree.key('v')
+        tree.key('\t')
+        tree.key('a')
+        tree.key('\t')
+        tree.key_down()
+        tree.select()
+        tree.key_down()
+        tree.key('v')
+        tree.key('\t')
+        tree.key('a')
+        tree.key('\t')
+        self.assertEqual(tree.query(),
+                         'query Query($a:String) {a(b:$a) b(b:$a)}')
+        tree.key_down()
+        tree.select()
+        tree.key_down()
+        tree.key('v')
+        tree.key('\t')
+        tree.key('a')
+        tree.key('\t')
+
+        with self.assertRaises(Exception) as cm:
+            tree.query()
+
+        self.assertEqual(str(cm.exception), "Variable 'a' has more than on type.")
