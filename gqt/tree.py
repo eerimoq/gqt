@@ -29,13 +29,12 @@ OPTIONAL_SYMBOLS = {
 }
 
 
-def is_optional_argument(field_type, default_value):
-    if field_type['kind'] != 'NON_NULL':
-        return True
-    elif default_value is not None:
-        return True
-    else:
-        return False
+def is_optional_argument(field_type):
+    return field_type['kind'] != 'NON_NULL'
+
+
+def has_default(default_value):
+    return default_value is not None
 
 
 class QueryError(Exception):
@@ -527,7 +526,8 @@ class ScalarArgument(Node):
         self._type = get_type(field_type)['name']
         self.type = get_type_string(field_type)
         self.description = description
-        self.is_optional = is_optional_argument(field_type, default_value)
+        self.is_optional = is_optional_argument(field_type)
+        self.has_default = has_default(default_value)
         self.is_variable = False
 
         if self.is_optional:
@@ -539,7 +539,7 @@ class ScalarArgument(Node):
         self.types = types
         self.value = Value()
 
-        if self.is_optional:
+        if self.is_optional or self.has_default:
             self.symbol = '□'
         else:
             self.symbol = '●'
@@ -604,7 +604,7 @@ class ScalarArgument(Node):
     def select(self):
         if self.state.cursor_at_input_field:
             self.key(' ')
-        elif self.is_optional and not self.is_variable:
+        elif (self.is_optional or self.has_default) and not self.is_variable:
             self.symbol = OPTIONAL_SYMBOLS[self.symbol]
 
     def query(self, variables):
@@ -698,7 +698,8 @@ class EnumArgument(Node):
         self.name = name
         self.type = get_type_string(field_type)
         self.description = description
-        self.is_optional = is_optional_argument(field_type, default_value)
+        self.is_optional = is_optional_argument(field_type)
+        self.has_default = has_default(default_value)
         self.is_variable = False
 
         if not self.is_optional:
@@ -711,7 +712,7 @@ class EnumArgument(Node):
         self.state = state
         self.value = Value()
 
-        if self.is_optional:
+        if self.is_optional or self.has_default:
             self.symbol = '□'
         else:
             self.symbol = '●'
@@ -787,7 +788,7 @@ class EnumArgument(Node):
     def select(self):
         if self.state.cursor_at_input_field:
             self.key(' ')
-        elif self.is_optional and not self.is_variable:
+        elif (self.is_optional or self.has_default) and not self.is_variable:
             self.symbol = OPTIONAL_SYMBOLS[self.symbol]
 
     def query(self, variables):
@@ -865,7 +866,8 @@ class InputArgument(Node):
         self._type = get_type(field_type)['name']
         self.type = get_type_string(field_type)
         self.description = description
-        self.is_optional = is_optional_argument(field_type, default_value)
+        self.is_optional = is_optional_argument(field_type)
+        self.has_default = has_default(default_value)
         self.is_variable = False
         self.state = state
         self.types = types
@@ -879,7 +881,7 @@ class InputArgument(Node):
         self.fields = ObjectFields(fields, [], types, state)
         self.fields.parent = self
 
-        if self.is_optional:
+        if self.is_optional or self.has_default:
             self.symbol = '□'
         else:
             self.symbol = '●'
@@ -969,7 +971,7 @@ class InputArgument(Node):
         return True
 
     def select(self):
-        if self.is_optional and not self.is_variable:
+        if (self.is_optional or self.has_default) and not self.is_variable:
             self.symbol = OPTIONAL_SYMBOLS[self.symbol]
 
             if self.symbol == '■':
@@ -1180,14 +1182,15 @@ class ListArgument(Node):
         self.name = name
         self.type = get_type_string(field_type)
         self.description = description
-        self.is_optional = is_optional_argument(field_type, default_value)
+        self.is_optional = is_optional_argument(field_type)
+        self.has_default = has_default(default_value)
         self.is_variable = False
         self.state = state
         self.field_type = field_type
         self.types = types
         self.value = Value()
 
-        if self.is_optional:
+        if self.is_optional or self.has_default:
             self.symbol = '□'
         else:
             self.symbol = '●'
@@ -1276,7 +1279,7 @@ class ListArgument(Node):
             item.next.prev = item.prev
 
     def select(self):
-        if self.is_optional and not self.is_variable:
+        if (self.is_optional or self.has_default) and not self.is_variable:
             self.symbol = OPTIONAL_SYMBOLS[self.symbol]
 
             if self.symbol == '■':
@@ -1836,7 +1839,6 @@ class Tree:
 
 
 def load_tree_from_schema(schema):
-    # print(schema)
     types = schema['__schema']['types']
     query_type = schema['__schema']['queryType']
 
