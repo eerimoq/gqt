@@ -606,6 +606,24 @@ class TreeTest(unittest.TestCase):
                         '■ a\n'
                         '  X x: C')
 
+    def test_input_argument_default_value(self):
+        schema = ('type Query {'
+                  '  a(x: Foo): String'
+                  '}'
+                  'input Foo {'
+                  '  y: Int = 1'
+                  '}')
+        tree = load_tree(schema)
+        tree.select()
+        tree.key_down()
+        self.assertEqual(tree.query(), 'query Query {a}')
+        tree.select()
+        self.assertEqual(tree.query(), 'query Query {a(x:{})}')
+        self.assertDraw(tree,
+                        '■ a\n'
+                        '  X x\n'
+                        '    □ y:')
+
     def test_interface(self):
         schema = ('type Query {'
                   '  a: Foo'

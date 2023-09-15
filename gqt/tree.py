@@ -29,6 +29,15 @@ OPTIONAL_SYMBOLS = {
 }
 
 
+def is_optional_argument(field_type, default_value):
+    if field_type['kind'] != 'NON_NULL':
+        return True
+    elif default_value is not None:
+        return True
+    else:
+        return False
+
+
 class QueryError(Exception):
 
     def __init__(self, message, node):
@@ -510,6 +519,7 @@ class ScalarArgument(Node):
                  name,
                  field_type,
                  description,
+                 default_value,
                  state,
                  types):
         super().__init__()
@@ -517,7 +527,7 @@ class ScalarArgument(Node):
         self._type = get_type(field_type)['name']
         self.type = get_type_string(field_type)
         self.description = description
-        self.is_optional = (field_type['kind'] != 'NON_NULL')
+        self.is_optional = is_optional_argument(field_type, default_value)
         self.is_variable = False
 
         if self.is_optional:
@@ -681,13 +691,14 @@ class EnumArgument(Node):
                  name,
                  field_type,
                  description,
+                 default_value,
                  state,
                  types):
         super().__init__()
         self.name = name
         self.type = get_type_string(field_type)
         self.description = description
-        self.is_optional = (field_type['kind'] != 'NON_NULL')
+        self.is_optional = is_optional_argument(field_type, default_value)
         self.is_variable = False
 
         if not self.is_optional:
@@ -846,6 +857,7 @@ class InputArgument(Node):
                  name,
                  field_type,
                  description,
+                 default_value,
                  state,
                  types):
         super().__init__()
@@ -853,7 +865,7 @@ class InputArgument(Node):
         self._type = get_type(field_type)['name']
         self.type = get_type_string(field_type)
         self.description = description
-        self.is_optional = (field_type['kind'] != 'NON_NULL')
+        self.is_optional = is_optional_argument(field_type, default_value)
         self.is_variable = False
         self.state = state
         self.types = types
@@ -1161,13 +1173,14 @@ class ListArgument(Node):
                  name,
                  field_type,
                  description,
+                 default_value,
                  state,
                  types):
         super().__init__()
         self.name = name
         self.type = get_type_string(field_type)
         self.description = description
-        self.is_optional = (field_type['kind'] != 'NON_NULL')
+        self.is_optional = is_optional_argument(field_type, default_value)
         self.is_variable = False
         self.state = state
         self.field_type = field_type
@@ -1487,18 +1500,19 @@ def build_argument(argument, types, state):
     description = argument['description']
     arg_type = argument['type']
     kind = arg_type['kind']
+    default_value = argument.get('defaultValue')
 
     if kind == 'NON_NULL':
         kind = arg_type['ofType']['kind']
 
     if kind == 'LIST':
-        return ListArgument(name, arg_type, description, state, types)
+        return ListArgument(name, arg_type, description, default_value, state, types)
     elif kind == 'INPUT_OBJECT':
-        return InputArgument(name, arg_type, description, state, types)
+        return InputArgument(name, arg_type, description, default_value, state, types)
     elif kind == 'ENUM':
-        return EnumArgument(name, arg_type, description, state, types)
+        return EnumArgument(name, arg_type, description, default_value, state, types)
     else:
-        return ScalarArgument(name, arg_type, description, state, types)
+        return ScalarArgument(name, arg_type, description, default_value, state, types)
 
 
 class ObjectFieldsIterator:
@@ -1822,6 +1836,7 @@ class Tree:
 
 
 def load_tree_from_schema(schema):
+    # print(schema)
     types = schema['__schema']['types']
     query_type = schema['__schema']['queryType']
 
