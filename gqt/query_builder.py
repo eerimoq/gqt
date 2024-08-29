@@ -375,6 +375,8 @@ def format_description(description, maximum_width):
     rest = ''
 
     for line in description.splitlines():
+        line = line.strip()
+
         if len(line) == 0:
             if rest:
                 lines.append(rest)
