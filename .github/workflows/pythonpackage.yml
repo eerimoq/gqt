@@ -17,7 +17,7 @@ jobs:
         pip install -r requirements.txt
     - name: Lint and style
       run: |
-        ruff .
+        ruff check .
 
   test:
     runs-on: ubuntu-latest
