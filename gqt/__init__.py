@@ -26,7 +26,7 @@ from .version import __version__
 
 
 def default_endpoint():
-    return os.environ.get('GQT_ENDPOINT', 'https://mys-lang.org/graphql')
+    return os.environ.get('GQT_ENDPOINT')
 
 
 def last_query(endpoint, query_name):
@@ -152,8 +152,8 @@ def main():
     parser.add_argument(
         '-e', '--endpoint',
         default=default_endpoint(),
-        help=('GraphQL endpoint (default: %(default)s). Set environment variable '
-              'GQT_ENDPOINT to override default value.'))
+        help=('GraphQL endpoint. Environment variable '
+              'GQT_ENDPOINT is used as default value.'))
     parser.add_argument('-n', '--query-name',
                         help='Query name.')
     parser.add_argument(
@@ -210,6 +210,9 @@ def main():
     verify = not args.no_verify
 
     try:
+        if args.endpoint is None:
+            raise Exception("No endpoint given via --endpoint or environment variable GQT_ENDPOINT.")
+
         if args.print_schema:
             schema = print_schema(
                 build_client_schema(
